@@ -1,0 +1,11 @@
+{
+  "extends": "./node_modules/@tsconfig/node18/tsconfig.json",
+  "compilerOptions": {
+    "outDir": "dist",
+    "resolveJsonModule": true,
+    "noUncheckedIndexedAccess": true,
+  },
+  "include": [
+    "src/**/*"
+  ]
+}

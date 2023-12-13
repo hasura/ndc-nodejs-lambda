@@ -1,0 +1,30 @@
+{
+  "name": "@hasura/ndc-functions-sdk-node",
+  "version": "0.1.0",
+  "description": "SDK that can automatically expose TypeScript functions as Hasura NDC functions/procedures",
+  "author": "Hasura",
+  "license": "Apache-2.0",
+  "homepage": "https://github.com/hasura/ndc-functions-sdk-node#readme",
+  "bugs": {
+    "url": "https://github.com/hasura/ndc-functions-sdk-node/issues"
+  },
+  "bin": {
+    "ndc-functions-sdk-node": "bin/index.js"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/hasura/ndc-functions-sdk-node.git"
+  },
+  "dependencies": {
+    "@hasura/ndc-sdk-typescript": "file:../ndc-sdk-typescript",
+    "@tsconfig/node18": "^18.2.2",
+    "@json-schema-tools/meta-schema": "^1.7.0",
+    "commander": "^11.1.0",
+    "cross-spawn": "^7.0.3",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.3.3"
+  }
+}
