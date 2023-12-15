@@ -41,7 +41,7 @@ export function createConnector(options: ConnectorOptions): sdk.Connector<RawCon
     },
     try_init_state: async function (configuration: Configuration, metrics: unknown): Promise<State> {
       const resolvedPath = path.resolve(options.functions);
-      const functions = await import(resolvedPath);
+      const functions = require(resolvedPath);
       return {
         functions
       }
