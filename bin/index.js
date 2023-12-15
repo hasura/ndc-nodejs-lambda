@@ -4,9 +4,7 @@
 
 const spawn = require("cross-spawn");
 
-const args = process.argv.slice(2);
-
-const pathToSource = require.resolve("../src/index.ts");
-const result = spawn.sync("ts-node", ["--transpileOnly", pathToSource, ...args], { stdio: "inherit" })
+const script = `require("@hasura/ndc-functions-sdk-node/host").startHost(${JSON.stringify(process.argv)})`
+const result = spawn.sync("ts-node", ["--cwdMode", "--transpile-only", "-e", script], { stdio: "inherit" })
 if (result.error) console.error(result.error);
 process.exit(result.status);

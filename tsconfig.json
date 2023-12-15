@@ -4,6 +4,7 @@
     "outDir": "dist",
     "resolveJsonModule": true,
     "noUncheckedIndexedAccess": true,
+    "sourceMap": true,
   },
   "include": [
     "src/**/*"

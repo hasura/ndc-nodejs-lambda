@@ -11,7 +11,16 @@
   "bin": {
     "ndc-functions-sdk-node": "bin/index.js"
   },
+  "files": [
+    "./dist/**",
+    "./src/**"
+  ],
+  "exports": {
+    "./host": "./dist/src/host.js"
+  },
   "scripts": {
+    "build": "tsc",
+    "start": "npm run build && node bin/index.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
@@ -20,8 +29,8 @@
   },
   "dependencies": {
     "@hasura/ndc-sdk-typescript": "file:../ndc-sdk-typescript",
-    "@tsconfig/node18": "^18.2.2",
     "@json-schema-tools/meta-schema": "^1.7.0",
+    "@tsconfig/node18": "^18.2.2",
     "commander": "^11.1.0",
     "cross-spawn": "^7.0.3",
     "ts-node": "^10.9.2",
