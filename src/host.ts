@@ -19,7 +19,7 @@ export function startHost(args: string[]) {
   });
 
   program
-    .name("ndc-functions-sdk-node")
+    .name("ndc-lamdba-sdk-node")
     .version(version)
     .command("host")
     .requiredOption("-f, --functions <filepath>")
