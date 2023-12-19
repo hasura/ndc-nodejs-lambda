@@ -1,15 +1,15 @@
 {
-  "name": "@hasura/ndc-lamdba-sdk-node",
+  "name": "@hasura/ndc-lamdba-sdk",
   "version": "0.1.0",
   "description": "SDK that can automatically expose TypeScript functions as Hasura NDC functions/procedures",
   "author": "Hasura",
   "license": "Apache-2.0",
-  "homepage": "https://github.com/hasura/ndc-lamdba-sdk-node#readme",
+  "homepage": "https://github.com/hasura/ndc-lamdba-sdk#readme",
   "bugs": {
-    "url": "https://github.com/hasura/ndc-lamdba-sdk-node/issues"
+    "url": "https://github.com/hasura/ndc-lamdba-sdk/issues"
   },
   "bin": {
-    "ndc-lamdba-sdk-node": "bin/index.js"
+    "ndc-lamdba-sdk": "bin/index.js"
   },
   "files": [
     "./dist/**",
@@ -25,10 +25,10 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/hasura/ndc-lamdba-sdk-node.git"
+    "url": "git+https://github.com/hasura/ndc-lamdba-sdk.git"
   },
   "dependencies": {
-    "@hasura/ndc-sdk-typescript": "file:../ndc-sdk-typescript",
+    "@hasura/ndc-sdk-typescript": "file:../../ndc-sdk-typescript",
     "@json-schema-tools/meta-schema": "^1.7.0",
     "@tsconfig/node18": "^18.2.2",
     "commander": "^11.1.0",
