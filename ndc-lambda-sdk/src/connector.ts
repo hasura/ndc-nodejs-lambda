@@ -22,11 +22,11 @@ export const RAW_CONFIGURATION_SCHEMA: JSONSchemaObject = {
 };
 
 export type ConnectorOptions = {
-  functions: string
+  functionsFilePath: string
 }
 
 export function createConnector(options: ConnectorOptions): sdk.Connector<RawConfiguration, Configuration, State> {
-  const functionsFilePath = path.resolve(options.functions);
+  const functionsFilePath = path.resolve(options.functionsFilePath);
 
   const connector: sdk.Connector<RawConfiguration, Configuration, State> = {
     get_raw_configuration_schema: function (): JSONSchemaObject {
