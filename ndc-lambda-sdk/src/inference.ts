@@ -3,61 +3,89 @@ import * as tsutils from "ts-api-utils";
 import path from "node:path"
 import * as schema from "./schema";
 import { throwError, unreachable } from "./util";
+import { Err, Ok, Result } from "./result";
 
-type SchemaIssues = {
-  functionIssues: { [functionName: string]: string[] }
+type SchemaDerivationResults = {
+  compilerDiagnostics: ts.Diagnostic[]
+  functionIssues: FunctionIssues
+  functionsSchema: schema.FunctionsSchema
 }
 
 type FunctionIssues = {
   [functionName: string]: string[]
 }
 
-export class TsError extends Error {
-  diagnosticErrors: readonly ts.Diagnostic[]
+export function deriveSchema(functionsFilePath: string): SchemaDerivationResults {
+  const programResult = createTsProgram(functionsFilePath)
+  if (programResult instanceof Ok) {
+    const [program, compilerDiagnostics] = programResult.data;
+    const sourceFile = program.getSourceFile(functionsFilePath)
+    if (!sourceFile) throw new Error(`'${functionsFilePath}' not returned as a TypeScript compiler source file`);
 
-  constructor(diagnosticErrors: readonly ts.Diagnostic[], message?: string) {
-    super(message)
-    this.diagnosticErrors = diagnosticErrors;
+    const [functionsSchema, functionIssues] = deriveSchemaFromFunctions(sourceFile, program.getTypeChecker());
+    return {
+      compilerDiagnostics,
+      functionsSchema,
+      functionIssues
+    }
+  } else {
+    return {
+      compilerDiagnostics: programResult.error,
+      functionIssues: {},
+      functionsSchema: {
+        functions: {},
+        objectTypes: {},
+        scalarTypes: {}
+      }
+    }
   }
-}
-
-export function deriveSchema(functionsFilePath: string): schema.FunctionsSchema & SchemaIssues {
-  const program = createTsProgram(functionsFilePath)
-  throwIfCompilerErrors(program);
-  const sourceFile = program.getSourceFile(functionsFilePath)
-  if (!sourceFile) throw new Error(`'${functionsFilePath}' not returned as a TypeScript compiler source file`);
-  return deriveSchemaFromFunctions(sourceFile, program.getTypeChecker());
 }
 
 function defaultTsConfig(): { extends: string; } {
   return { extends: "./node_modules/@tsconfig/node18/tsconfig.json" }
 }
 
-function createTsProgram(functionsFilePath: string): ts.Program {
+function createTsProgram(functionsFilePath: string): Result<[ts.Program, ts.Diagnostic[]], ts.Diagnostic[]> {
   const fileDirectory = path.dirname(functionsFilePath);
-  const tsConfig = loadTsConfig(fileDirectory);
-  const parsedCommandLine = ts.parseJsonConfigFileContent(tsConfig, ts.sys, fileDirectory);
-  const compilerHost = ts.createCompilerHost(parsedCommandLine.options);
-  return ts.createProgram([functionsFilePath], parsedCommandLine.options, compilerHost);
+  return loadTsConfig(fileDirectory).bind(tsConfig => {
+    const parsedCommandLine = ts.parseJsonConfigFileContent(tsConfig, ts.sys, fileDirectory);
+    const compilerHost = ts.createCompilerHost(parsedCommandLine.options);
+    const program = ts.createProgram([functionsFilePath], parsedCommandLine.options, compilerHost);
+    const compilerDiagnostics = ts.getPreEmitDiagnostics(program);
+    return compilerDiagnostics.find(d => d.category === ts.DiagnosticCategory.Error) === undefined
+      ? new Ok([program, [...compilerDiagnostics]])
+      : new Err([...compilerDiagnostics]);
+  })
 }
 
-function loadTsConfig(functionsDir: string): Record<string, unknown> {
+function loadTsConfig(functionsDir: string): Result<Record<string, unknown>, ts.Diagnostic[]> {
   const configPath = ts.findConfigFile(functionsDir, ts.sys.fileExists);
   if (configPath !== undefined) {
     const configFile = ts.readConfigFile(configPath, ts.sys.readFile)
     if (configFile.error) {
-      throw new TsError([configFile.error], "Error loading TypeScript compiler configuration (tsconfig.json)")
+      return new Err([configFile.error])
     }
-    return configFile.config;
+    return new Ok(configFile.config);
   } else {
-    return defaultTsConfig();
+    return new Ok(defaultTsConfig());
   }
 }
 
-function throwIfCompilerErrors(program: ts.Program): void {
-  const diagnostics = ts.getPreEmitDiagnostics(program)
-  if (diagnostics.length > 0)
-    throw new TsError(diagnostics, "Compiler errors");
+export function printCompilerDiagnostics(diagnostics: ts.Diagnostic[]) {
+  const host: ts.FormatDiagnosticsHost = {
+    getNewLine: () => ts.sys.newLine,
+    getCurrentDirectory: ts.sys.getCurrentDirectory,
+    getCanonicalFileName: x => x
+  }
+  console.error(ts.formatDiagnosticsWithColorAndContext(diagnostics, host));
+}
+
+export function printFunctionIssues(functionIssues: FunctionIssues) {
+  for (const [functionName, issues] of Object.entries(functionIssues)) {
+    for (const issue of issues) {
+      console.error(`${functionName}: ${issue}`)
+    }
+  }
 }
 
 type TypeDerivationContext = {
@@ -67,7 +95,7 @@ type TypeDerivationContext = {
   functionsFilePath: string,
 }
 
-function deriveSchemaFromFunctions(sourceFile: ts.SourceFile, typeChecker: ts.TypeChecker): schema.FunctionsSchema & SchemaIssues {
+function deriveSchemaFromFunctions(sourceFile: ts.SourceFile, typeChecker: ts.TypeChecker): [schema.FunctionsSchema, FunctionIssues] {
   const typeDerivationContext: TypeDerivationContext = {
     objectTypeDefinitions: {},
     scalarTypeDefinitions: {},
@@ -94,12 +122,13 @@ function deriveSchemaFromFunctions(sourceFile: ts.SourceFile, typeChecker: ts.Ty
     }
   }
 
-  return {
+  const functionsSchema = {
     functions: schemaFunctions,
     objectTypes: typeDerivationContext.objectTypeDefinitions,
     scalarTypes: typeDerivationContext.scalarTypeDefinitions,
-    functionIssues
-  }
+  };
+
+  return [functionsSchema, functionIssues];
 }
 
 function isExportedFunction(node: ts.FunctionDeclaration): boolean {
@@ -220,14 +249,22 @@ function deriveSchemaTypeForTsType(tsType: ts.Type, typePath: TypePathSegment[],
     return { errors: [`The void type is not supported, but one was encountered in ${typePathToString(typePath)}`] }
   }
 
-  return (
+  const schemaTypeResult =
     deriveSchemaTypeIfTsArrayType(tsType, typePath, context, recursionDepth)
     ?? deriveSchemaTypeIfScalarType(tsType, context)
     ?? deriveSchemaTypeIfNullableType(tsType, typePath, context, recursionDepth)
-    ?? deriveSchemaTypeIfObjectType(tsType, typePath, context, recursionDepth)
-    ?? { errors: ["fallback"] }
-  );
+    ?? deriveSchemaTypeIfObjectType(tsType, typePath, context, recursionDepth);
 
+  if (schemaTypeResult !== undefined)
+    return schemaTypeResult;
+
+  // We don't know how to deal with this type, so just make it an opaque scalar
+  const typeName = generateTypeNameFromTypePath(typePath);
+  context.scalarTypeDefinitions[typeName] = {};
+  return {
+    warnings: [`Unable to derive an NDC type for ${typePathToString(typePath)} (type: ${context.typeChecker.typeToString(tsType)}). Assuming that it is a scalar type.`],
+    typeDefinition: { type: "named", kind: "scalar", name: typeName }
+  };
 }
 
 function deriveSchemaTypeIfTsArrayType(tsType: ts.Type, typePath: TypePathSegment[], context: TypeDerivationContext, recursionDepth: number): DeriveSchemaTypeResult | undefined {

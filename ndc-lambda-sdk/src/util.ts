@@ -4,3 +4,7 @@ export const unreachable = (x: never): never => { throw new Error(`Unreachable c
 export function throwError<T>(...args: ConstructorParameters<typeof Error>): NonNullable<T> {
   throw new Error(...args);
 }
+
+export function mapObjectValues<T, U>(obj: { [k: string]: T }, fn: (value: T, propertyName: string) => U): Record<string, U> {
+  return Object.fromEntries(Object.entries(obj).map(([prop, val]) => [prop, fn(val, prop)]));
+}
