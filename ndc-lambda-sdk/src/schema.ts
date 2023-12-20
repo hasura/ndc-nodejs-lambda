@@ -1,4 +1,4 @@
-import sdk from "@hasura/ndc-sdk-typescript";
+import * as sdk from "@hasura/ndc-sdk-typescript";
 import { mapObjectValues, unreachable } from "./util";
 
 export type FunctionsSchema = {
