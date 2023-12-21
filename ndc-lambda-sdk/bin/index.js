@@ -18,7 +18,12 @@ const program = makeCommand({
 program.parse();
 
 const hostOpts = program.commands.find(c => c.name() === "host")?.opts();
-const tsConfigFileLocation = hostOpts?.functions ? ts.findConfigFile(path.dirname(hostOpts.functions), ts.sys.fileExists) : undefined;
+const tsConfigFileLocation =
+  ( hostOpts?.functions
+    ? ts.findConfigFile(path.dirname(hostOpts.functions), ts.sys.fileExists)
+    : undefined
+  )
+  ?? require.resolve("@tsconfig/node18/tsconfig.json");
 
 const hostScriptPath = path.resolve(__dirname, "../dist/src/host.js")
 const projectArgs = tsConfigFileLocation ? ["--project", tsConfigFileLocation] : []

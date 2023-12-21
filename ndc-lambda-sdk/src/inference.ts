@@ -41,10 +41,6 @@ export function deriveSchema(functionsFilePath: string): SchemaDerivationResults
   }
 }
 
-function defaultTsConfig(): { extends: string; } {
-  return { extends: "./node_modules/@tsconfig/node18/tsconfig.json" }
-}
-
 function createTsProgram(functionsFilePath: string): Result<[ts.Program, ts.Diagnostic[]], ts.Diagnostic[]> {
   const fileDirectory = path.dirname(functionsFilePath);
   return loadTsConfig(fileDirectory).bind(tsConfig => {
@@ -59,16 +55,12 @@ function createTsProgram(functionsFilePath: string): Result<[ts.Program, ts.Diag
 }
 
 function loadTsConfig(functionsDir: string): Result<Record<string, unknown>, ts.Diagnostic[]> {
-  const configPath = ts.findConfigFile(functionsDir, ts.sys.fileExists);
-  if (configPath !== undefined) {
-    const configFile = ts.readConfigFile(configPath, ts.sys.readFile)
-    if (configFile.error) {
-      return new Err([configFile.error])
-    }
-    return new Ok(configFile.config);
-  } else {
-    return new Ok(defaultTsConfig());
+  const configPath = ts.findConfigFile(functionsDir, ts.sys.fileExists) ?? require.resolve("@tsconfig/node18/tsconfig.json");
+  const configFile = ts.readConfigFile(configPath, ts.sys.readFile)
+  if (configFile.error) {
+    return new Err([configFile.error])
   }
+  return new Ok(configFile.config);
 }
 
 export function printCompilerDiagnostics(diagnostics: ts.Diagnostic[]) {
