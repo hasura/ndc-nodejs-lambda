@@ -1,9 +1,10 @@
-import { Command } from "commander"
+import { Command, Option } from "commander"
 import { version } from "../package.json"
 import * as sdk from "@hasura/ndc-sdk-typescript";
 
 export type HostOptions = {
   functions: string
+  watch: boolean
 }
 
 export interface CommandActions {
@@ -30,7 +31,12 @@ export function makeCommand(commandActions: CommandActions): Command {
 
   const hostCommand = program
     .command("host")
-    .requiredOption("-f, --functions <filepath>")
+    .addOption(
+      new Option("--watch", "watch for configuration changes and reload")
+        .default(false)
+        .env("WATCH")
+    )
+    .requiredOption("-f, --functions <filepath>", "path to your TypeScript functions file")
     .addCommand(serveCommand)
     .addCommand(configurationServeCommand);
 
