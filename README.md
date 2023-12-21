@@ -3,33 +3,14 @@
 The NodeJS Lambda connector allows you to expose TypeScript functions as NDC functions/procedures for use in your Hasura DDN subgraphs.
 
 # How to Use
-First create a `functions.ts` that contains your functions, for example:
-```typescript
-/**
- * @pure Exposes the function as an NDC function (the function should only query data without making modifications)
- */
-export function hello(name?: string) {
-  return `hello ${name ?? "world"}`;
-}
-```
-Then add a `configuration.json` file that simply contains an empty configuration object:
-```json
-{}
+First, ensure you have NodeJS v18+ installed. Then, create a directory into which you will create your functions using the `hasura-ndc-nodejs-lambda` Yeoman template.
+
+```bash
+mkdir my-functions
+cd my-functions
+npx yo hasura-ndc-nodejs-lambda
 ```
 
-Now add a `package.json` file that depends on the `ndc-lambda-sdk` like so:
-```json
-{
-  "private": true,
-  "scripts": {
-    "start": "ndc-lambda-sdk host -f functions.ts serve --configuration configuration.json",
-    "watch": "ndc-lambda-sdk host -f functions.ts --watch serve --configuration configuration.json"
-  },
-  "dependencies": {
-    "@hasura/ndc-lambda-sdk": "0.2.0"
-  }
-}
-```
-Now run `npm install` to install all the packages.
+This creates a `functions.ts` file in which you will write your functions, and a `package.json` with the `ndc-lambda-sdk` installed into it.
 
-Notice the `start` and `watch` scripts in the `package.config`. These use the SDK to host your `functions.ts` file. You can start your connector with `npm start`, or if you'd like it to automatically restart as you change your code, use `npm run watch`.
+The `package.config` has been created with `start` and `watch` scripts. These use the SDK to host your `functions.ts` file. You can start your connector with `npm start`, or if you'd like it to automatically restart as you change your code, use `npm run watch`.
