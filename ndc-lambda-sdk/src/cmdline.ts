@@ -13,7 +13,7 @@ export interface CommandActions {
 
 export function makeCommand(commandActions: CommandActions): Command {
   const program = new Command()
-    .name("ndc-lamdba-sdk")
+    .name("ndc-lambda-sdk")
     .version(version);
 
   const serveCommand = sdk.get_serve_command();

@@ -1,5 +1,5 @@
 {
-  "name": "@hasura/ndc-lamdba-sdk",
+  "name": "@hasura/ndc-lambda-sdk",
   "version": "0.1.0",
   "description": "SDK that can automatically expose TypeScript functions as Hasura NDC functions/procedures",
   "author": "Hasura",
@@ -9,7 +9,7 @@
     "url": "https://github.com/hasura/ndc-nodejs-lambda-connector/issues"
   },
   "bin": {
-    "ndc-lamdba-sdk": "bin/index.js"
+    "ndc-lambda-sdk": "bin/index.js"
   },
   "files": [
     "./dist/**",
@@ -28,7 +28,7 @@
     "url": "git+https://github.com/hasura/ndc-nodejs-lambda-connector.git"
   },
   "dependencies": {
-    "@hasura/ndc-sdk-typescript": "file:../../ndc-sdk-typescript",
+    "@hasura/ndc-sdk-typescript": "^1.2.7",
     "@json-schema-tools/meta-schema": "^1.7.0",
     "@tsconfig/node18": "^18.2.2",
     "commander": "^11.1.0",
