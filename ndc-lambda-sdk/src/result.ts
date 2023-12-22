@@ -50,7 +50,11 @@ export class Err<T, TError> extends ResultBase<T, TError> {
 
 export type Result<T, TError> = Ok<T, TError> | Err<T, TError>
 
-function traverseAndCollectErrors<T, TErr>(results: Result<T, TErr[]>[]): Result<T[], TErr[]> {
+function traverseAndCollectErrors<T1, T2, TErr>(inputs: T1[], fn: (input: T1) => Result<T2, TErr[]>): Result<T2[], TErr[]> {
+  return sequenceAndCollectErrors(inputs.map(fn))
+}
+
+function sequenceAndCollectErrors<T, TErr>(results: Result<T, TErr[]>[]): Result<T[], TErr[]> {
   const data: T[] = [];
   const errors: TErr[] = [];
 
@@ -109,6 +113,7 @@ function collectErrors3<T1, T2, T3, TErr>(result1: Result<T1, TErr[]>, result2: 
 
 export const Result = {
   traverseAndCollectErrors,
+  sequenceAndCollectErrors,
   partitionAndCollectErrors,
   collectErrors,
   collectErrors3,

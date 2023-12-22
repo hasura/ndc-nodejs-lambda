@@ -157,36 +157,36 @@ function deriveFunctionSchema(functionDeclaration: ts.FunctionDeclaration, conte
 
     const paramTypeResult = deriveSchemaTypeForTsType(paramType, paramTypePath, context);
 
-    if ("errors" in paramTypeResult) {
+    if (paramTypeResult instanceof Err) {
       // Record the error, discard the parameter, but mark the function
       // as broken so we discard the whole thing at the end
-      issues.push(...paramTypeResult.errors)
+      issues.push(...paramTypeResult.error)
       functionIsBroken = true;
       return [];
     } else {
-      issues.push(...paramTypeResult.warnings)
+      issues.push(...paramTypeResult.data.warnings)
       return [{
         argumentName: paramName,
         description: paramDesc ? paramDesc : null,
-        type: paramTypeResult.typeDefinition,
+        type: paramTypeResult.data.typeDefinition,
       }]
     }
   });
 
   const returnTypeResult = deriveSchemaTypeForTsType(functionCallSig.getReturnType(), [{segmentType: "FunctionReturn", functionName}], context);
   let functionDefinition: schema.FunctionDefinition | null = null;
-  if ("errors" in returnTypeResult) {
+  if (returnTypeResult instanceof Err) {
     // Record the error, mark the function as broken so we discard the whole thing at the end
-    issues.push(...returnTypeResult.errors)
+    issues.push(...returnTypeResult.error)
     functionIsBroken = true;
     functionDefinition = null;
   } else {
-    issues.push(...returnTypeResult.warnings)
+    issues.push(...returnTypeResult.data.warnings)
     functionDefinition = {
       description: functionDescription ? functionDescription : null,
       ndcKind: markedPureInJsDoc ? schema.FunctionNdcKind.Function : schema.FunctionNdcKind.Procedure,
       arguments: functionSchemaArguments,
-      resultType: returnTypeResult.typeDefinition
+      resultType: returnTypeResult.data.typeDefinition
     }
   }
 
@@ -219,26 +219,25 @@ function typePathSegmentToString(segment: TypePathSegment): string {
   }
 }
 
-type DeriveSchemaTypeResult =
+type DerivedSchemaType =
   { typeDefinition: schema.TypeDefinition, warnings: string[] }
-  | { errors: string[] }
 
-function deriveSchemaTypeForTsType(tsType: ts.Type, typePath: TypePathSegment[], context: TypeDerivationContext, recursionDepth: number = 0): DeriveSchemaTypeResult {
+function deriveSchemaTypeForTsType(tsType: ts.Type, typePath: TypePathSegment[], context: TypeDerivationContext, recursionDepth: number = 0): Result<DerivedSchemaType, string[]> {
   const typeRenderedName = context.typeChecker.typeToString(tsType);
 
   if (recursionDepth > MAX_TYPE_DERIVATION_RECURSION)
     throw new Error(`Schema inference validation exceeded depth ${MAX_TYPE_DERIVATION_RECURSION} for type ${typeRenderedName}`)
 
   if (unwrapPromiseType(tsType, context.typeChecker) !== undefined) {
-    return { errors: [`Promise types are not supported, but one was encountered in ${typePathToString(typePath)}.`] };
+    return new Err([`Promise types are not supported, but one was encountered in ${typePathToString(typePath)}.`]);
   }
 
   if (tsutils.isObjectType(tsType) && tsutils.isObjectFlagSet(tsType, ts.ObjectFlags.Class)) {
-    return { errors: [`Class types are not supported, but one was encountered in ${typePathToString(typePath)}`] }
+    return new Err([`Class types are not supported, but one was encountered in ${typePathToString(typePath)}`]);
   }
 
   if (tsutils.isIntrinsicVoidType(tsType)) {
-    return { errors: [`The void type is not supported, but one was encountered in ${typePathToString(typePath)}`] }
+    return new Err([`The void type is not supported, but one was encountered in ${typePathToString(typePath)}`]);
   }
 
   const schemaTypeResult =
@@ -253,79 +252,70 @@ function deriveSchemaTypeForTsType(tsType: ts.Type, typePath: TypePathSegment[],
   // We don't know how to deal with this type, so just make it an opaque scalar
   const typeName = generateTypeNameFromTypePath(typePath);
   context.scalarTypeDefinitions[typeName] = {};
-  return {
+  return new Ok({
     warnings: [`Unable to derive an NDC type for ${typePathToString(typePath)} (type: ${context.typeChecker.typeToString(tsType)}). Assuming that it is a scalar type.`],
     typeDefinition: { type: "named", kind: "scalar", name: typeName }
-  };
+  });
 }
 
-function deriveSchemaTypeIfTsArrayType(tsType: ts.Type, typePath: TypePathSegment[], context: TypeDerivationContext, recursionDepth: number): DeriveSchemaTypeResult | undefined {
+function deriveSchemaTypeIfTsArrayType(tsType: ts.Type, typePath: TypePathSegment[], context: TypeDerivationContext, recursionDepth: number): Result<DerivedSchemaType, string[]> | undefined {
   if (context.typeChecker.isArrayType(tsType) && tsutils.isTypeReference(tsType)) {
     const typeArgs = context.typeChecker.getTypeArguments(tsType)
     if (typeArgs.length === 1) {
       const innerType = typeArgs[0]!;
-      const innerTypeResult = deriveSchemaTypeForTsType(innerType, [...typePath, {segmentType: "Array"}], context, recursionDepth + 1);
-      return "errors" in innerTypeResult
-        ? innerTypeResult
-        : { typeDefinition: { type: "array", elementType: innerTypeResult.typeDefinition }, warnings: innerTypeResult.warnings };
+      return deriveSchemaTypeForTsType(innerType, [...typePath, {segmentType: "Array"}], context, recursionDepth + 1)
+        .map(innerTypeResult => ({ typeDefinition: { type: "array", elementType: innerTypeResult.typeDefinition }, warnings: innerTypeResult.warnings }));
     }
   }
 }
 
-function deriveSchemaTypeIfScalarType(tsType: ts.Type, context: TypeDerivationContext): DeriveSchemaTypeResult | undefined {
+function deriveSchemaTypeIfScalarType(tsType: ts.Type, context: TypeDerivationContext): Result<DerivedSchemaType, string[]> | undefined {
   if (tsutils.isIntrinsicBooleanType(tsType)) {
     context.scalarTypeDefinitions["Boolean"] = {};
-    return { typeDefinition: { type: "named", kind: "scalar", name: "Boolean" }, warnings: [] };
+    return new Ok({ typeDefinition: { type: "named", kind: "scalar", name: "Boolean" }, warnings: [] });
   }
   if (tsutils.isIntrinsicStringType(tsType)) {
     context.scalarTypeDefinitions["String"] = {};
-    return { typeDefinition: { type: "named", kind: "scalar", name: "String" }, warnings: [] };
+    return new Ok({ typeDefinition: { type: "named", kind: "scalar", name: "String" }, warnings: [] });
   }
   if (tsutils.isIntrinsicNumberType(tsType)) {
     context.scalarTypeDefinitions["Float"] = {};
-    return { typeDefinition: { type: "named", kind: "scalar", name: "Float" }, warnings: [] };
+    return new Ok({ typeDefinition: { type: "named", kind: "scalar", name: "Float" }, warnings: [] });
   }
 }
 
-function deriveSchemaTypeIfNullableType(tsType: ts.Type, typePath: TypePathSegment[], context: TypeDerivationContext, recursionDepth: number): DeriveSchemaTypeResult | undefined {
+function deriveSchemaTypeIfNullableType(tsType: ts.Type, typePath: TypePathSegment[], context: TypeDerivationContext, recursionDepth: number): Result<DerivedSchemaType, string[]> | undefined {
   const notNullableResult = unwrapNullableType(tsType);
   if (notNullableResult !== null) {
     const [notNullableType, nullOrUndefinability] = notNullableResult;
-    const notNullableTypeResult = deriveSchemaTypeForTsType(notNullableType, typePath, context, recursionDepth + 1);
-    if ("errors" in notNullableTypeResult) return notNullableTypeResult;
-    return { typeDefinition: { type: "nullable", underlyingType: notNullableTypeResult.typeDefinition, nullOrUndefinability }, warnings: notNullableTypeResult.warnings }
+    return deriveSchemaTypeForTsType(notNullableType, typePath, context, recursionDepth + 1)
+      .map(notNullableTypeResult => ({ typeDefinition: { type: "nullable", underlyingType: notNullableTypeResult.typeDefinition, nullOrUndefinability }, warnings: notNullableTypeResult.warnings }))
   }
 }
 
-function deriveSchemaTypeIfObjectType(tsType: ts.Type, typePath: TypePathSegment[], context: TypeDerivationContext, recursionDepth: number): DeriveSchemaTypeResult | undefined {
+function deriveSchemaTypeIfObjectType(tsType: ts.Type, typePath: TypePathSegment[], context: TypeDerivationContext, recursionDepth: number): Result<DerivedSchemaType, string[]> | undefined {
   const info = getObjectTypeInfo(tsType, typePath, context.typeChecker, context.functionsFilePath);
   if (info) {
     // Shortcut recursion if the type has already been named
     if (context.objectTypeDefinitions[info.generatedTypeName]) {
-      return { typeDefinition: { type: 'named', name: info.generatedTypeName, kind: "object" }, warnings: [] };
+      return new Ok({ typeDefinition: { type: 'named', name: info.generatedTypeName, kind: "object" }, warnings: [] });
     }
 
     context.objectTypeDefinitions[info.generatedTypeName] = { properties: [] }; // Break infinite recursion
 
-    const errors: string[] = [];
     const warnings: string[] = [];
-    const properties = Array.from(info.members).flatMap(([propertyName, propertyType]) => {
-      const propertyTypeResult = deriveSchemaTypeForTsType(propertyType, [...typePath, { segmentType: "ObjectProperty", typeName: info.generatedTypeName, propertyName }], context, recursionDepth + 1);
-      if ("errors" in propertyTypeResult) {
-        errors.push(...propertyTypeResult.errors)
-        return [];
-      } else {
-        warnings.push(...propertyTypeResult.warnings)
-        return [{ propertyName: propertyName, type: propertyTypeResult.typeDefinition }]
-      }
+    const propertyResults = Result.traverseAndCollectErrors(Array.from(info.members), ([propertyName, propertyType]) => {
+      return deriveSchemaTypeForTsType(propertyType, [...typePath, { segmentType: "ObjectProperty", typeName: info.generatedTypeName, propertyName }], context, recursionDepth + 1)
+        .map(propertyTypeResult => {
+          warnings.push(...propertyTypeResult.warnings)
+          return { propertyName: propertyName, type: propertyTypeResult.typeDefinition }
+        });
     });
 
-    if (errors.length === 0) {
+    return propertyResults.map(properties => {
       context.objectTypeDefinitions[info.generatedTypeName] = { properties }
       return { typeDefinition: { type: 'named', name: info.generatedTypeName, kind: "object" }, warnings }
-    } else {
-      return { errors };
-    }
+    })
   }
 }
 
