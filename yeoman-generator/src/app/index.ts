@@ -16,6 +16,10 @@ export default class extends Generator {
       this.templatePath("configuration.json"),
       this.destinationPath("configuration.json")
     );
+    this.fs.copyTpl(
+      this.templatePath("tsconfig.json"),
+      this.destinationPath("tsconfig.json")
+    );
   }
 
   async installSdkPackage() {
