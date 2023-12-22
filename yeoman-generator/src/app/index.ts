@@ -12,10 +12,6 @@ export default class extends Generator {
       this.templatePath("functions.ts"),
       this.destinationPath("functions.ts")
     );
-    // this.fs.copyTpl(
-    //   this.templatePath("package.json"),
-    //   this.destinationPath("package.json")
-    // );
     this.fs.copyTpl(
       this.templatePath("configuration.json"),
       this.destinationPath("configuration.json")

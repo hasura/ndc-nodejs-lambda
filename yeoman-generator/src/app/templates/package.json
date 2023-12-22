@@ -1,9 +1,0 @@
-{
-  "private": true,
-  "scripts": {
-    "start": "ndc-lambda-sdk host -f functions.ts serve --configuration configuration.json",
-    "watch": "ndc-lambda-sdk host -f functions.ts --watch serve --configuration configuration.json"
-  },
-  "dependencies": {
-  }
-}
