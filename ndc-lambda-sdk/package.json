@@ -12,7 +12,8 @@
     "ndc-lambda-sdk": "bin/index.js"
   },
   "files": [
-    "./dist/**",
+    "./dist/package.json",
+    "./dist/src/**",
     "./src/**"
   ],
   "exports": {
@@ -21,7 +22,7 @@
   "scripts": {
     "build": "tsc",
     "start": "npm run build && node bin/index.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "mocha"
   },
   "repository": {
     "type": "git",
@@ -37,5 +38,11 @@
     "ts-node": "^10.9.2",
     "ts-node-dev": "^2.0.0",
     "typescript": "^5.3.3"
+  },
+  "devDependencies": {
+    "@types/chai": "^4.3.11",
+    "@types/mocha": "^10.0.6",
+    "chai": "^4.3.7",
+    "mocha": "^10.2.0"
   }
 }

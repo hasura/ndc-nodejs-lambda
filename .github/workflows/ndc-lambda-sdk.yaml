@@ -26,6 +26,7 @@ jobs:
           cache-dependency-path: ./ndc-lambda-sdk/package-lock.json
       - run: npm ci
       - run: npm run build
+      - run: npm test
 
   publish:
     needs: build
