@@ -173,7 +173,8 @@ function deriveFunctionSchema(functionDeclaration: ts.FunctionDeclaration, conte
     }
   });
 
-  const returnTypeResult = deriveSchemaTypeForTsType(functionCallSig.getReturnType(), [{segmentType: "FunctionReturn", functionName}], context);
+  const returnType = functionCallSig.getReturnType();
+  const returnTypeResult = deriveSchemaTypeForTsType(unwrapPromiseType(returnType, context.typeChecker) ?? returnType, [{segmentType: "FunctionReturn", functionName}], context);
   let functionDefinition: schema.FunctionDefinition | null = null;
   if (returnTypeResult instanceof Err) {
     // Record the error, mark the function as broken so we discard the whole thing at the end
