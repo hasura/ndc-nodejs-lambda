@@ -5,6 +5,7 @@
     "test/**/*.test.ts"
   ],
   "watch-files": [
-    "src"
+    "src",
+    "test"
   ]
 }

@@ -95,7 +95,7 @@ function resolveArgumentValues(args: Record<string, sdk.Argument>, variableValue
   });
 }
 
-function prepareArguments(args: Record<string, unknown>, functionDefinition: schema.FunctionDefinition, objectTypes: schema.ObjectTypeDefinitions): unknown[] {
+export function prepareArguments(args: Record<string, unknown>, functionDefinition: schema.FunctionDefinition, objectTypes: schema.ObjectTypeDefinitions): unknown[] {
   return functionDefinition.arguments.map(argDef => coerceArgumentValue(args[argDef.argumentName], argDef.type, [argDef.argumentName], objectTypes));
 }
 

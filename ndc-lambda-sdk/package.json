@@ -43,6 +43,8 @@
     "@types/chai": "^4.3.11",
     "@types/mocha": "^10.0.6",
     "chai": "^4.3.7",
-    "mocha": "^10.2.0"
+    "mocha": "^10.2.0",
+    "node-emoji": "^2.1.3",
+    "node-postgres": "^0.6.2"
   }
 }

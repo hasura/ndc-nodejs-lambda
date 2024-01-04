@@ -300,7 +300,7 @@ function deriveSchemaTypeIfNullableType(tsType: ts.Type, typePath: TypePathSegme
 function deriveSchemaTypeIfObjectType(tsType: ts.Type, typePath: TypePathSegment[], context: TypeDerivationContext, recursionDepth: number): Result<DerivedSchemaType, string[]> | undefined {
   const info = getObjectTypeInfo(tsType, typePath, context.typeChecker, context.functionsFilePath);
   if (info) {
-    // Shortcut recursion if the type has already been named
+    // Short-circuit recursion if the type has already been named
     if (context.objectTypeDefinitions[info.generatedTypeName]) {
       return new Ok({ typeDefinition: { type: 'named', name: info.generatedTypeName, kind: "object" }, warnings: [] });
     }
@@ -316,10 +316,14 @@ function deriveSchemaTypeIfObjectType(tsType: ts.Type, typePath: TypePathSegment
         });
     });
 
-    return propertyResults.map(properties => {
-      context.objectTypeDefinitions[info.generatedTypeName] = { properties }
-      return { typeDefinition: { type: 'named', name: info.generatedTypeName, kind: "object" }, warnings }
-    })
+    if (propertyResults instanceof Ok) {
+      context.objectTypeDefinitions[info.generatedTypeName] = { properties: propertyResults.data }
+      return new Ok({ typeDefinition: { type: 'named', name: info.generatedTypeName, kind: "object" }, warnings })
+    } else {
+      // Remove the recursion short-circuit to ensure errors are raised if this type is encountered again
+      delete context.objectTypeDefinitions[info.generatedTypeName];
+      return new Err(propertyResults.error);
+    }
   }
 }
 
