@@ -42,8 +42,7 @@ export function deriveSchema(functionsFilePath: string): SchemaDerivationResults
 }
 
 function createTsProgram(functionsFilePath: string): Result<[ts.Program, ts.Diagnostic[]], ts.Diagnostic[]> {
-  const fileDirectory = path.dirname(functionsFilePath);
-  return loadTsConfig(fileDirectory).bind(parsedCommandLine => {
+  return loadTsConfig(functionsFilePath).bind(parsedCommandLine => {
     const compilerHost = ts.createCompilerHost(parsedCommandLine.options);
     const program = ts.createProgram([functionsFilePath], parsedCommandLine.options, compilerHost);
     const compilerDiagnostics = ts.getPreEmitDiagnostics(program);
@@ -53,12 +52,24 @@ function createTsProgram(functionsFilePath: string): Result<[ts.Program, ts.Diag
   })
 }
 
-function loadTsConfig(functionsDir: string): Result<ts.ParsedCommandLine, ts.Diagnostic[]> {
-  const configPath = ts.findConfigFile(functionsDir, ts.sys.fileExists) ?? path.resolve(require.resolve("@tsconfig/node18/tsconfig.json"));
+function loadTsConfig(functionsFilePath: string): Result<ts.ParsedCommandLine, ts.Diagnostic[]> {
+  const functionsDir = path.dirname(functionsFilePath);
+  const userTsConfig = ts.findConfigFile(functionsDir, ts.sys.fileExists);
+  // If the user doesn't have a tsconfig, use this one as a fallback. The TypeScript defaults are bad
+  // (eg. strict and strictNullChecks is off by default)
+  const fallbackTsConfig = path.resolve(require.resolve("@tsconfig/node18/tsconfig.json"));
+  const configPath = userTsConfig ?? fallbackTsConfig;
   const configFile = ts.readConfigFile(configPath, ts.sys.readFile)
   if (configFile.error) {
     return new Err([configFile.error])
   }
+
+  // If we're using the fallback tsconfig, override the include path to point to the user's
+  // functions directory, otherwise it will look in the fallback tsconfig's directory
+  if (userTsConfig === undefined) {
+    configFile.config.include = [path.join(functionsDir, "./**/*")];
+  }
+
   const parsedCommandLine = ts.parseJsonConfigFileContent(configFile.config, ts.sys, path.dirname(configPath));
   if (parsedCommandLine.errors.find(d => d.category === ts.DiagnosticCategory.Error) !== undefined) {
     return new Err([...parsedCommandLine.errors]);
