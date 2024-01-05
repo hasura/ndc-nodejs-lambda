@@ -1,5 +1,7 @@
 FROM node:18-alpine
 
+RUN apk add jq
+
 COPY /docker /scripts
 
 COPY /functions /functions

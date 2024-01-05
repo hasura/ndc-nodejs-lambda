@@ -35,6 +35,7 @@ const [command, args] =
     ? ["ts-node-dev", ["--respawn", ...tsNodeArgs]]
     : ["ts-node", tsNodeArgs]
 
-const result = spawn.sync(command, args, { stdio: "inherit" })
-if (result.error) console.error(result.error);
-process.exit(result.status ?? undefined);
+const childProcess = spawn(command, args, { stdio: "inherit" })
+process.on("SIGTERM", () => childProcess.kill("SIGTERM"));
+childProcess.on("error", err => console.error(err));
+childProcess.on("close", code => process.exit(code));
