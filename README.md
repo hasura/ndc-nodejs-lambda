@@ -8,6 +8,7 @@ First, ensure you have NodeJS v18+ installed. Then, create a directory into whic
 ```bash
 mkdir my-functions
 cd my-functions
+npm install -g generator-hasura-ndc-nodejs-lambda
 npx yo hasura-ndc-nodejs-lambda
 ```
 
