@@ -28,7 +28,7 @@ export async function executeQuery(queryRequest: sdk.QueryRequest, functionsSche
   const rows: Record<string, unknown>[] = [];
   for (const invocationPreparedArgs of functionInvocationPreparedArgs) {
     const result = await invokeFunction(runtimeFunction, invocationPreparedArgs, functionName);
-    const prunedResult = pruneFields(result, queryRequest.query.fields, functionName);
+    const prunedResult = pruneFields(result, queryRequest.query.fields, functionName, functionDefinition.resultType);
     rows.push({
       __value: prunedResult
     });
@@ -69,7 +69,7 @@ async function executeMutationOperation(mutationOperation: sdk.MutationOperation
 
   const preparedArgs = prepareArguments(mutationOperation.arguments, functionDefinition, functionsSchema.objectTypes);
   const result = await invokeFunction(runtimeFunction, preparedArgs, functionName);
-  const prunedResult = pruneFields(result, mutationOperation.fields, functionName);
+  const prunedResult = reshapeResultToNdcResponseValue(result, functionDefinition.resultType, mutationOperation.fields ?? {}, functionsSchema.objectTypes);
 
   return {
     affected_rows: 1,
@@ -120,6 +120,9 @@ function coerceArgumentValue(value: unknown, type: schema.TypeDefinition, valueP
       }
     case "named":
       if (type.kind === "scalar") {
+        const builtInScalarType = schema.isTypeNameBuiltInScalar(type.name);
+        if (builtInScalarType)
+          return convertNdcJsonScalarToJsScalar(value, valuePath, builtInScalarType);
         // Scalars are currently treated as opaque values, which is a bit dodgy
         return value;
       } else {
@@ -158,7 +161,65 @@ async function invokeFunction(func: Function, preparedArgs: unknown[], functionN
   }
 }
 
-function pruneFields(result: unknown, fields: Record<string, sdk.Field> | null | undefined, functionName: string): unknown {
+export function reshapeResultToNdcResponseValue(value: unknown, type: schema.TypeDefinition, fields: Record<string, sdk.Field> | "AllColumns", objectTypes: schema.ObjectTypeDefinitions): unknown {
+  switch (type.type) {
+    case "array":
+      if (isArray(value)) {
+        return value.map(elementValue => reshapeResultToNdcResponseValue(elementValue, type.elementType, fields, objectTypes))
+      }
+      break;
+
+    case "nullable":
+      // Selected fields must always return a value, so they cannot be undefined. So all
+      // undefineds are coerced to nulls so that the field is included with a null value.
+      return value === null || value === undefined
+        ? null
+        : reshapeResultToNdcResponseValue(value, type.underlyingType, fields, objectTypes);
+
+    case "named":
+      switch (type.kind) {
+        case "scalar":
+          const builtInScalarType = schema.isTypeNameBuiltInScalar(type.name);
+          return builtInScalarType
+            ? convertJsScalarToNdcJsonScalar(value, builtInScalarType)
+            : value; // YOLO? Just try to serialize it to JSON as is as an opaque scalar.
+
+        case "object":
+          const objectType = objectTypes[type.name];
+          if (objectType === undefined)
+            throw new sdk.InternalServerError(`Unable to find object type definition '${type.name}'`)
+          if (value === null || Array.isArray(value) || typeof value !== "object")
+            throw new sdk.InternalServerError(`Expected an object, but received '${value === null ? "null" : null ?? Array.isArray(value) ? "array" : null ?? typeof value}'`);
+
+          const selectedFields: Record<string, sdk.Field> =
+            fields === "AllColumns"
+              ? Object.fromEntries(objectType.properties.map(propDef => [propDef.propertyName, { type: "column", column: propDef.propertyName }]))
+              : fields;
+
+          return mapObjectValues(selectedFields, (field, fieldName) => {
+            switch(field.type) {
+              case "column":
+                const objPropDef = objectType.properties.find(prop => prop.propertyName === field.column);
+                if (objPropDef === undefined)
+                  throw new sdk.InternalServerError(`Unable to find property definition '${field.column}' on object type '${type.name}'`);
+
+                // We pass "AllColumns" as the fields because we don't yet support nested field selections, so we just include all columns by default for now
+                return reshapeResultToNdcResponseValue((value as Record<string, unknown>)[field.column], objPropDef.type, "AllColumns", objectTypes)
+
+              default:
+                throw new sdk.NotSupported(`Field '${fieldName}' uses an unsupported field type: '${field.type}'`)
+            }
+          })
+
+        default:
+          return unreachable(type["kind"]);
+      }
+    default:
+      return unreachable(type["type"]);
+  }
+}
+
+function pruneFields(result: unknown, fields: Record<string, sdk.Field> | null | undefined, functionName: string, returnType: schema.TypeDefinition): unknown {
   if (!fields || Object.keys(fields).length === 0) {
     return result;
   }
@@ -179,4 +240,53 @@ function pruneFields(result: unknown, fields: Record<string, sdk.Field> | null |
   }
 
   return response;
+}
+
+function convertNdcJsonScalarToJsScalar(value: unknown, valuePath: string[], scalarType: schema.BuiltInScalarTypeName): string | number | boolean | BigInt {
+  switch (scalarType) {
+    case schema.BuiltInScalarTypeName.String:
+      if (typeof value === "string") {
+        return value;
+      } else {
+        throw new sdk.BadRequest(`Unexpected value in function arguments. Expected a string at '${valuePath.join(".")}', got a ${typeof value}`);
+      }
+    case schema.BuiltInScalarTypeName.Float:
+      if (typeof value === "number") {
+        return value;
+      } else {
+        throw new sdk.BadRequest(`Unexpected value in function arguments. Expected a number at '${valuePath.join(".")}', got a ${typeof value}`);
+      }
+    case schema.BuiltInScalarTypeName.Boolean:
+      if (typeof value === "boolean") {
+        return value;
+      } else {
+        throw new sdk.BadRequest(`Unexpected value in function arguments. Expected a boolean at '${valuePath.join(".")}', got a ${typeof value}`);
+      }
+    case schema.BuiltInScalarTypeName.BigInt:
+      if (typeof value === "number") {
+        if (!Number.isInteger(value))
+          throw new sdk.BadRequest(`Unexpected value in function arguments. Expected a integer number at '${valuePath.join(".")}', got a float`);
+        return BigInt(value);
+      }
+      else if (typeof value === "string") {
+        try { return BigInt(value) }
+        catch { throw new sdk.BadRequest(`Unexpected value in function arguments. Expected a bigint string at '${valuePath.join(".")}', got a non-integer string`); }
+      }
+      else if (typeof value === "bigint") { // This won't happen since JSON doesn't have a bigint type, but I'll just put it here for completeness
+        return value;
+      } else {
+        throw new sdk.BadRequest(`Unexpected value in function arguments. Expected a bigint at '${valuePath.join(".")}', got a ${typeof value}`);
+      }
+    default:
+      return unreachable(scalarType);
+  }
+}
+
+function convertJsScalarToNdcJsonScalar(value: unknown, scalarType: schema.BuiltInScalarTypeName): unknown {
+  if (typeof value === "bigint") {
+    // BigInts can't be serialized to JSON natively, so put them in strings
+    return value.toString();
+  } else {
+    return value;
+  }
 }

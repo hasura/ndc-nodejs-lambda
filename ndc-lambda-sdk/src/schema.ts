@@ -73,6 +73,13 @@ export enum NullOrUndefinability {
   AcceptsEither = "AcceptsEither",
 }
 
+export enum BuiltInScalarTypeName {
+  String = "String",
+  Float = "Float",
+  Boolean = "Boolean",
+  BigInt = "BigInt",
+}
+
 export function getNdcSchema(functionsSchema: FunctionsSchema): sdk.SchemaResponse {
   const functions = Object.entries(functionsSchema.functions);
 
@@ -141,5 +148,15 @@ export function printSchemaListing(functionNdcKind: FunctionNdcKind, functionDef
       console.error(`* ${functionName}(${args})`);
     }
     console.error(``);
+  }
+}
+
+export function isTypeNameBuiltInScalar(typeName: string): BuiltInScalarTypeName | undefined {
+  switch (typeName) {
+    case BuiltInScalarTypeName.String: return BuiltInScalarTypeName.String;
+    case BuiltInScalarTypeName.Float: return BuiltInScalarTypeName.Float;
+    case BuiltInScalarTypeName.Boolean: return BuiltInScalarTypeName.Boolean;
+    case BuiltInScalarTypeName.BigInt: return BuiltInScalarTypeName.BigInt;
+    default: return undefined;
   }
 }

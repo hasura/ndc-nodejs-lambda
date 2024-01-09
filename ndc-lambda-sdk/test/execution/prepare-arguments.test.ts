@@ -308,4 +308,8 @@ describe("prepare arguments", function() {
       });
     }
   });
+
+  describe("scalar type coercion", function() {
+
+  });
 });

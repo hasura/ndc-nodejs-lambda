@@ -286,16 +286,20 @@ function deriveSchemaTypeIfTsArrayType(tsType: ts.Type, typePath: TypePathSegmen
 
 function deriveSchemaTypeIfScalarType(tsType: ts.Type, context: TypeDerivationContext): Result<DerivedSchemaType, string[]> | undefined {
   if (tsutils.isIntrinsicBooleanType(tsType)) {
-    context.scalarTypeDefinitions["Boolean"] = {};
-    return new Ok({ typeDefinition: { type: "named", kind: "scalar", name: "Boolean" }, warnings: [] });
+    context.scalarTypeDefinitions[schema.BuiltInScalarTypeName.Boolean] = {};
+    return new Ok({ typeDefinition: { type: "named", kind: "scalar", name: schema.BuiltInScalarTypeName.Boolean }, warnings: [] });
   }
   if (tsutils.isIntrinsicStringType(tsType)) {
-    context.scalarTypeDefinitions["String"] = {};
-    return new Ok({ typeDefinition: { type: "named", kind: "scalar", name: "String" }, warnings: [] });
+    context.scalarTypeDefinitions[schema.BuiltInScalarTypeName.String] = {};
+    return new Ok({ typeDefinition: { type: "named", kind: "scalar", name: schema.BuiltInScalarTypeName.String }, warnings: [] });
   }
   if (tsutils.isIntrinsicNumberType(tsType)) {
-    context.scalarTypeDefinitions["Float"] = {};
-    return new Ok({ typeDefinition: { type: "named", kind: "scalar", name: "Float" }, warnings: [] });
+    context.scalarTypeDefinitions[schema.BuiltInScalarTypeName.Float] = {};
+    return new Ok({ typeDefinition: { type: "named", kind: "scalar", name: schema.BuiltInScalarTypeName.Float }, warnings: [] });
+  }
+  if (tsutils.isIntrinsicBigIntType(tsType)) {
+    context.scalarTypeDefinitions[schema.BuiltInScalarTypeName.BigInt] = {};
+    return new Ok({ typeDefinition: { type: "named", kind: "scalar", name: schema.BuiltInScalarTypeName.BigInt }, warnings: [] });
   }
 }
 
