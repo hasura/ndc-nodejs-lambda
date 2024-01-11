@@ -303,9 +303,69 @@ describe("prepare arguments", function() {
 
     for (const testCase of testCases) {
       it(testCase.name, function() {
-        const prepared_args = prepareArguments(testCase.args, functionDefinition, objectTypes);
-        assert.deepStrictEqual(prepared_args, testCase.expected);
+        const preparedArgs = prepareArguments(testCase.args, functionDefinition, objectTypes);
+        assert.deepStrictEqual(preparedArgs, testCase.expected);
       });
     }
+  });
+
+  it("scalar type coercion", function() {
+    const functionDefinition: FunctionDefinition = {
+      ndcKind: FunctionNdcKind.Function,
+      description: null,
+      arguments: [
+        {
+          argumentName: "stringArg",
+          description: null,
+          type: {
+            type: "named",
+            kind: "scalar",
+            name: "String"
+          }
+        },
+        {
+          argumentName: "boolArg",
+          description: null,
+          type: {
+            type: "named",
+            kind: "scalar",
+            name: "Boolean"
+          }
+        },
+        {
+          argumentName: "floatArg",
+          description: null,
+          type: {
+            type: "named",
+            kind: "scalar",
+            name: "Float"
+          }
+        },
+        {
+          argumentName: "bigIntArg",
+          description: null,
+          type: {
+            type: "named",
+            kind: "scalar",
+            name: "BigInt"
+          }
+        },
+      ],
+      resultType: {
+        type: "named",
+        kind: "scalar",
+        name: "String"
+      }
+    }
+
+    const args = {
+      stringArg: "test",
+      boolArg: true,
+      floatArg: 123.456,
+      bigIntArg: "1234"
+    }
+
+    const preparedArgs = prepareArguments(args, functionDefinition, {});
+    assert.deepStrictEqual(preparedArgs, ["test", true, 123.456, BigInt(1234)]);
   });
 });

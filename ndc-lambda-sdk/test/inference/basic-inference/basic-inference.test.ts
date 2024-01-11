@@ -12,6 +12,8 @@ describe("basic inference", function() {
       functionIssues: {},
       functionsSchema: {
         scalarTypes: {
+          BigInt: {},
+          Boolean: {},
           Float: {},
           String: {},
         },
@@ -52,6 +54,26 @@ describe("basic inference", function() {
             ],
             resultType: {
               name: "Float",
+              kind: "scalar",
+              type: "named",
+            }
+          },
+          "isEven": {
+            ndcKind: FunctionNdcKind.Function,
+            description: null,
+            arguments: [
+              {
+                argumentName: "x",
+                description: null,
+                type: {
+                  name: "BigInt",
+                  kind: "scalar",
+                  type: "named",
+                }
+              }
+            ],
+            resultType: {
+              name: "Boolean",
               kind: "scalar",
               type: "named",
             }
