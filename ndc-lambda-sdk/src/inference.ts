@@ -255,6 +255,14 @@ function deriveSchemaTypeForTsType(tsType: ts.Type, typePath: TypePathSegment[],
     return new Err([`The void type is not supported, but one was encountered in ${typePathToString(typePath)}`]);
   }
 
+  if (tsutils.isIntrinsicNullType(tsType)) {
+    return new Err([`The null type is not supported as a type literal used on its own, but one was encountered in ${typePathToString(typePath)}`]);
+  }
+
+  if (tsutils.isIntrinsicUndefinedType(tsType)) {
+    return new Err([`The undefined type is not supported as a type literal used on its own, but one was encountered in ${typePathToString(typePath)}`]);
+  }
+
   const schemaTypeResult =
     deriveSchemaTypeIfTsArrayType(tsType, typePath, context, recursionDepth)
     ?? deriveSchemaTypeIfScalarType(tsType, context)
@@ -479,7 +487,7 @@ function generateTypeNameFromTypePath(typePath: TypePathSegment[]): string {
     switch (segment.segmentType) {
       case "FunctionParameter": return `${segment.functionName}_arguments_${segment.parameterName}`
       case "FunctionReturn": return `${segment.functionName}_output`
-      case "ObjectProperty": return `field_'${segment.propertyName}`
+      case "ObjectProperty": return `field_${segment.propertyName}`
       case "Array": return `array`
       default: return unreachable(segment["segmentType"])
     }

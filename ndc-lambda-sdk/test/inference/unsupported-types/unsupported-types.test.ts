@@ -66,4 +66,23 @@ describe("unsupported types", function() {
       }
     })
   });
+
+  it("null or undefined literals", function() {
+    const schema = deriveSchema(require.resolve("./null-undefined-literals.ts"));
+
+    assert.deepStrictEqual(schema, {
+      compilerDiagnostics: [],
+      functionIssues: {
+        "literalTypes": [
+          "The null type is not supported as a type literal used on its own, but one was encountered in function 'literalTypes' return value, type 'LiteralProps' property 'literalNull'",
+          "The undefined type is not supported as a type literal used on its own, but one was encountered in function 'literalTypes' return value, type 'LiteralProps' property 'literalUndefined'"
+        ]
+      },
+      functionsSchema: {
+        scalarTypes: {},
+        objectTypes: {},
+        functions: {}
+      }
+    })
+  });
 });
