@@ -242,7 +242,7 @@ function pruneFields(result: unknown, fields: Record<string, sdk.Field> | null |
   return response;
 }
 
-function convertNdcJsonScalarToJsScalar(value: unknown, valuePath: string[], scalarType: schema.BuiltInScalarTypeName): string | number | boolean | BigInt {
+function convertNdcJsonScalarToJsScalar(value: unknown, valuePath: string[], scalarType: schema.BuiltInScalarTypeName): string | number | boolean | BigInt | Date {
   switch (scalarType) {
     case schema.BuiltInScalarTypeName.String:
       if (typeof value === "string") {
@@ -270,12 +270,21 @@ function convertNdcJsonScalarToJsScalar(value: unknown, valuePath: string[], sca
       }
       else if (typeof value === "string") {
         try { return BigInt(value) }
-        catch { throw new sdk.BadRequest(`Unexpected value in function arguments. Expected a bigint string at '${valuePath.join(".")}', got a non-integer string`); }
+        catch { throw new sdk.BadRequest(`Unexpected value in function arguments. Expected a bigint string at '${valuePath.join(".")}', got a non-integer string: '${value}'`); }
       }
       else if (typeof value === "bigint") { // This won't happen since JSON doesn't have a bigint type, but I'll just put it here for completeness
         return value;
       } else {
         throw new sdk.BadRequest(`Unexpected value in function arguments. Expected a bigint at '${valuePath.join(".")}', got a ${typeof value}`);
+      }
+    case schema.BuiltInScalarTypeName.DateTime:
+      if (typeof value === "string") {
+        const parsedDate = Date.parse(value);
+        if (isNaN(parsedDate))
+          throw new sdk.BadRequest(`Unexpected value in function arguments. Expected a Date string at '${valuePath.join(".")}', but the value failed to parse: '${value}'`)
+        return new Date(parsedDate);
+      } else {
+        throw new sdk.BadRequest(`Unexpected value in function arguments. Expected a Date string at '${valuePath.join(".")}', got a ${typeof value}`);
       }
     default:
       return unreachable(scalarType);
@@ -286,6 +295,8 @@ function convertJsScalarToNdcJsonScalar(value: unknown, scalarType: schema.Built
   if (typeof value === "bigint") {
     // BigInts can't be serialized to JSON natively, so put them in strings
     return value.toString();
+  } else if (value instanceof Date) {
+    return value.toISOString();
   } else {
     return value;
   }

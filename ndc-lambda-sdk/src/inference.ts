@@ -301,6 +301,16 @@ function deriveSchemaTypeIfScalarType(tsType: ts.Type, context: TypeDerivationCo
     context.scalarTypeDefinitions[schema.BuiltInScalarTypeName.BigInt] = {};
     return new Ok({ typeDefinition: { type: "named", kind: "scalar", name: schema.BuiltInScalarTypeName.BigInt }, warnings: [] });
   }
+  if (isDateType(tsType)) {
+    context.scalarTypeDefinitions[schema.BuiltInScalarTypeName.DateTime] = {};
+    return new Ok({ typeDefinition: { type: "named", kind: "scalar", name: schema.BuiltInScalarTypeName.DateTime }, warnings: [] });
+  }
+}
+
+function isDateType(tsType: ts.Type): boolean {
+  const symbol = tsType.getSymbol()
+  if (symbol === undefined) return false;
+  return symbol.escapedName === "Date" && symbol.members?.has(ts.escapeLeadingUnderscores("toISOString")) === true;
 }
 
 function deriveSchemaTypeIfNullableType(tsType: ts.Type, typePath: TypePathSegment[], context: TypeDerivationContext, recursionDepth: number): Result<DerivedSchemaType, string[]> | undefined {

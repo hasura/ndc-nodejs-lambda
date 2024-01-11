@@ -78,6 +78,7 @@ export enum BuiltInScalarTypeName {
   Float = "Float",
   Boolean = "Boolean",
   BigInt = "BigInt",
+  DateTime = "DateTime",
 }
 
 export function getNdcSchema(functionsSchema: FunctionsSchema): sdk.SchemaResponse {
@@ -152,11 +153,5 @@ export function printSchemaListing(functionNdcKind: FunctionNdcKind, functionDef
 }
 
 export function isTypeNameBuiltInScalar(typeName: string): BuiltInScalarTypeName | undefined {
-  switch (typeName) {
-    case BuiltInScalarTypeName.String: return BuiltInScalarTypeName.String;
-    case BuiltInScalarTypeName.Float: return BuiltInScalarTypeName.Float;
-    case BuiltInScalarTypeName.Boolean: return BuiltInScalarTypeName.Boolean;
-    case BuiltInScalarTypeName.BigInt: return BuiltInScalarTypeName.BigInt;
-    default: return undefined;
-  }
+  return Object.values(BuiltInScalarTypeName).find(builtInScalarTypeName => typeName === builtInScalarTypeName);
 }

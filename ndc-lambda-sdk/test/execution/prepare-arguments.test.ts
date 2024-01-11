@@ -350,6 +350,15 @@ describe("prepare arguments", function() {
             name: "BigInt"
           }
         },
+        {
+          argumentName: "dateTimeArg",
+          description: null,
+          type: {
+            type: "named",
+            kind: "scalar",
+            name: "DateTime"
+          }
+        },
       ],
       resultType: {
         type: "named",
@@ -362,10 +371,11 @@ describe("prepare arguments", function() {
       stringArg: "test",
       boolArg: true,
       floatArg: 123.456,
-      bigIntArg: "1234"
+      bigIntArg: "1234",
+      dateTimeArg: "2024-01-11T15:17:56Z"
     }
 
     const preparedArgs = prepareArguments(args, functionDefinition, {});
-    assert.deepStrictEqual(preparedArgs, ["test", true, 123.456, BigInt(1234)]);
+    assert.deepStrictEqual(preparedArgs, ["test", true, 123.456, BigInt(1234), new Date("2024-01-11T15:17:56Z")]);
   });
 });

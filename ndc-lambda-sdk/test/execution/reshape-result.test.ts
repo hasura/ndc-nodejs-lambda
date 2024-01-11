@@ -6,7 +6,7 @@ import { ArrayTypeDefinition, BuiltInScalarTypeName, FunctionDefinition, Functio
 
 describe("reshape result", function() {
 
-  describe("deserializes scalar types", function() {
+  describe("serializes scalar types", function() {
     const testCases = [
       {
         testName: "Float",
@@ -31,6 +31,12 @@ describe("reshape result", function() {
         value: 123n,
         type: BuiltInScalarTypeName.BigInt,
         reshapedValue: "123"
+      },
+      {
+        testName: "DateTime",
+        value: new Date("2024-01-11T14:45:23Z"),
+        type: BuiltInScalarTypeName.DateTime,
+        reshapedValue: "2024-01-11T14:45:23.000Z"
       },
     ]
 
@@ -141,7 +147,7 @@ describe("reshape result", function() {
     }
   });
 
-  it("deserializes scalar array type", function() {
+  it("serializes scalar array type", function() {
     const arrayType: ArrayTypeDefinition = { type: "array", elementType: { type: "named", kind: "scalar", name: BuiltInScalarTypeName.Float } };
     const result = reshapeResultToNdcResponseValue([1,2,3], arrayType, "AllColumns", {});
     assert.deepStrictEqual(result, [1,2,3]);

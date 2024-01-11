@@ -16,6 +16,7 @@ describe("basic inference", function() {
           Boolean: {},
           Float: {},
           String: {},
+          DateTime: {},
         },
         objectTypes: {},
         functions: {
@@ -74,6 +75,16 @@ describe("basic inference", function() {
             ],
             resultType: {
               name: "Boolean",
+              kind: "scalar",
+              type: "named",
+            }
+          },
+          "dateTime": {
+            ndcKind: FunctionNdcKind.Procedure,
+            description: null,
+            arguments: [],
+            resultType: {
+              name: "DateTime",
               kind: "scalar",
               type: "named",
             }
