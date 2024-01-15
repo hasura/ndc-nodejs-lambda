@@ -28,7 +28,7 @@ export async function executeQuery(queryRequest: sdk.QueryRequest, functionsSche
   const rows: Record<string, unknown>[] = [];
   for (const invocationPreparedArgs of functionInvocationPreparedArgs) {
     const result = await invokeFunction(runtimeFunction, invocationPreparedArgs, functionName);
-    const prunedResult = pruneFields(result, queryRequest.query.fields, functionName, functionDefinition.resultType);
+    const prunedResult = reshapeResultToNdcResponseValue(result, functionDefinition.resultType, queryRequest.query.fields ?? {}, functionsSchema.objectTypes);
     rows.push({
       __value: prunedResult
     });
@@ -215,29 +215,6 @@ export function reshapeResultToNdcResponseValue(value: unknown, type: schema.Typ
     default:
       return unreachable(type["type"]);
   }
-}
-
-function pruneFields(result: unknown, fields: Record<string, sdk.Field> | null | undefined, functionName: string, returnType: schema.TypeDefinition): unknown {
-  if (!fields || Object.keys(fields).length === 0) {
-    return result;
-  }
-
-  const response: Record<string, unknown> = {};
-
-  if (result === null || Array.isArray(result) || typeof result !== "object")
-    throw new sdk.InternalServerError(`Function '${functionName}' did not return an object when expected to`);
-
-  for (const [fieldName,field] of Object.entries(fields)) {
-    switch(field.type) {
-      case 'column':
-        response[fieldName] = (result as Record<string, unknown>)[field.column] ?? null; // Coalesce undefined into null to ensure we always have a value for a requested column
-        break;
-      default:
-        throw new sdk.NotSupported(`Function '${functionName}' field of type '${field.type}' is not supported.`)
-    }
-  }
-
-  return response;
 }
 
 function convertBuiltInNdcJsonScalarToJsScalar(value: unknown, valuePath: string[], scalarType: schema.BuiltInScalarTypeDefinition): string | number | boolean | BigInt | Date {
