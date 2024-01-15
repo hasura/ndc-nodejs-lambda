@@ -1,7 +1,8 @@
 import { describe, it } from "mocha";
 import { assert } from "chai";
 import { prepareArguments } from "../../src/execution";
-import { FunctionDefinition, FunctionNdcKind, NullOrUndefinability, ObjectTypeDefinitions } from "../../src/schema";
+import { BuiltInScalarTypeName, FunctionDefinition, FunctionNdcKind, NullOrUndefinability, ObjectTypeDefinitions } from "../../src/schema";
+import { BadRequest } from "@hasura/ndc-sdk-typescript";
 
 describe("prepare arguments", function() {
   it("argument ordering", function() {
@@ -377,5 +378,99 @@ describe("prepare arguments", function() {
 
     const preparedArgs = prepareArguments(args, functionDefinition, {});
     assert.deepStrictEqual(preparedArgs, ["test", true, 123.456, BigInt(1234), new Date("2024-01-11T15:17:56Z")]);
+  });
+
+  describe("validation of literal types", function() {
+    const functionDefinition: FunctionDefinition = {
+      ndcKind: FunctionNdcKind.Function,
+      description: null,
+      arguments: [
+        {
+          argumentName: "literalString",
+          description: null,
+          type: {
+            type: "named",
+            kind: "scalar",
+            name: BuiltInScalarTypeName.String,
+            literalValue: "literal-string"
+          }
+        },
+        {
+          argumentName: "literalFloat",
+          description: null,
+          type: {
+            type: "named",
+            kind: "scalar",
+            name: BuiltInScalarTypeName.Float,
+            literalValue: 123.567
+          }
+        },
+        {
+          argumentName: "literalBool",
+          description: null,
+          type: {
+            type: "named",
+            kind: "scalar",
+            name: BuiltInScalarTypeName.Boolean,
+            literalValue: true
+          }
+        },
+        {
+          argumentName: "literalBigInt",
+          description: null,
+          type: {
+            type: "named",
+            kind: "scalar",
+            name: BuiltInScalarTypeName.BigInt,
+            literalValue: 678n
+          }
+        },
+      ],
+      resultType: {
+        type: "named",
+        kind: "scalar",
+        name: "String"
+      }
+    }
+    const objectTypes: ObjectTypeDefinitions = {}
+
+    it("passes validation", function() {
+      const args = {
+        literalString: "literal-string",
+        literalFloat: 123.567,
+        literalBool: true,
+        literalBigInt: 678n,
+      }
+
+      const preparedArgs = prepareArguments(args, functionDefinition, objectTypes);
+
+      assert.deepStrictEqual(preparedArgs, [ "literal-string", 123.567, true, 678n ]);
+    });
+
+    describe("fails validation", function() {
+      const correctArgs = {
+        literalString: "literal-string",
+        literalFloat: 123.567,
+        literalBool: true,
+        literalBigInt: 678n,
+      };
+
+      it("String", function() {
+        const args = { ...correctArgs, literalString: "something else" };
+        assert.throws(() => prepareArguments(args, functionDefinition, objectTypes), BadRequest, "Invalid value in function arguments. Only the value 'literal-string' is accepted at 'literalString', got 'something else'")
+      });
+      it("Float", function() {
+        const args = { ...correctArgs, literalFloat: 10 };
+        assert.throws(() => prepareArguments(args, functionDefinition, objectTypes), BadRequest, "Invalid value in function arguments. Only the value '123.567' is accepted at 'literalFloat', got '10'")
+      });
+      it("Boolean", function() {
+        const args = { ...correctArgs, literalBool: false };
+        assert.throws(() => prepareArguments(args, functionDefinition, objectTypes), BadRequest, "Invalid value in function arguments. Only the value 'true' is accepted at 'literalBool', got 'false'")
+      });
+      it("BigInt", function() {
+        const args = { ...correctArgs, literalBigInt: 789n };
+        assert.throws(() => prepareArguments(args, functionDefinition, objectTypes), BadRequest, "Invalid value in function arguments. Only the value '678' is accepted at 'literalBigInt', got '789'")
+      });
+    });
   });
 });

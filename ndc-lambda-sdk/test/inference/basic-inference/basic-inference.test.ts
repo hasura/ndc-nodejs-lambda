@@ -1,7 +1,7 @@
 import { describe, it } from "mocha";
 import { assert } from "chai";
 import { deriveSchema } from "../../../src/inference";
-import { FunctionNdcKind, NullOrUndefinability } from "../../../src/schema";
+import { BuiltInScalarTypeName, FunctionNdcKind, NullOrUndefinability } from "../../../src/schema";
 
 describe("basic inference", function() {
   it("simple types", function() {
@@ -687,6 +687,95 @@ describe("basic inference", function() {
         },
         scalarTypes: {
           Float: {},
+        },
+      }
+    })
+  });
+
+  it("literal types", function() {
+    const schema = deriveSchema(require.resolve("./literal-types.ts"));
+
+    assert.deepStrictEqual(schema, {
+      compilerDiagnostics: [],
+      functionIssues: {},
+      functionsSchema: {
+        scalarTypes: {
+          BigInt: {},
+          Boolean: {},
+          Float: {},
+          String: {},
+        },
+        functions: {
+          "literalTypes": {
+            ndcKind: FunctionNdcKind.Procedure,
+            description: null,
+            arguments: [],
+            resultType: {
+              name: "LiteralProps",
+              kind: "object",
+              type: "named",
+            }
+          },
+        },
+        objectTypes: {
+          "LiteralProps": {
+            properties: [
+              {
+                propertyName: "literalString",
+                type: {
+                  type: "named",
+                  kind: "scalar",
+                  name: BuiltInScalarTypeName.String,
+                  literalValue: "literal-string"
+                }
+              },
+              {
+                propertyName: "literalNumber",
+                type: {
+                  type: "named",
+                  kind: "scalar",
+                  name: BuiltInScalarTypeName.Float,
+                  literalValue: 123,
+                }
+              },
+              {
+                propertyName: "literalBoolean",
+                type: {
+                  type: "named",
+                  kind: "scalar",
+                  name: BuiltInScalarTypeName.Boolean,
+                  literalValue: true,
+                }
+              },
+              {
+                propertyName: "literalBigInt",
+                type: {
+                  type: "named",
+                  kind: "scalar",
+                  name: BuiltInScalarTypeName.BigInt,
+                  literalValue: -123n,
+                }
+              },
+              {
+                propertyName: "literalStringEnum",
+                type: {
+                  type: "named",
+                  kind: "scalar",
+                  name: BuiltInScalarTypeName.String,
+                  literalValue: "EnumItem",
+                }
+              },
+              {
+                propertyName: "literalNumericEnum",
+                type: {
+                  type: "named",
+                  kind: "scalar",
+                  name: BuiltInScalarTypeName.Float,
+                  literalValue: 0,
+                }
+              }
+            ]
+          }
         },
       }
     })

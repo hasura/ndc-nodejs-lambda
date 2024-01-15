@@ -120,9 +120,8 @@ function coerceArgumentValue(value: unknown, type: schema.TypeDefinition, valueP
       }
     case "named":
       if (type.kind === "scalar") {
-        const builtInScalarType = schema.isTypeNameBuiltInScalar(type.name);
-        if (builtInScalarType)
-          return convertNdcJsonScalarToJsScalar(value, valuePath, builtInScalarType);
+        if (schema.isBuiltInScalarTypeDefinition(type))
+          return convertBuiltInNdcJsonScalarToJsScalar(value, valuePath, type);
         // Scalars are currently treated as opaque values, which is a bit dodgy
         return value;
       } else {
@@ -179,9 +178,8 @@ export function reshapeResultToNdcResponseValue(value: unknown, type: schema.Typ
     case "named":
       switch (type.kind) {
         case "scalar":
-          const builtInScalarType = schema.isTypeNameBuiltInScalar(type.name);
-          return builtInScalarType
-            ? convertJsScalarToNdcJsonScalar(value, builtInScalarType)
+          return schema.isTypeNameBuiltInScalar(type.name)
+            ? convertJsScalarToNdcJsonScalar(value, type.name)
             : value; // YOLO? Just try to serialize it to JSON as is as an opaque scalar.
 
         case "object":
@@ -242,41 +240,56 @@ function pruneFields(result: unknown, fields: Record<string, sdk.Field> | null |
   return response;
 }
 
-function convertNdcJsonScalarToJsScalar(value: unknown, valuePath: string[], scalarType: schema.BuiltInScalarTypeName): string | number | boolean | BigInt | Date {
-  switch (scalarType) {
+function convertBuiltInNdcJsonScalarToJsScalar(value: unknown, valuePath: string[], scalarType: schema.BuiltInScalarTypeDefinition): string | number | boolean | BigInt | Date {
+  switch (scalarType.name) {
     case schema.BuiltInScalarTypeName.String:
       if (typeof value === "string") {
+        if (scalarType.literalValue !== undefined && value !== scalarType.literalValue)
+          throw new sdk.BadRequest(`Invalid value in function arguments. Only the value '${scalarType.literalValue}' is accepted at '${valuePath.join(".")}', got '${value}'`);
         return value;
       } else {
         throw new sdk.BadRequest(`Unexpected value in function arguments. Expected a string at '${valuePath.join(".")}', got a ${typeof value}`);
       }
+
     case schema.BuiltInScalarTypeName.Float:
       if (typeof value === "number") {
+        if (scalarType.literalValue !== undefined && value !== scalarType.literalValue)
+          throw new sdk.BadRequest(`Invalid value in function arguments. Only the value '${scalarType.literalValue}' is accepted at '${valuePath.join(".")}', got '${value}'`);
         return value;
       } else {
         throw new sdk.BadRequest(`Unexpected value in function arguments. Expected a number at '${valuePath.join(".")}', got a ${typeof value}`);
       }
+
     case schema.BuiltInScalarTypeName.Boolean:
       if (typeof value === "boolean") {
+        if (scalarType.literalValue !== undefined && value !== scalarType.literalValue)
+          throw new sdk.BadRequest(`Invalid value in function arguments. Only the value '${scalarType.literalValue}' is accepted at '${valuePath.join(".")}', got '${value}'`);
         return value;
       } else {
         throw new sdk.BadRequest(`Unexpected value in function arguments. Expected a boolean at '${valuePath.join(".")}', got a ${typeof value}`);
       }
+
     case schema.BuiltInScalarTypeName.BigInt:
-      if (typeof value === "number") {
-        if (!Number.isInteger(value))
-          throw new sdk.BadRequest(`Unexpected value in function arguments. Expected a integer number at '${valuePath.join(".")}', got a float`);
-        return BigInt(value);
-      }
-      else if (typeof value === "string") {
-        try { return BigInt(value) }
-        catch { throw new sdk.BadRequest(`Unexpected value in function arguments. Expected a bigint string at '${valuePath.join(".")}', got a non-integer string: '${value}'`); }
-      }
-      else if (typeof value === "bigint") { // This won't happen since JSON doesn't have a bigint type, but I'll just put it here for completeness
-        return value;
-      } else {
-        throw new sdk.BadRequest(`Unexpected value in function arguments. Expected a bigint at '${valuePath.join(".")}', got a ${typeof value}`);
-      }
+      const bigIntValue = (() => {
+        if (typeof value === "number") {
+          if (!Number.isInteger(value))
+            throw new sdk.BadRequest(`Unexpected value in function arguments. Expected a integer number at '${valuePath.join(".")}', got a float`);
+          return BigInt(value);
+        }
+        else if (typeof value === "string") {
+          try { return BigInt(value) }
+          catch { throw new sdk.BadRequest(`Unexpected value in function arguments. Expected a bigint string at '${valuePath.join(".")}', got a non-integer string: '${value}'`); }
+        }
+        else if (typeof value === "bigint") { // This won't happen since JSON doesn't have a bigint type, but I'll just put it here for completeness
+          return value;
+        } else {
+          throw new sdk.BadRequest(`Unexpected value in function arguments. Expected a bigint at '${valuePath.join(".")}', got a ${typeof value}`);
+        }
+      })();
+      if (scalarType.literalValue !== undefined && bigIntValue !== scalarType.literalValue)
+        throw new sdk.BadRequest(`Invalid value in function arguments. Only the value '${scalarType.literalValue}' is accepted at '${valuePath.join(".")}', got '${value}'`);
+      return bigIntValue;
+
     case schema.BuiltInScalarTypeName.DateTime:
       if (typeof value === "string") {
         const parsedDate = Date.parse(value);
@@ -286,6 +299,7 @@ function convertNdcJsonScalarToJsScalar(value: unknown, valuePath: string[], sca
       } else {
         throw new sdk.BadRequest(`Unexpected value in function arguments. Expected a Date string at '${valuePath.join(".")}', got a ${typeof value}`);
       }
+
     default:
       return unreachable(scalarType);
   }

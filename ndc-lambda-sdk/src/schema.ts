@@ -61,10 +61,63 @@ export type NullableTypeDefinition = {
   underlyingType: TypeDefinition
 }
 
-export type NamedTypeDefinition = {
+export type NamedTypeDefinition = NamedObjectTypeDefinition | NamedScalarTypeDefinition | StringScalarTypeDefinition | FloatScalarTypeDefinition | BooleanScalarTypeDefinition | BigIntScalarTypeDefinition
+
+export type NamedObjectTypeDefinition = {
   type: "named"
   name: string
-  kind: "scalar" | "object"
+  kind: "object"
+}
+
+export type NamedScalarTypeDefinition = CustomNamedScalarTypeDefinition | BuiltInScalarTypeDefinition
+
+export type BuiltInScalarTypeDefinition = StringScalarTypeDefinition | FloatScalarTypeDefinition | BooleanScalarTypeDefinition | BigIntScalarTypeDefinition | DateTimeScalarTypeDefinition
+
+export type CustomNamedScalarTypeDefinition = {
+  type: "named"
+  name: string
+  kind: "scalar"
+}
+
+export type StringScalarTypeDefinition = {
+  type: "named"
+  name: BuiltInScalarTypeName.String
+  kind: "scalar"
+  literalValue?: string
+}
+
+export type FloatScalarTypeDefinition = {
+  type: "named"
+  name: BuiltInScalarTypeName.Float
+  kind: "scalar"
+  literalValue?: number
+}
+
+export type BooleanScalarTypeDefinition = {
+  type: "named"
+  name: BuiltInScalarTypeName.Boolean
+  kind: "scalar"
+  literalValue?: boolean
+}
+
+export type BigIntScalarTypeDefinition = {
+  type: "named"
+  name: BuiltInScalarTypeName.BigInt
+  kind: "scalar"
+  literalValue?: bigint
+}
+
+export type DateTimeScalarTypeDefinition = {
+  type: "named"
+  name: BuiltInScalarTypeName.DateTime
+  kind: "scalar"
+}
+
+// If there are compiler errors on this function, ensure that BuiltInScalarTypeDefinition has a type in
+// its union for every BuiltInScalarTypeName enum member, and vice versa.
+function builtInScalarTypeAssertionTest(a: BuiltInScalarTypeDefinition["name"], b: BuiltInScalarTypeName): void {
+  a = b;
+  b = a;
 }
 
 export enum NullOrUndefinability {
@@ -152,6 +205,10 @@ export function printSchemaListing(functionNdcKind: FunctionNdcKind, functionDef
   }
 }
 
-export function isTypeNameBuiltInScalar(typeName: string): BuiltInScalarTypeName | undefined {
-  return Object.values(BuiltInScalarTypeName).find(builtInScalarTypeName => typeName === builtInScalarTypeName);
+export function isTypeNameBuiltInScalar(typeName: string): typeName is BuiltInScalarTypeName {
+  return Object.values(BuiltInScalarTypeName).find(builtInScalarTypeName => typeName === builtInScalarTypeName) !== undefined;
+}
+
+export function isBuiltInScalarTypeDefinition(typeDefinition: NamedScalarTypeDefinition): typeDefinition is BuiltInScalarTypeDefinition {
+  return isTypeNameBuiltInScalar(typeDefinition.name);
 }

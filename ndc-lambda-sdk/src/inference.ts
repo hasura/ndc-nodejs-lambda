@@ -297,17 +297,35 @@ function deriveSchemaTypeIfScalarType(tsType: ts.Type, context: TypeDerivationCo
     context.scalarTypeDefinitions[schema.BuiltInScalarTypeName.Boolean] = {};
     return new Ok({ typeDefinition: { type: "named", kind: "scalar", name: schema.BuiltInScalarTypeName.Boolean }, warnings: [] });
   }
+  if (tsutils.isBooleanLiteralType(tsType)) {
+    context.scalarTypeDefinitions[schema.BuiltInScalarTypeName.Boolean] = {};
+    const literalValue = tsType.intrinsicName === "true" ? true : false; // Unfortunately the types lie, tsType.value is undefined here :(
+    return new Ok({ typeDefinition: { type: "named", kind: "scalar", name: schema.BuiltInScalarTypeName.Boolean, literalValue: literalValue }, warnings: [] });
+  }
   if (tsutils.isIntrinsicStringType(tsType)) {
     context.scalarTypeDefinitions[schema.BuiltInScalarTypeName.String] = {};
     return new Ok({ typeDefinition: { type: "named", kind: "scalar", name: schema.BuiltInScalarTypeName.String }, warnings: [] });
+  }
+  if (tsutils.isStringLiteralType(tsType)) {
+    context.scalarTypeDefinitions[schema.BuiltInScalarTypeName.String] = {};
+    return new Ok({ typeDefinition: { type: "named", kind: "scalar", name: schema.BuiltInScalarTypeName.String, literalValue: tsType.value }, warnings: [] });
   }
   if (tsutils.isIntrinsicNumberType(tsType)) {
     context.scalarTypeDefinitions[schema.BuiltInScalarTypeName.Float] = {};
     return new Ok({ typeDefinition: { type: "named", kind: "scalar", name: schema.BuiltInScalarTypeName.Float }, warnings: [] });
   }
+  if (tsutils.isNumberLiteralType(tsType)) {
+    context.scalarTypeDefinitions[schema.BuiltInScalarTypeName.Float] = {};
+    return new Ok({ typeDefinition: { type: "named", kind: "scalar", name: schema.BuiltInScalarTypeName.Float, literalValue: tsType.value }, warnings: [] });
+  }
   if (tsutils.isIntrinsicBigIntType(tsType)) {
     context.scalarTypeDefinitions[schema.BuiltInScalarTypeName.BigInt] = {};
     return new Ok({ typeDefinition: { type: "named", kind: "scalar", name: schema.BuiltInScalarTypeName.BigInt }, warnings: [] });
+  }
+  if (tsutils.isBigIntLiteralType(tsType)) {
+    context.scalarTypeDefinitions[schema.BuiltInScalarTypeName.BigInt] = {};
+    const literalValue = BigInt(`${tsType.value.negative ? "-" : ""}${tsType.value.base10Value}`);
+    return new Ok({ typeDefinition: { type: "named", kind: "scalar", name: schema.BuiltInScalarTypeName.BigInt, literalValue: literalValue }, warnings: [] });
   }
   if (isDateType(tsType)) {
     context.scalarTypeDefinitions[schema.BuiltInScalarTypeName.DateTime] = {};
