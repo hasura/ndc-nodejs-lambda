@@ -255,12 +255,32 @@ function deriveSchemaTypeForTsType(tsType: ts.Type, typePath: TypePathSegment[],
     return new Err([`The void type is not supported, but one was encountered in ${typePathToString(typePath)}`]);
   }
 
+  if (tsutils.isIntrinsicNeverType(tsType)) {
+    return new Err([`The never type is not supported, but one was encountered in ${typePathToString(typePath)}`]);
+  }
+
+  if (tsutils.isIntrinsicNonPrimitiveType(tsType)) {
+    return new Err([`The object type is not supported, but one was encountered in ${typePathToString(typePath)}`]);
+  }
+
+  if (tsutils.isIntrinsicUnknownType(tsType)) {
+    return new Err([`The unknown type is not supported, but one was encountered in ${typePathToString(typePath)}`]);
+  }
+
+  if (tsutils.isIntrinsicAnyType(tsType)) {
+    return new Err([`The any type is not supported, but one was encountered in ${typePathToString(typePath)}`]);
+  }
+
   if (tsutils.isIntrinsicNullType(tsType)) {
     return new Err([`The null type is not supported as a type literal used on its own, but one was encountered in ${typePathToString(typePath)}`]);
   }
 
   if (tsutils.isIntrinsicUndefinedType(tsType)) {
     return new Err([`The undefined type is not supported as a type literal used on its own, but one was encountered in ${typePathToString(typePath)}`]);
+  }
+
+  if (tsutils.isTupleTypeReference(tsType)) {
+    return new Err([`Tuple types are not supported, but one was encountered in ${typePathToString(typePath)}`]);
   }
 
   const schemaTypeResult =

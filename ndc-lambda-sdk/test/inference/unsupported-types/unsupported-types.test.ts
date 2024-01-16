@@ -41,6 +41,86 @@ describe("unsupported types", function() {
     })
   });
 
+  it("never", function() {
+    const schema = deriveSchema(require.resolve("./never.ts"));
+
+    assert.deepStrictEqual(schema, {
+      compilerDiagnostics: [],
+      functionIssues: {
+        "neverFunction": [
+          "The never type is not supported, but one was encountered in function 'neverFunction' parameter 'test'"
+        ]
+      },
+      functionsSchema: {
+        scalarTypes: {
+          String: {}
+        },
+        objectTypes: {},
+        functions: {}
+      }
+    })
+  });
+
+  it("object", function() {
+    const schema = deriveSchema(require.resolve("./object.ts"));
+
+    assert.deepStrictEqual(schema, {
+      compilerDiagnostics: [],
+      functionIssues: {
+        "objectFunction": [
+          "The object type is not supported, but one was encountered in function 'objectFunction' parameter 'test'"
+        ]
+      },
+      functionsSchema: {
+        scalarTypes: {
+          String: {}
+        },
+        objectTypes: {},
+        functions: {}
+      }
+    })
+  });
+
+  it("unknown", function() {
+    const schema = deriveSchema(require.resolve("./unknown.ts"));
+
+    assert.deepStrictEqual(schema, {
+      compilerDiagnostics: [],
+      functionIssues: {
+        "unknownFunction": [
+          "The unknown type is not supported, but one was encountered in function 'unknownFunction' parameter 'test'"
+        ]
+      },
+      functionsSchema: {
+        scalarTypes: {
+          String: {}
+        },
+        objectTypes: {},
+        functions: {}
+      }
+    })
+  });
+
+  it("any", function() {
+    const schema = deriveSchema(require.resolve("./any.ts"));
+
+    assert.deepStrictEqual(schema, {
+      compilerDiagnostics: [],
+      functionIssues: {
+        "anyFunction": [
+          "The any type is not supported, but one was encountered in function 'anyFunction' parameter 'test'"
+        ]
+      },
+      functionsSchema: {
+        scalarTypes: {
+          String: {}
+        },
+        objectTypes: {},
+        functions: {}
+      }
+    })
+  });
+
   it("promises", function() {
     const schema = deriveSchema(require.resolve("./promises.ts"));
 
@@ -80,6 +160,32 @@ describe("unsupported types", function() {
       },
       functionsSchema: {
         scalarTypes: {},
+        objectTypes: {},
+        functions: {}
+      }
+    })
+  });
+
+  it("tuple types", function() {
+    const schema = deriveSchema(require.resolve("./tuple-types.ts"));
+
+    assert.deepStrictEqual(schema, {
+      compilerDiagnostics: [],
+      functionIssues: {
+        "tuple1": [
+          "Tuple types are not supported, but one was encountered in function 'tuple1' parameter 'test'"
+        ],
+        "tuple2": [
+          "Tuple types are not supported, but one was encountered in function 'tuple2' parameter 'test'"
+        ],
+        "tupleAlias": [
+          "Tuple types are not supported, but one was encountered in function 'tupleAlias' parameter 'test'"
+        ]
+      },
+      functionsSchema: {
+        scalarTypes: {
+          String: {}
+        },
         objectTypes: {},
         functions: {}
       }
