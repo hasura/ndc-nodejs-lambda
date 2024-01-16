@@ -5,6 +5,9 @@
     "resolveJsonModule": true,
     "noUncheckedIndexedAccess": true,
     "sourceMap": true,
+    "declaration": true,
+    "declarationMap": true,
+    "stripInternal": true,
   },
   "include": [
     "src/**/*",

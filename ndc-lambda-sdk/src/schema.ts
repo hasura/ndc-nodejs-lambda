@@ -61,7 +61,7 @@ export type NullableTypeDefinition = {
   underlyingType: TypeDefinition
 }
 
-export type NamedTypeDefinition = NamedObjectTypeDefinition | NamedScalarTypeDefinition | StringScalarTypeDefinition | FloatScalarTypeDefinition | BooleanScalarTypeDefinition | BigIntScalarTypeDefinition
+export type NamedTypeDefinition = NamedObjectTypeDefinition | NamedScalarTypeDefinition
 
 export type NamedObjectTypeDefinition = {
   type: "named"
@@ -71,7 +71,7 @@ export type NamedObjectTypeDefinition = {
 
 export type NamedScalarTypeDefinition = CustomNamedScalarTypeDefinition | BuiltInScalarTypeDefinition
 
-export type BuiltInScalarTypeDefinition = StringScalarTypeDefinition | FloatScalarTypeDefinition | BooleanScalarTypeDefinition | BigIntScalarTypeDefinition | DateTimeScalarTypeDefinition
+export type BuiltInScalarTypeDefinition = StringScalarTypeDefinition | FloatScalarTypeDefinition | BooleanScalarTypeDefinition | BigIntScalarTypeDefinition | DateTimeScalarTypeDefinition | JSONScalarTypeDefinition
 
 export type CustomNamedScalarTypeDefinition = {
   type: "named"
@@ -113,6 +113,12 @@ export type DateTimeScalarTypeDefinition = {
   kind: "scalar"
 }
 
+export type JSONScalarTypeDefinition = {
+  type: "named"
+  name: BuiltInScalarTypeName.JSON
+  kind: "scalar"
+}
+
 // If there are compiler errors on this function, ensure that BuiltInScalarTypeDefinition has a type in
 // its union for every BuiltInScalarTypeName enum member, and vice versa.
 function builtInScalarTypeAssertionTest(a: BuiltInScalarTypeDefinition["name"], b: BuiltInScalarTypeName): void {
@@ -132,6 +138,53 @@ export enum BuiltInScalarTypeName {
   Boolean = "Boolean",
   BigInt = "BigInt",
   DateTime = "DateTime",
+  JSON = "JSON",
+}
+
+export class JSONValue {
+  #value: unknown = undefined;
+  #serializationError: Error | null | undefined;
+
+  constructor(value: unknown)
+  /** @internal */
+  constructor(value: unknown, lazyValidate: boolean);
+  constructor(value: unknown, lazyValidate: boolean = false) {
+    if (value === undefined) {
+      throw new Error("'value' cannot be undefined");
+    }
+
+    if (!lazyValidate) {
+      this.#serializationError = this.#validate(value);
+      if (this.#serializationError !== null && this.#serializationError !== undefined) {
+        throw new Error("The provided value cannot be serialized to JSON", { cause: this.#serializationError });
+      }
+    }
+
+    this.#value = value;
+  }
+
+  #validate(value: unknown): Error | null {
+    try {
+      JSON.stringify(value);
+      return null;
+    } catch (e) {
+      return e as Error;
+    }
+  }
+
+  get value(): unknown {
+    return this.#value;
+  }
+
+  /**
+   * @internal
+   */
+  get validationError(): Error | null {
+    if (this.#serializationError === undefined) {
+      this.#serializationError = this.#validate(this.#value);
+    }
+    return this.#serializationError;
+  }
 }
 
 export function getNdcSchema(functionsSchema: FunctionsSchema): sdk.SchemaResponse {

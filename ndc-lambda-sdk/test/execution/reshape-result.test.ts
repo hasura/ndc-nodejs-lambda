@@ -2,7 +2,7 @@ import { describe, it } from "mocha";
 import { assert } from "chai";
 import * as sdk from "@hasura/ndc-sdk-typescript"
 import { reshapeResultToNdcResponseValue } from "../../src/execution";
-import { ArrayTypeDefinition, BuiltInScalarTypeName, FunctionDefinition, FunctionNdcKind, NamedTypeDefinition, NullOrUndefinability, NullableTypeDefinition, ObjectTypeDefinitions } from "../../src/schema";
+import { ArrayTypeDefinition, BuiltInScalarTypeName, FunctionDefinition, FunctionNdcKind, JSONValue, NamedTypeDefinition, NullOrUndefinability, NullableTypeDefinition, ObjectTypeDefinitions } from "../../src/schema";
 
 describe("reshape result", function() {
 
@@ -38,13 +38,19 @@ describe("reshape result", function() {
         type: BuiltInScalarTypeName.DateTime,
         reshapedValue: "2024-01-11T14:45:23.000Z"
       },
+      {
+        testName: "JSON",
+        value: new JSONValue({some: "random", json: { object: true }}),
+        type: BuiltInScalarTypeName.JSON,
+        reshapedValue: {some: "random", json: { object: true }}
+      },
     ]
 
     for (const testCase of testCases) {
       it(testCase.testName, function () {
         const scalarType: NamedTypeDefinition = { type: "named", kind: "scalar", name: testCase.type };
-        const result = reshapeResultToNdcResponseValue(testCase.value, scalarType, "AllColumns", {});
-        assert.strictEqual(result, testCase.reshapedValue);
+        const result = reshapeResultToNdcResponseValue(testCase.value, scalarType, [], "AllColumns", {});
+        assert.deepStrictEqual(result, testCase.reshapedValue);
       })
     }
   });
@@ -74,7 +80,7 @@ describe("reshape result", function() {
     for (const testCase of testCases) {
       it(testCase.testName, function () {
         const nullableType: NullableTypeDefinition = { type: "nullable", nullOrUndefinability: NullOrUndefinability.AcceptsEither, underlyingType: { type: "named", kind: "scalar", name: testCase.scalarType } };
-        const result = reshapeResultToNdcResponseValue(testCase.value, nullableType, "AllColumns", {});
+        const result = reshapeResultToNdcResponseValue(testCase.value, nullableType, [], "AllColumns", {});
         assert.strictEqual(result, testCase.reshapedValue);
       })
     }
@@ -141,7 +147,7 @@ describe("reshape result", function() {
     for (const testCase of testCases) {
       it(testCase.testName, function () {
         const objectType: NamedTypeDefinition = { type: "named", kind: "object", name: "TestObjectType" };
-        const result = reshapeResultToNdcResponseValue(testCase.value, objectType, testCase.fields, objectTypes);
+        const result = reshapeResultToNdcResponseValue(testCase.value, objectType, [], testCase.fields, objectTypes);
         assert.deepStrictEqual(result, testCase.reshapedValue);
       })
     }
@@ -149,7 +155,7 @@ describe("reshape result", function() {
 
   it("serializes scalar array type", function() {
     const arrayType: ArrayTypeDefinition = { type: "array", elementType: { type: "named", kind: "scalar", name: BuiltInScalarTypeName.Float } };
-    const result = reshapeResultToNdcResponseValue([1,2,3], arrayType, "AllColumns", {});
+    const result = reshapeResultToNdcResponseValue([1,2,3], arrayType, [], "AllColumns", {});
     assert.deepStrictEqual(result, [1,2,3]);
   });
 
@@ -246,7 +252,7 @@ describe("reshape result", function() {
     for (const testCase of testCases) {
       it(testCase.testName, function () {
         const arrayType: ArrayTypeDefinition = { type: "array", elementType: { type: "named", kind: "object", name: "TestObjectType" } };
-        const result = reshapeResultToNdcResponseValue(testCase.value, arrayType, testCase.fields, objectTypes);
+        const result = reshapeResultToNdcResponseValue(testCase.value, arrayType, [], testCase.fields, objectTypes);
         assert.deepStrictEqual(result, testCase.reshapedValue);
       })
     }

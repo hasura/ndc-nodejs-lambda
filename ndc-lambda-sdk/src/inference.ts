@@ -15,14 +15,20 @@ type FunctionIssues = {
   [functionName: string]: string[]
 }
 
+type CompilerResults = {
+  program: ts.Program,
+  compilerDiagnostics: ts.Diagnostic[],
+  ndcLambdaSdkModule: ts.ResolvedModuleFull
+}
+
 export function deriveSchema(functionsFilePath: string): SchemaDerivationResults {
   const programResult = createTsProgram(functionsFilePath)
   if (programResult instanceof Ok) {
-    const [program, compilerDiagnostics] = programResult.data;
+    const {program, compilerDiagnostics, ndcLambdaSdkModule} = programResult.data;
     const sourceFile = program.getSourceFile(functionsFilePath)
     if (!sourceFile) throw new Error(`'${functionsFilePath}' not returned as a TypeScript compiler source file`);
 
-    const [functionsSchema, functionIssues] = deriveSchemaFromFunctions(sourceFile, program.getTypeChecker());
+    const [functionsSchema, functionIssues] = deriveSchemaFromFunctions(sourceFile, program.getTypeChecker(), ndcLambdaSdkModule);
     return {
       compilerDiagnostics,
       functionsSchema,
@@ -41,13 +47,15 @@ export function deriveSchema(functionsFilePath: string): SchemaDerivationResults
   }
 }
 
-function createTsProgram(functionsFilePath: string): Result<[ts.Program, ts.Diagnostic[]], ts.Diagnostic[]> {
+function createTsProgram(functionsFilePath: string): Result<CompilerResults, ts.Diagnostic[]> {
   return loadTsConfig(functionsFilePath).bind(parsedCommandLine => {
     const compilerHost = ts.createCompilerHost(parsedCommandLine.options);
+    const sdkModule = ts.resolveModuleName("@hasura/ndc-lambda-sdk", functionsFilePath, parsedCommandLine.options, compilerHost);
+    if (sdkModule.resolvedModule === undefined) throw new Error("Unable to resolve module '@hasura/ndc-lambda-sdk'");
     const program = ts.createProgram([functionsFilePath], parsedCommandLine.options, compilerHost);
     const compilerDiagnostics = ts.getPreEmitDiagnostics(program);
     return compilerDiagnostics.find(d => d.category === ts.DiagnosticCategory.Error) === undefined
-      ? new Ok([program, [...compilerDiagnostics]])
+      ? new Ok({program, compilerDiagnostics: [...compilerDiagnostics], ndcLambdaSdkModule: sdkModule.resolvedModule})
       : new Err([...compilerDiagnostics]);
   })
 }
@@ -99,14 +107,16 @@ type TypeDerivationContext = {
   scalarTypeDefinitions: schema.ScalarTypeDefinitions
   typeChecker: ts.TypeChecker
   functionsFilePath: string,
+  ndcLambdaSdkModule: ts.ResolvedModuleFull,
 }
 
-function deriveSchemaFromFunctions(sourceFile: ts.SourceFile, typeChecker: ts.TypeChecker): [schema.FunctionsSchema, FunctionIssues] {
+function deriveSchemaFromFunctions(sourceFile: ts.SourceFile, typeChecker: ts.TypeChecker, ndcLambdaSdkModule: ts.ResolvedModuleFull): [schema.FunctionsSchema, FunctionIssues] {
   const typeDerivationContext: TypeDerivationContext = {
     objectTypeDefinitions: {},
     scalarTypeDefinitions: {},
     typeChecker,
-    functionsFilePath: sourceFile.fileName
+    functionsFilePath: sourceFile.fileName,
+    ndcLambdaSdkModule
   }
   const schemaFunctions: schema.FunctionDefinitions = {};
   const functionIssues: FunctionIssues = {};
@@ -247,10 +257,6 @@ function deriveSchemaTypeForTsType(tsType: ts.Type, typePath: TypePathSegment[],
     return new Err([`Promise types are not supported, but one was encountered in ${typePathToString(typePath)}.`]);
   }
 
-  if (tsutils.isObjectType(tsType) && tsutils.isObjectFlagSet(tsType, ts.ObjectFlags.Class)) {
-    return new Err([`Class types are not supported, but one was encountered in ${typePathToString(typePath)}`]);
-  }
-
   if (tsutils.isIntrinsicVoidType(tsType)) {
     return new Err([`The void type is not supported, but one was encountered in ${typePathToString(typePath)}`]);
   }
@@ -291,6 +297,10 @@ function deriveSchemaTypeForTsType(tsType: ts.Type, typePath: TypePathSegment[],
 
   if (schemaTypeResult !== undefined)
     return schemaTypeResult;
+
+  if (tsutils.isObjectType(tsType) && tsutils.isObjectFlagSet(tsType, ts.ObjectFlags.Class)) {
+    return new Err([`Class types are not supported, but one was encountered in ${typePathToString(typePath)}`]);
+  }
 
   // We don't know how to deal with this type, so just make it an opaque scalar
   const typeName = generateTypeNameFromTypePath(typePath);
@@ -351,12 +361,32 @@ function deriveSchemaTypeIfScalarType(tsType: ts.Type, context: TypeDerivationCo
     context.scalarTypeDefinitions[schema.BuiltInScalarTypeName.DateTime] = {};
     return new Ok({ typeDefinition: { type: "named", kind: "scalar", name: schema.BuiltInScalarTypeName.DateTime }, warnings: [] });
   }
+  if (isJSONValueType(tsType, context.ndcLambdaSdkModule)) {
+    context.scalarTypeDefinitions[schema.BuiltInScalarTypeName.JSON] = {};
+    return new Ok({ typeDefinition: { type: "named", kind: "scalar", name: schema.BuiltInScalarTypeName.JSON }, warnings: [] });
+  }
 }
 
 function isDateType(tsType: ts.Type): boolean {
   const symbol = tsType.getSymbol()
   if (symbol === undefined) return false;
   return symbol.escapedName === "Date" && symbol.members?.has(ts.escapeLeadingUnderscores("toISOString")) === true;
+}
+
+function isJSONValueType(tsType: ts.Type, ndcLambdaSdkModule: ts.ResolvedModuleFull): boolean {
+  // Must be a class type
+  if (!tsutils.isObjectType(tsType) || !tsutils.isObjectFlagSet(tsType, ts.ObjectFlags.Class))
+    return false;
+
+  // Must be called JSONValue
+  const symbol = tsType.getSymbol();
+  if (symbol === undefined || symbol.escapedName !== "JSONValue") return false;
+
+  // Must be declared in a file in the ndc-lambda-sdk's module directory (ie. this is _our_ JSONValue class)
+  const sourceFile = symbol.getDeclarations()?.[0]?.getSourceFile();
+  if (sourceFile === undefined) return false;
+  const sdkDirectory = path.dirname(ndcLambdaSdkModule.resolvedFileName);
+  return sourceFile.fileName.startsWith(sdkDirectory);
 }
 
 function deriveSchemaTypeIfNullableType(tsType: ts.Type, typePath: TypePathSegment[], context: TypeDerivationContext, recursionDepth: number): Result<DerivedSchemaType, string[]> | undefined {

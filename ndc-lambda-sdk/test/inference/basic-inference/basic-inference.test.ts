@@ -17,6 +17,7 @@ describe("basic inference", function() {
           Float: {},
           String: {},
           DateTime: {},
+          JSON: {},
         },
         objectTypes: {},
         functions: {
@@ -85,6 +86,26 @@ describe("basic inference", function() {
             arguments: [],
             resultType: {
               name: "DateTime",
+              kind: "scalar",
+              type: "named",
+            }
+          },
+          "json": {
+            ndcKind: FunctionNdcKind.Function,
+            description: null,
+            arguments: [
+              {
+                argumentName: "input",
+                description: null,
+                type: {
+                  name: "JSON",
+                  kind: "scalar",
+                  type: "named",
+                }
+              }
+            ],
+            resultType: {
+              name: "JSON",
               kind: "scalar",
               type: "named",
             }

@@ -28,7 +28,7 @@ export async function executeQuery(queryRequest: sdk.QueryRequest, functionsSche
   const rows: Record<string, unknown>[] = [];
   for (const invocationPreparedArgs of functionInvocationPreparedArgs) {
     const result = await invokeFunction(runtimeFunction, invocationPreparedArgs, functionName);
-    const prunedResult = reshapeResultToNdcResponseValue(result, functionDefinition.resultType, queryRequest.query.fields ?? {}, functionsSchema.objectTypes);
+    const prunedResult = reshapeResultToNdcResponseValue(result, functionDefinition.resultType, [], queryRequest.query.fields ?? {}, functionsSchema.objectTypes);
     rows.push({
       __value: prunedResult
     });
@@ -69,7 +69,7 @@ async function executeMutationOperation(mutationOperation: sdk.MutationOperation
 
   const preparedArgs = prepareArguments(mutationOperation.arguments, functionDefinition, functionsSchema.objectTypes);
   const result = await invokeFunction(runtimeFunction, preparedArgs, functionName);
-  const prunedResult = reshapeResultToNdcResponseValue(result, functionDefinition.resultType, mutationOperation.fields ?? {}, functionsSchema.objectTypes);
+  const prunedResult = reshapeResultToNdcResponseValue(result, functionDefinition.resultType, [], mutationOperation.fields ?? {}, functionsSchema.objectTypes);
 
   return {
     affected_rows: 1,
@@ -160,11 +160,11 @@ async function invokeFunction(func: Function, preparedArgs: unknown[], functionN
   }
 }
 
-export function reshapeResultToNdcResponseValue(value: unknown, type: schema.TypeDefinition, fields: Record<string, sdk.Field> | "AllColumns", objectTypes: schema.ObjectTypeDefinitions): unknown {
+export function reshapeResultToNdcResponseValue(value: unknown, type: schema.TypeDefinition, valuePath: string[], fields: Record<string, sdk.Field> | "AllColumns", objectTypes: schema.ObjectTypeDefinitions): unknown {
   switch (type.type) {
     case "array":
       if (isArray(value)) {
-        return value.map(elementValue => reshapeResultToNdcResponseValue(elementValue, type.elementType, fields, objectTypes))
+        return value.map((elementValue, index) => reshapeResultToNdcResponseValue(elementValue, type.elementType, [...valuePath, `[${index}]`], fields, objectTypes))
       }
       break;
 
@@ -173,13 +173,13 @@ export function reshapeResultToNdcResponseValue(value: unknown, type: schema.Typ
       // undefineds are coerced to nulls so that the field is included with a null value.
       return value === null || value === undefined
         ? null
-        : reshapeResultToNdcResponseValue(value, type.underlyingType, fields, objectTypes);
+        : reshapeResultToNdcResponseValue(value, type.underlyingType, valuePath, fields, objectTypes);
 
     case "named":
       switch (type.kind) {
         case "scalar":
           return schema.isTypeNameBuiltInScalar(type.name)
-            ? convertJsScalarToNdcJsonScalar(value, type.name)
+            ? convertJsScalarToNdcJsonScalar(value, valuePath)
             : value; // YOLO? Just try to serialize it to JSON as is as an opaque scalar.
 
         case "object":
@@ -202,7 +202,7 @@ export function reshapeResultToNdcResponseValue(value: unknown, type: schema.Typ
                   throw new sdk.InternalServerError(`Unable to find property definition '${field.column}' on object type '${type.name}'`);
 
                 // We pass "AllColumns" as the fields because we don't yet support nested field selections, so we just include all columns by default for now
-                return reshapeResultToNdcResponseValue((value as Record<string, unknown>)[field.column], objPropDef.type, "AllColumns", objectTypes)
+                return reshapeResultToNdcResponseValue((value as Record<string, unknown>)[field.column], objPropDef.type, [...valuePath, field.column], "AllColumns", objectTypes)
 
               default:
                 throw new sdk.NotSupported(`Field '${fieldName}' uses an unsupported field type: '${field.type}'`)
@@ -217,7 +217,7 @@ export function reshapeResultToNdcResponseValue(value: unknown, type: schema.Typ
   }
 }
 
-function convertBuiltInNdcJsonScalarToJsScalar(value: unknown, valuePath: string[], scalarType: schema.BuiltInScalarTypeDefinition): string | number | boolean | BigInt | Date {
+function convertBuiltInNdcJsonScalarToJsScalar(value: unknown, valuePath: string[], scalarType: schema.BuiltInScalarTypeDefinition): string | number | boolean | BigInt | Date | schema.JSONValue {
   switch (scalarType.name) {
     case schema.BuiltInScalarTypeName.String:
       if (typeof value === "string") {
@@ -277,17 +277,28 @@ function convertBuiltInNdcJsonScalarToJsScalar(value: unknown, valuePath: string
         throw new sdk.BadRequest(`Unexpected value in function arguments. Expected a Date string at '${valuePath.join(".")}', got a ${typeof value}`);
       }
 
+    case schema.BuiltInScalarTypeName.JSON:
+      if (value === undefined) {
+        throw new sdk.BadRequest(`Unexpected value in function arguments. Expected a JSONValue at '${valuePath.join(".")}', got undefined`);
+      }
+      return new schema.JSONValue(value, true);
+
     default:
       return unreachable(scalarType);
   }
 }
 
-function convertJsScalarToNdcJsonScalar(value: unknown, scalarType: schema.BuiltInScalarTypeName): unknown {
+function convertJsScalarToNdcJsonScalar(value: unknown, valuePath: string[]): unknown {
   if (typeof value === "bigint") {
     // BigInts can't be serialized to JSON natively, so put them in strings
     return value.toString();
   } else if (value instanceof Date) {
     return value.toISOString();
+  } else if (value instanceof schema.JSONValue) {
+    if (value.validationError) {
+      throw new sdk.InternalServerError(`Unable to serialize JSONValue to JSON at path '${valuePath.join(".")}: ${value.validationError.message}'`)
+    }
+    return value.value;
   } else {
     return value;
   }

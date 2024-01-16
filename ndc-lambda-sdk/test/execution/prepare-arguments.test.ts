@@ -1,7 +1,7 @@
 import { describe, it } from "mocha";
 import { assert } from "chai";
 import { prepareArguments } from "../../src/execution";
-import { BuiltInScalarTypeName, FunctionDefinition, FunctionNdcKind, NullOrUndefinability, ObjectTypeDefinitions } from "../../src/schema";
+import { BuiltInScalarTypeName, FunctionDefinition, FunctionNdcKind, JSONValue, NullOrUndefinability, ObjectTypeDefinitions } from "../../src/schema";
 import { BadRequest } from "@hasura/ndc-sdk-typescript";
 
 describe("prepare arguments", function() {
@@ -360,6 +360,15 @@ describe("prepare arguments", function() {
             name: "DateTime"
           }
         },
+        {
+          argumentName: "jsonArg",
+          description: null,
+          type: {
+            type: "named",
+            kind: "scalar",
+            name: "JSON"
+          }
+        },
       ],
       resultType: {
         type: "named",
@@ -373,11 +382,14 @@ describe("prepare arguments", function() {
       boolArg: true,
       floatArg: 123.456,
       bigIntArg: "1234",
-      dateTimeArg: "2024-01-11T15:17:56Z"
+      dateTimeArg: "2024-01-11T15:17:56Z",
+      jsonArg: { some: "arbitrary", json: 123 }
     }
 
     const preparedArgs = prepareArguments(args, functionDefinition, {});
-    assert.deepStrictEqual(preparedArgs, ["test", true, 123.456, BigInt(1234), new Date("2024-01-11T15:17:56Z")]);
+    const unwrappedArgs = preparedArgs.map(unwrapJSONValues); // We unwrap JSON values so equals works correctly
+    assert.deepStrictEqual(unwrappedArgs, ["test", true, 123.456, BigInt(1234), new Date("2024-01-11T15:17:56Z"), { some: "arbitrary", json: 123 }]);
+    assert.instanceOf(preparedArgs[5], JSONValue);
   });
 
   describe("validation of literal types", function() {
@@ -474,3 +486,9 @@ describe("prepare arguments", function() {
     });
   });
 });
+
+function unwrapJSONValues(x: unknown): unknown {
+  return x instanceof JSONValue
+    ? x.value
+    : x;
+}

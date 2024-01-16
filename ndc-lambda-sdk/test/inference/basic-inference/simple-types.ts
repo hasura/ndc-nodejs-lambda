@@ -1,3 +1,5 @@
+import * as sdk from "../../../src/sdk"
+
 function nonExported() {
 }
 
@@ -21,4 +23,15 @@ export function isEven(x: bigint): boolean {
 
 export function dateTime(): Date {
   return new Date("2024-01-11T13:09:23Z");
+}
+
+/**
+ * @pure
+ */
+export function json(input: sdk.JSONValue): sdk.JSONValue {
+  const jsonValue = input.value;
+  if (jsonValue instanceof Object && "test" in jsonValue) {
+    jsonValue.test = "wow";
+  }
+  return new sdk.JSONValue(jsonValue);
 }

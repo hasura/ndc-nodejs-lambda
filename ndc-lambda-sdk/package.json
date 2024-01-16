@@ -17,6 +17,7 @@
     "./src/**"
   ],
   "exports": {
+    ".": "./dist/src/sdk.js",
     "./host": "./dist/src/host.js"
   },
   "scripts": {
