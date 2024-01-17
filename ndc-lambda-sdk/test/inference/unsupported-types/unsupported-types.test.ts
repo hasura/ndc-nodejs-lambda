@@ -191,4 +191,30 @@ describe("unsupported types", function() {
       }
     })
   });
+
+  it("function types", function() {
+    const schema = deriveSchema(require.resolve("./function-types.ts"));
+
+    assert.deepStrictEqual(schema, {
+      compilerDiagnostics: [],
+      functionIssues: {
+        "functionExpressionType": [
+          "Function types are not supported, but one was encountered in function 'functionExpressionType' parameter 'test'"
+        ],
+        "objectWithCallSignature": [
+          "Function types are not supported, but one was encountered in function 'objectWithCallSignature' parameter 'test'"
+        ],
+        "objectWithConstructSignature": [
+          "Function types are not supported, but one was encountered in function 'objectWithConstructSignature' parameter 'test'"
+        ]
+      },
+      functionsSchema: {
+        scalarTypes: {
+          String: {}
+        },
+        objectTypes: {},
+        functions: {}
+      }
+    })
+  });
 });

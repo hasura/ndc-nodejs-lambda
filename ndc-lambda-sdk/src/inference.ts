@@ -289,6 +289,10 @@ function deriveSchemaTypeForTsType(tsType: ts.Type, typePath: TypePathSegment[],
     return new Err([`Tuple types are not supported, but one was encountered in ${typePathToString(typePath)}`]);
   }
 
+  if (isFunctionType(tsType)) {
+    return new Err([`Function types are not supported, but one was encountered in ${typePathToString(typePath)}`]);
+  }
+
   const schemaTypeResult =
     deriveSchemaTypeIfTsArrayType(tsType, typePath, context, recursionDepth)
     ?? deriveSchemaTypeIfScalarType(tsType, context)
@@ -371,6 +375,10 @@ function isDateType(tsType: ts.Type): boolean {
   const symbol = tsType.getSymbol()
   if (symbol === undefined) return false;
   return symbol.escapedName === "Date" && symbol.members?.has(ts.escapeLeadingUnderscores("toISOString")) === true;
+}
+
+function isFunctionType(tsType: ts.Type): boolean {
+  return tsType.getCallSignatures().length > 0 || tsType.getConstructSignatures().length > 0;
 }
 
 function isJSONValueType(tsType: ts.Type, ndcLambdaSdkModule: ts.ResolvedModuleFull): boolean {
