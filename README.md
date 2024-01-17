@@ -124,7 +124,7 @@ These types are unsupported as function parameter types or return types for func
 * Promises - unless it is the direct return type of a function
 * [Classes](https://www.typescriptlang.org/docs/handbook/2/classes.html)
 * [JavaScript Map type](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Map)
-* Function types - function types can't be accepted as arguments or returned as values
+* [Function types](https://www.typescriptlang.org/docs/handbook/2/functions.html#function-type-expressions) - function types can't be accepted as arguments or returned as values
 * [`void`](https://www.typescriptlang.org/docs/handbook/2/functions.html#void), [`object`](https://www.typescriptlang.org/docs/handbook/2/functions.html#object), [`unknown`](https://www.typescriptlang.org/docs/handbook/2/functions.html#unknown), [`never`](https://www.typescriptlang.org/docs/handbook/2/functions.html#never), [`any`](https://www.typescriptlang.org/docs/handbook/2/everyday-types.html#any) types - to accept and return arbitrary JSON, use `sdk.JSONValue` instead
 * `null` and `undefined` - unless used in a union with a single other type
 
