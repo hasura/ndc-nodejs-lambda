@@ -46,17 +46,7 @@ describe("external dependencies", function() {
 
     assert.deepStrictEqual(schema, {
       compilerDiagnostics: [],
-      functionIssues: {
-        "delete_todos": [
-          "Unable to derive an NDC type for function 'delete_todos' return value (type: string | { error: string; }). Assuming that it is a scalar type."
-        ],
-        "insert_todos": [
-          "Unable to derive an NDC type for function 'insert_todos' return value (type: {} | { id: string; user_id: string; todo: string; created_at: string; } | { message: string; } | { error: string; }). Assuming that it is a scalar type."
-        ],
-        "insert_user": [
-          "Unable to derive an NDC type for function 'insert_user' return value (type: {} | { id: string; name: string; created_at: string; } | { message: string; } | { error: string; }). Assuming that it is a scalar type."
-        ],
-      },
+      functionIssues: {},
       functionsSchema: {
         functions: {
           "insert_user": {
@@ -76,7 +66,7 @@ describe("external dependencies", function() {
             resultType: {
               type: "named",
               kind: "scalar",
-              name: "insert_user_output"
+              name: "JSON"
             }
           },
           "insert_todos": {
@@ -105,7 +95,7 @@ describe("external dependencies", function() {
             resultType: {
               type: "named",
               kind: "scalar",
-              name: "insert_todos_output"
+              name: "JSON"
             }
           },
           "delete_todos": {
@@ -124,18 +114,45 @@ describe("external dependencies", function() {
             ],
             resultType: {
               type: "named",
-              kind: "scalar",
+              kind: "object",
               name: "delete_todos_output"
             }
           },
         },
         scalarTypes: {
           String: {},
-          insert_todos_output: {},
-          insert_user_output: {},
-          delete_todos_output: {},
+          JSON: {}
         },
-        objectTypes: {},
+        objectTypes: {
+          "delete_todos_output": {
+            properties: [
+              {
+                propertyName: "error",
+                type: {
+                  nullOrUndefinability: NullOrUndefinability.AcceptsUndefinedOnly,
+                  type: "nullable",
+                  underlyingType: {
+                    kind: "scalar",
+                    name: "String",
+                    type: "named",
+                  }
+                }
+              },
+              {
+                propertyName: "result",
+                type: {
+                  nullOrUndefinability: NullOrUndefinability.AcceptsUndefinedOnly,
+                  type: "nullable",
+                  underlyingType: {
+                    kind: "scalar",
+                    name: "String",
+                    type: "named",
+                  }
+                }
+              }
+            ]
+          }
+        },
       }
     })
   });

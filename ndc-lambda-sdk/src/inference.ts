@@ -306,6 +306,10 @@ function deriveSchemaTypeForTsType(tsType: ts.Type, typePath: TypePathSegment[],
     return new Err([`Class types are not supported, but one was encountered in ${typePathToString(typePath)} (type: ${context.typeChecker.typeToString(tsType)})`]);
   }
 
+  if (tsType.isUnion()) {
+    return new Err([`Union types are not supported, but one was encountered in ${typePathToString(typePath)} (type: ${context.typeChecker.typeToString(tsType)})`]);
+  }
+
   // We don't know how to deal with this type, so just make it an opaque scalar
   const typeName = generateTypeNameFromTypePath(typePath);
   context.scalarTypeDefinitions[typeName] = {};

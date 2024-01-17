@@ -499,11 +499,7 @@ describe("basic inference", function() {
 
     assert.deepStrictEqual(schema, {
       compilerDiagnostics: [],
-      functionIssues: {
-        "test": [
-          "Unable to derive an NDC type for function 'test' parameter 'unionWithNull' (type: string | number | null). Assuming that it is a scalar type."
-        ]
-      },
+      functionIssues: {},
       functionsSchema: {
         functions: {
           "test": {
@@ -554,15 +550,6 @@ describe("basic inference", function() {
                     name: "String",
                     type: "named",
                   },
-                },
-              },
-              {
-                argumentName: "unionWithNull",
-                description: null,
-                type: {
-                  kind: "scalar",
-                  name: "test_arguments_unionWithNull",
-                  type: "named",
                 },
               },
               {
@@ -656,7 +643,6 @@ describe("basic inference", function() {
         },
         scalarTypes: {
           String: {},
-          test_arguments_unionWithNull: {},
         },
       }
     })

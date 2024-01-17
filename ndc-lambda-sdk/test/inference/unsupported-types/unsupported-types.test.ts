@@ -217,4 +217,26 @@ describe("unsupported types", function() {
       }
     })
   });
+
+  it("union types", function() {
+    const schema = deriveSchema(require.resolve("./union-types.ts"));
+
+    assert.deepStrictEqual(schema, {
+      compilerDiagnostics: [],
+      functionIssues: {
+        "unionTypes": [
+          "Union types are not supported, but one was encountered in function 'unionTypes' parameter 'numberOrString' (type: string | number)",
+          "Union types are not supported, but one was encountered in function 'unionTypes' parameter 'aliasedUnion' (type: AliasedUnion)",
+          "Union types are not supported, but one was encountered in function 'unionTypes' parameter 'unionedObjects' (type: { prop1: string; } | { prop2: string; })"
+        ],
+      },
+      functionsSchema: {
+        scalarTypes: {
+          String: {}
+        },
+        objectTypes: {},
+        functions: {}
+      }
+    })
+  });
 });

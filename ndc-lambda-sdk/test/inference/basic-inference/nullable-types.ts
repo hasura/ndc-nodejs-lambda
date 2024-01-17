@@ -11,7 +11,6 @@ export function test(
   nullableParam: string | null,
   undefinedParam: string | undefined,
   nullOrUndefinedParam: string | undefined | null,
-  unionWithNull: string | number | null,
   optionalParam?: string
 ): string | null {
   return "test"
