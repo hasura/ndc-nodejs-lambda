@@ -286,11 +286,11 @@ function deriveSchemaTypeForTsType(tsType: ts.Type, typePath: TypePathSegment[],
   }
 
   if (tsutils.isTupleTypeReference(tsType)) {
-    return new Err([`Tuple types are not supported, but one was encountered in ${typePathToString(typePath)}`]);
+    return new Err([`Tuple types are not supported, but one was encountered in ${typePathToString(typePath)} (type: ${context.typeChecker.typeToString(tsType)})`]);
   }
 
   if (isFunctionType(tsType)) {
-    return new Err([`Function types are not supported, but one was encountered in ${typePathToString(typePath)}`]);
+    return new Err([`Function types are not supported, but one was encountered in ${typePathToString(typePath)} (type: ${context.typeChecker.typeToString(tsType)})`]);
   }
 
   const schemaTypeResult =
@@ -303,7 +303,7 @@ function deriveSchemaTypeForTsType(tsType: ts.Type, typePath: TypePathSegment[],
     return schemaTypeResult;
 
   if (tsutils.isObjectType(tsType) && tsutils.isObjectFlagSet(tsType, ts.ObjectFlags.Class)) {
-    return new Err([`Class types are not supported, but one was encountered in ${typePathToString(typePath)}`]);
+    return new Err([`Class types are not supported, but one was encountered in ${typePathToString(typePath)} (type: ${context.typeChecker.typeToString(tsType)})`]);
   }
 
   // We don't know how to deal with this type, so just make it an opaque scalar

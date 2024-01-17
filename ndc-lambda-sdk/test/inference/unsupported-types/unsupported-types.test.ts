@@ -10,7 +10,7 @@ describe("unsupported types", function() {
       compilerDiagnostics: [],
       functionIssues: {
         "bar": [
-          "Class types are not supported, but one was encountered in function 'bar' parameter 'clazz'"
+          "Class types are not supported, but one was encountered in function 'bar' parameter 'clazz' (type: MyClass)"
         ]
       },
       functionsSchema: {
@@ -173,13 +173,13 @@ describe("unsupported types", function() {
       compilerDiagnostics: [],
       functionIssues: {
         "tuple1": [
-          "Tuple types are not supported, but one was encountered in function 'tuple1' parameter 'test'"
+          "Tuple types are not supported, but one was encountered in function 'tuple1' parameter 'test' (type: [string])"
         ],
         "tuple2": [
-          "Tuple types are not supported, but one was encountered in function 'tuple2' parameter 'test'"
+          "Tuple types are not supported, but one was encountered in function 'tuple2' parameter 'test' (type: [string, number])"
         ],
         "tupleAlias": [
-          "Tuple types are not supported, but one was encountered in function 'tupleAlias' parameter 'test'"
+          "Tuple types are not supported, but one was encountered in function 'tupleAlias' parameter 'test' (type: Tuple<number, boolean>)"
         ]
       },
       functionsSchema: {
@@ -199,13 +199,13 @@ describe("unsupported types", function() {
       compilerDiagnostics: [],
       functionIssues: {
         "functionExpressionType": [
-          "Function types are not supported, but one was encountered in function 'functionExpressionType' parameter 'test'"
+          "Function types are not supported, but one was encountered in function 'functionExpressionType' parameter 'test' (type: (i: number) => string)"
         ],
         "objectWithCallSignature": [
-          "Function types are not supported, but one was encountered in function 'objectWithCallSignature' parameter 'test'"
+          "Function types are not supported, but one was encountered in function 'objectWithCallSignature' parameter 'test' (type: ObjectWithCallSignature)"
         ],
         "objectWithConstructSignature": [
-          "Function types are not supported, but one was encountered in function 'objectWithConstructSignature' parameter 'test'"
+          "Function types are not supported, but one was encountered in function 'objectWithConstructSignature' parameter 'test' (type: ObjectWithConstructSignature)"
         ]
       },
       functionsSchema: {
