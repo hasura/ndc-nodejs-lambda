@@ -167,7 +167,7 @@ function deriveFunctionSchema(functionDeclaration: ts.FunctionDeclaration, conte
   const functionType = context.typeChecker.getTypeOfSymbolAtLocation(functionSymbol, functionDeclaration);
 
   const functionDescription = ts.displayPartsToString(functionSymbol.getDocumentationComment(context.typeChecker)).trim();
-  const markedPureInJsDoc = functionSymbol.getJsDocTags().find(e => e.name === "pure") !== undefined;
+  const markedReadonlyInJsDoc = functionSymbol.getJsDocTags().find(e => e.name === "readonly") !== undefined;
 
   const functionCallSig = functionType.getCallSignatures()[0] ?? throwError(`Function '${functionName}' didn't have a call signature`)
   const functionSchemaArguments: Result<schema.ArgumentDefinition[], string[]> = Result.traverseAndCollectErrors(functionCallSig.getParameters(), paramSymbol => {
@@ -190,7 +190,7 @@ function deriveFunctionSchema(functionDeclaration: ts.FunctionDeclaration, conte
   const functionDefinition = Result.collectErrors(functionSchemaArguments, returnTypeResult)
     .map(([functionSchemaArgs, returnType]) => ({
       description: functionDescription ? functionDescription : null,
-      ndcKind: markedPureInJsDoc ? schema.FunctionNdcKind.Function : schema.FunctionNdcKind.Procedure,
+      ndcKind: markedReadonlyInJsDoc ? schema.FunctionNdcKind.Function : schema.FunctionNdcKind.Procedure,
       arguments: functionSchemaArgs,
       resultType: returnType
     }));

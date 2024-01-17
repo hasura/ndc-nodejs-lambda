@@ -8,14 +8,14 @@ export function hello(): string {
 }
 
 /**
- * @pure
+ * @readonly
  */
 export function add(a: number, b: number): number {
   return a + b;
 }
 
 /**
- * @pure
+ * @readonly
  */
 export function isEven(x: bigint): boolean {
   return x % 2n === 0n;
@@ -26,7 +26,7 @@ export function dateTime(): Date {
 }
 
 /**
- * @pure
+ * @readonly
  */
 export function json(input: sdk.JSONValue): sdk.JSONValue {
   const jsonValue = input.value;

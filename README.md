@@ -22,7 +22,7 @@ Any functions exported from `functions.ts` are made available as NDC functions/p
 Arguments to the function end up being field arguments in GraphQL and the return value is what the field will return when queried. Every function must return a value; `void`, `null` or `undefined` is not supported.
 
 ```typescript
-/** @pure */
+/** @readonly */
 export function hello(name: string, year: number): string {
   return `Hello ${name}, welcome to ${year}`
 }
@@ -130,16 +130,16 @@ These types are unsupported as function parameter types or return types for func
 
 
 ### Impure/pure functions
-If you write a function that performs a read-only operation, or is otherwise a pure function (no side-effects), you can mark it with the `@pure` JSDoc tag, and it will be exposed as an NDC function, which will ultimately show up as a GraphQL query field in Hasura.
+If you write a function that performs a read-only operation, you should mark it with the `@readonly` JSDoc tag, and it will be exposed as an NDC function, which will ultimately show up as a GraphQL query field in Hasura.
 
 ```typescript
-/** @pure */
+/** @readonly */
 export function add(x: number, y: number): number {
   return x + y;
 }
 ```
 
-Functions without the `@pure` JSDoc tag are exposed as NDC procedures, which will ultimately show up as a GraphQL mutation field in Hasura.
+Functions without the `@readonly` JSDoc tag are exposed as NDC procedures, which will ultimately show up as a GraphQL mutation field in Hasura.
 
 ## Deploying with `hasura3 connector create`
 
