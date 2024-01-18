@@ -31,7 +31,7 @@ export default class extends Generator {
       },
       "scripts": {
         "start": "ndc-lambda-sdk host -f functions.ts serve --configuration configuration.json",
-        "watch": "ndc-lambda-sdk host -f functions.ts --watch serve --configuration configuration.json"
+        "watch": "ndc-lambda-sdk host -f functions.ts --watch serve --configuration configuration.json --pretty-print-logs"
       },
       "dependencies": {
         "@hasura/ndc-lambda-sdk": packageManifest.version
