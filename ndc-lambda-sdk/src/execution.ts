@@ -224,7 +224,7 @@ function convertBuiltInNdcJsonScalarToJsScalar(value: unknown, valuePath: string
     case schema.BuiltInScalarTypeName.String:
       if (typeof value === "string") {
         if (scalarType.literalValue !== undefined && value !== scalarType.literalValue)
-          throw new sdk.BadRequest(`Invalid value in function arguments. Only the value '${scalarType.literalValue}' is accepted at '${valuePath.join(".")}', got '${value}'`);
+          throw new sdk.UnprocessableContent(`Invalid value in function arguments. Only the value '${scalarType.literalValue}' is accepted at '${valuePath.join(".")}', got '${value}'`);
         return value;
       } else {
         throw new sdk.BadRequest(`Unexpected value in function arguments. Expected a string at '${valuePath.join(".")}', got a ${typeof value}`);
@@ -233,7 +233,7 @@ function convertBuiltInNdcJsonScalarToJsScalar(value: unknown, valuePath: string
     case schema.BuiltInScalarTypeName.Float:
       if (typeof value === "number") {
         if (scalarType.literalValue !== undefined && value !== scalarType.literalValue)
-          throw new sdk.BadRequest(`Invalid value in function arguments. Only the value '${scalarType.literalValue}' is accepted at '${valuePath.join(".")}', got '${value}'`);
+          throw new sdk.UnprocessableContent(`Invalid value in function arguments. Only the value '${scalarType.literalValue}' is accepted at '${valuePath.join(".")}', got '${value}'`);
         return value;
       } else {
         throw new sdk.BadRequest(`Unexpected value in function arguments. Expected a number at '${valuePath.join(".")}', got a ${typeof value}`);
@@ -242,7 +242,7 @@ function convertBuiltInNdcJsonScalarToJsScalar(value: unknown, valuePath: string
     case schema.BuiltInScalarTypeName.Boolean:
       if (typeof value === "boolean") {
         if (scalarType.literalValue !== undefined && value !== scalarType.literalValue)
-          throw new sdk.BadRequest(`Invalid value in function arguments. Only the value '${scalarType.literalValue}' is accepted at '${valuePath.join(".")}', got '${value}'`);
+          throw new sdk.UnprocessableContent(`Invalid value in function arguments. Only the value '${scalarType.literalValue}' is accepted at '${valuePath.join(".")}', got '${value}'`);
         return value;
       } else {
         throw new sdk.BadRequest(`Unexpected value in function arguments. Expected a boolean at '${valuePath.join(".")}', got a ${typeof value}`);
@@ -252,12 +252,12 @@ function convertBuiltInNdcJsonScalarToJsScalar(value: unknown, valuePath: string
       const bigIntValue = (() => {
         if (typeof value === "number") {
           if (!Number.isInteger(value))
-            throw new sdk.BadRequest(`Unexpected value in function arguments. Expected a integer number at '${valuePath.join(".")}', got a float`);
+            throw new sdk.UnprocessableContent(`Invalid value in function arguments. Expected a integer number at '${valuePath.join(".")}', got a float: '${value}'`);
           return BigInt(value);
         }
         else if (typeof value === "string") {
           try { return BigInt(value) }
-          catch { throw new sdk.BadRequest(`Unexpected value in function arguments. Expected a bigint string at '${valuePath.join(".")}', got a non-integer string: '${value}'`); }
+          catch { throw new sdk.UnprocessableContent(`Invalid value in function arguments. Expected a bigint string at '${valuePath.join(".")}', got a non-integer string: '${value}'`); }
         }
         else if (typeof value === "bigint") { // This won't happen since JSON doesn't have a bigint type, but I'll just put it here for completeness
           return value;
@@ -266,17 +266,17 @@ function convertBuiltInNdcJsonScalarToJsScalar(value: unknown, valuePath: string
         }
       })();
       if (scalarType.literalValue !== undefined && bigIntValue !== scalarType.literalValue)
-        throw new sdk.BadRequest(`Invalid value in function arguments. Only the value '${scalarType.literalValue}' is accepted at '${valuePath.join(".")}', got '${value}'`);
+        throw new sdk.UnprocessableContent(`Invalid value in function arguments. Only the value '${scalarType.literalValue}' is accepted at '${valuePath.join(".")}', got '${value}'`);
       return bigIntValue;
 
     case schema.BuiltInScalarTypeName.DateTime:
       if (typeof value === "string") {
         const parsedDate = Date.parse(value);
         if (isNaN(parsedDate))
-          throw new sdk.BadRequest(`Unexpected value in function arguments. Expected a Date string at '${valuePath.join(".")}', but the value failed to parse: '${value}'`)
+          throw new sdk.UnprocessableContent(`Invalid value in function arguments. Expected an ISO 8601 calendar date extended format string at '${valuePath.join(".")}', but the value failed to parse: '${value}'`)
         return new Date(parsedDate);
       } else {
-        throw new sdk.BadRequest(`Unexpected value in function arguments. Expected a Date string at '${valuePath.join(".")}', got a ${typeof value}`);
+        throw new sdk.BadRequest(`Unexpected value in function arguments. Expected a ISO 8601 calendar date extended format string at '${valuePath.join(".")}', got a ${typeof value}`);
       }
 
     case schema.BuiltInScalarTypeName.JSON:

@@ -2,7 +2,7 @@ import { describe, it } from "mocha";
 import { assert } from "chai";
 import { prepareArguments } from "../../src/execution";
 import { BuiltInScalarTypeName, FunctionDefinition, FunctionNdcKind, JSONValue, NullOrUndefinability, ObjectTypeDefinitions } from "../../src/schema";
-import { BadRequest } from "@hasura/ndc-sdk-typescript";
+import { UnprocessableContent } from "@hasura/ndc-sdk-typescript";
 
 describe("prepare arguments", function() {
   it("argument ordering", function() {
@@ -392,6 +392,59 @@ describe("prepare arguments", function() {
     assert.instanceOf(preparedArgs[5], JSONValue);
   });
 
+  describe("validation of non-JSON scalar types", function() {
+    const functionDefinition: FunctionDefinition = {
+      ndcKind: FunctionNdcKind.Function,
+      description: null,
+      arguments: [
+        {
+          argumentName: "dateTime",
+          description: null,
+          type: {
+            type: "named",
+            kind: "scalar",
+            name: BuiltInScalarTypeName.DateTime,
+          }
+        },
+        {
+          argumentName: "bigInt",
+          description: null,
+          type: {
+            type: "named",
+            kind: "scalar",
+            name: BuiltInScalarTypeName.BigInt,
+          }
+        },
+      ],
+      resultType: {
+        type: "named",
+        kind: "scalar",
+        name: "String"
+      }
+    }
+    const objectTypes: ObjectTypeDefinitions = {}
+
+    describe("fails validation", function() {
+      const correctArgs = {
+        dateTime: "2024-01-11T15:17:56Z",
+        bigInt: 678n,
+      };
+
+      it("DateTime (invalid format)", function() {
+        const args = { ...correctArgs, dateTime: "NotADateTime" };
+        assert.throws(() => prepareArguments(args, functionDefinition, objectTypes), UnprocessableContent, "Invalid value in function arguments. Expected an ISO 8601 calendar date extended format string at 'dateTime', but the value failed to parse: 'NotADateTime'")
+      });
+      it("BigInt (floating point number)", function() {
+        const args = { ...correctArgs, bigInt: 123.123 };
+        assert.throws(() => prepareArguments(args, functionDefinition, objectTypes), UnprocessableContent, "Invalid value in function arguments. Expected a integer number at 'bigInt', got a float: '123.123'")
+      });
+      it("BigInt (non-integer string)", function() {
+        const args = { ...correctArgs, bigInt: "123a" };
+        assert.throws(() => prepareArguments(args, functionDefinition, objectTypes), UnprocessableContent, "Invalid value in function arguments. Expected a bigint string at 'bigInt', got a non-integer string: '123a'")
+      });
+    });
+  });
+
   describe("validation of literal types", function() {
     const functionDefinition: FunctionDefinition = {
       ndcKind: FunctionNdcKind.Function,
@@ -469,19 +522,19 @@ describe("prepare arguments", function() {
 
       it("String", function() {
         const args = { ...correctArgs, literalString: "something else" };
-        assert.throws(() => prepareArguments(args, functionDefinition, objectTypes), BadRequest, "Invalid value in function arguments. Only the value 'literal-string' is accepted at 'literalString', got 'something else'")
+        assert.throws(() => prepareArguments(args, functionDefinition, objectTypes), UnprocessableContent, "Invalid value in function arguments. Only the value 'literal-string' is accepted at 'literalString', got 'something else'")
       });
       it("Float", function() {
         const args = { ...correctArgs, literalFloat: 10 };
-        assert.throws(() => prepareArguments(args, functionDefinition, objectTypes), BadRequest, "Invalid value in function arguments. Only the value '123.567' is accepted at 'literalFloat', got '10'")
+        assert.throws(() => prepareArguments(args, functionDefinition, objectTypes), UnprocessableContent, "Invalid value in function arguments. Only the value '123.567' is accepted at 'literalFloat', got '10'")
       });
       it("Boolean", function() {
         const args = { ...correctArgs, literalBool: false };
-        assert.throws(() => prepareArguments(args, functionDefinition, objectTypes), BadRequest, "Invalid value in function arguments. Only the value 'true' is accepted at 'literalBool', got 'false'")
+        assert.throws(() => prepareArguments(args, functionDefinition, objectTypes), UnprocessableContent, "Invalid value in function arguments. Only the value 'true' is accepted at 'literalBool', got 'false'")
       });
       it("BigInt", function() {
         const args = { ...correctArgs, literalBigInt: 789n };
-        assert.throws(() => prepareArguments(args, functionDefinition, objectTypes), BadRequest, "Invalid value in function arguments. Only the value '678' is accepted at 'literalBigInt', got '789'")
+        assert.throws(() => prepareArguments(args, functionDefinition, objectTypes), UnprocessableContent, "Invalid value in function arguments. Only the value '678' is accepted at 'literalBigInt', got '789'")
       });
     });
   });
