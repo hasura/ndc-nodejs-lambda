@@ -26,6 +26,9 @@ export default class extends Generator {
     const packageManifest = await pacote.manifest("@hasura/ndc-lambda-sdk");
     this.packageJson.merge({
       "private": true,
+      "engines": {
+        "node": ">=18"
+      },
       "scripts": {
         "start": "ndc-lambda-sdk host -f functions.ts serve --configuration configuration.json",
         "watch": "ndc-lambda-sdk host -f functions.ts --watch serve --configuration configuration.json"
