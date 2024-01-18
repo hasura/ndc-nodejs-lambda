@@ -1,10 +1,31 @@
 import Generator from "yeoman-generator";
 import pacote from "pacote"
+import { version } from "../../package.json"
+import { SemVer } from "semver";
 
 export default class extends Generator {
   constructor(args: string | string[], opts: Generator.GeneratorOptions) {
     super(args, opts);
     this.env.options.nodePackageManager = "npm";
+  }
+
+  async initializingCheckTemplateIsLatestVersion() {
+    const packageManifest = await pacote.manifest("generator-hasura-ndc-nodejs-lambda");
+    const latestVersion = new SemVer(packageManifest.version);
+    const currentVersion = new SemVer(version);
+    if (currentVersion.compare(latestVersion) === -1) {
+      const answer = await this.prompt({
+        type: "confirm",
+        name: "continueWithOutOfDateVersion",
+        message: `There's a new version of generator-hasura-ndc-nodejs-lambda (latest: ${latestVersion.version}, current: ${currentVersion.version})!\nConsider upgrading by running 'npm install -g generator-hasura-ndc-nodejs-lambda'.\nWould you like to continue anyway?`,
+        default: true,
+      });
+      if (answer.continueWithOutOfDateVersion === false) {
+        this.log.error("Cancelled");
+        process.exit(1);
+      }
+    }
+
   }
 
   writingTemplateFiles() {
