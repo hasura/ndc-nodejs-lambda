@@ -2,7 +2,7 @@ import { describe, it } from "mocha";
 import { assert } from "chai";
 import * as sdk from "@hasura/ndc-sdk-typescript"
 import { reshapeResultToNdcResponseValue } from "../../src/execution";
-import { ArrayTypeDefinition, BuiltInScalarTypeName, FunctionDefinition, FunctionNdcKind, JSONValue, NamedTypeDefinition, NullOrUndefinability, NullableTypeDefinition, ObjectTypeDefinitions } from "../../src/schema";
+import { ArrayTypeDefinition, BuiltInScalarTypeName, JSONValue, NamedTypeDefinition, NullOrUndefinability, NullableTypeDefinition, ObjectTypeDefinitions } from "../../src/schema";
 
 describe("reshape result", function() {
 

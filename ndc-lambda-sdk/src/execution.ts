@@ -25,19 +25,21 @@ export async function executeQuery(queryRequest: sdk.QueryRequest, functionsSche
     return prepareArguments(resolvedArgs, functionDefinition, functionsSchema.objectTypes);
   });
 
-  const rows: Record<string, unknown>[] = [];
+  const rowSets: sdk.RowSet[] = [];
   for (const invocationPreparedArgs of functionInvocationPreparedArgs) {
     const result = await invokeFunction(runtimeFunction, invocationPreparedArgs, functionName);
     const prunedResult = reshapeResultToNdcResponseValue(result, functionDefinition.resultType, [], queryRequest.query.fields ?? {}, functionsSchema.objectTypes);
-    rows.push({
-      __value: prunedResult
+    rowSets.push({
+      aggregates: {},
+      rows: [
+        {
+          __value: prunedResult
+        }
+      ]
     });
   }
 
-  return [{
-    aggregates: {},
-    rows
-  }];
+  return rowSets;
 }
 
 export async function executeMutation(mutationRequest: sdk.MutationRequest, functionsSchema: schema.FunctionsSchema, runtimeFunctions: RuntimeFunctions): Promise<sdk.MutationResponse> {
