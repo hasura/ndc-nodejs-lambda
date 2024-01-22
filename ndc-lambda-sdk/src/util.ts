@@ -12,3 +12,20 @@ export function throwError<T>(...args: ConstructorParameters<typeof Error>): Non
 export function mapObjectValues<T, U>(obj: { [k: string]: T }, fn: (value: T, propertyName: string) => U): Record<string, U> {
   return Object.fromEntries(Object.entries(obj).map(([prop, val]) => [prop, fn(val, prop)]));
 }
+
+/**
+ * Returns all the set bitwise flags in a value, where the flags are defined on an enum type.
+ * Useful for debugging TypeScript API types (eg ts.Type.flags with enum ts.TypeFlags)
+ */
+export function getFlags(flagsEnum: Record<string, string | number>, value: number): string[] {
+  return Object
+    .keys(flagsEnum)
+    .flatMap(k => {
+      const k_int = parseInt(k);
+      return isNaN(k_int)
+        ? []
+        : (value & k_int) !== 0
+          ? [flagsEnum[k] as string]
+          : []
+    });
+}

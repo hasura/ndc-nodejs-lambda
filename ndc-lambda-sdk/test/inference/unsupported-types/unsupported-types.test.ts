@@ -239,4 +239,33 @@ describe("unsupported types", function() {
       }
     })
   });
+
+  it("map types", function() {
+    const schema = deriveSchema(require.resolve("./map-types.ts"));
+
+    assert.deepStrictEqual(schema, {
+      compilerDiagnostics: [],
+      functionIssues: {
+        "mapType": [
+          "Map types are not supported, but one was encountered in function 'mapType' parameter 'param' (type: Map<string, string>)",
+        ],
+        "recordType": [
+          "Types with index signatures are not supported, but one was encountered in function 'recordType' parameter 'param' (type: Record<string, string>)",
+        ],
+        "objectWithIndexSignatureType": [
+          "Types with index signatures are not supported, but one was encountered in function 'objectWithIndexSignatureType' parameter 'param' (type: ObjectWithIndexSignature)",
+        ],
+        "objectWithPropsAndIndexSignatureType": [
+          "Types with index signatures are not supported, but one was encountered in function 'objectWithPropsAndIndexSignatureType' parameter 'param' (type: ObjectWithPropsAndIndexSignature)",
+        ],
+      },
+      functionsSchema: {
+        scalarTypes: {
+          String: {}
+        },
+        objectTypes: {},
+        functions: {}
+      }
+    })
+  });
 });

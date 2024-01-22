@@ -278,6 +278,10 @@ function deriveSchemaTypeForTsType(tsType: ts.Type, typePath: TypePathSegment[],
     return new Err([`Function types are not supported, but one was encountered in ${typePathToString(typePath)} (type: ${context.typeChecker.typeToString(tsType)})`]);
   }
 
+  if (isMapType(tsType)) {
+    return new Err([`Map types are not supported, but one was encountered in ${typePathToString(typePath)} (type: ${context.typeChecker.typeToString(tsType)})`]);
+  }
+
   const schemaTypeResult =
     deriveSchemaTypeIfTsArrayType(tsType, typePath, context, recursionDepth)
     ?? deriveSchemaTypeIfScalarType(tsType, context)
@@ -286,6 +290,11 @@ function deriveSchemaTypeForTsType(tsType: ts.Type, typePath: TypePathSegment[],
 
   if (schemaTypeResult !== undefined)
     return schemaTypeResult;
+
+  // Types with index signatures: ie '[x: T]: Y'
+  if (context.typeChecker.getIndexInfosOfType(tsType).length > 0) {
+    return new Err([`Types with index signatures are not supported, but one was encountered in ${typePathToString(typePath)} (type: ${context.typeChecker.typeToString(tsType)})`]);
+  }
 
   if (tsutils.isObjectType(tsType) && tsutils.isObjectFlagSet(tsType, ts.ObjectFlags.Class)) {
     return new Err([`Class types are not supported, but one was encountered in ${typePathToString(typePath)} (type: ${context.typeChecker.typeToString(tsType)})`]);
@@ -363,6 +372,12 @@ function isDateType(tsType: ts.Type): boolean {
 
 function isFunctionType(tsType: ts.Type): boolean {
   return tsType.getCallSignatures().length > 0 || tsType.getConstructSignatures().length > 0;
+}
+
+function isMapType(tsType: ts.Type): boolean {
+  const symbol = tsType.getSymbol()
+  if (symbol === undefined) return false;
+  return symbol.escapedName === "Map" && symbol.members?.has(ts.escapeLeadingUnderscores("keys")) === true && symbol.members?.has(ts.escapeLeadingUnderscores("values")) === true && symbol.members?.has(ts.escapeLeadingUnderscores("entries")) === true;
 }
 
 function isJSONValueType(tsType: ts.Type, ndcLambdaSdkModule: ts.ResolvedModuleFull): boolean {
@@ -461,6 +476,11 @@ type ObjectTypeInfo = {
 
 // TODO: This can be vastly simplified when I yeet the name qualification stuff
 function getObjectTypeInfo(tsType: ts.Type, typePath: TypePathSegment[], typeChecker: ts.TypeChecker, functionsFilePath: string): ObjectTypeInfo | null {
+  // If the type has an index signature (ie '[x: T]: Y'), we don't support that (yet) so exclude it
+  if (typeChecker.getIndexInfosOfType(tsType).length > 0) {
+    return null;
+  }
+
   // Anonymous object type - this covers:
   // - {a: number, b: string}
   // - type Bar = { test: string }
