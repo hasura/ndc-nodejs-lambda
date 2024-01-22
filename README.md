@@ -43,6 +43,13 @@ export async function test(): Promise<string> {
 }
 ```
 
+If you'd like to split your functions across multiple files, do so, then simply re-export them from `functions.ts` like so:
+
+```typescript
+export * from "./another-file-1"
+export * from "./another-file-2"
+```
+
 The `ndc-lambda-sdk` uses the TypeScript types specified for your function arguments and return types to automatically derive the NDC schema (function/procedure schema, scalar types and object types) for your functions. This makes the available in your Hasura DDN metadata, where they can be bound to [Commands](https://hasura.io/docs/3.0/supergraph-modeling/commands/) and thereby exposed in your GraphQL supergraph.
 
 ### Supported types

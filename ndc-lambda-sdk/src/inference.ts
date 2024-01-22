@@ -121,20 +121,34 @@ function deriveSchemaFromFunctions(sourceFile: ts.SourceFile, typeChecker: ts.Ty
   const schemaFunctions: schema.FunctionDefinitions = {};
   const functionIssues: FunctionIssues = {};
 
-  const functionDeclarations: FunctionDeclaration[] = [];
-  sourceFile.forEachChild(child => {
-    if (ts.isFunctionDeclaration(child) && isExportedFunction(child)) {
-      functionDeclarations.push(child);
+  const sourceFileSymbol = typeChecker.getSymbolAtLocation(sourceFile) ?? throwError("sourceFile does not have a symbol");
+  const functionDeclarations: [string, ts.FunctionDeclaration][] = typeChecker.getExportsOfModule(sourceFileSymbol).flatMap(exportedSymbol => {
+    const declaration = exportedSymbol.getDeclarations()?.[0] ?? throwError("exported symbol does not have a declaration");
+
+    // If exported via 'export { name } from "./imported"'
+    if (ts.isExportSpecifier(declaration)) {
+      const identifier = declaration.name ?? throwError("export declaration didn't have an identifier");
+      const exportTarget = typeChecker.getExportSpecifierLocalTargetSymbol(declaration) ?? throwError("export specifier does not have a local target symbol");
+      const exportTargetDeclaration = exportTarget.valueDeclaration ?? throwError("export target symbol does not have a value declaration");
+      if (ts.isFunctionDeclaration(exportTargetDeclaration)) {
+        return [[identifier.text, exportTargetDeclaration]];
+      }
     }
+    // If just a plain function export or exported via 'export * from "./imported"'
+    else if (ts.isFunctionDeclaration(declaration)) {
+      const identifier = declaration.name ?? throwError("function declaration didn't have an identifier");
+      return [[identifier.text, declaration]];
+    }
+
+    return [];
   });
 
-  for (const functionDeclaration of functionDeclarations) {
-    const result = deriveFunctionSchema(functionDeclaration, typeDerivationContext);
-    if (result.issues.length > 0) {
-      functionIssues[result.name] = result.issues;
-    }
-    if (result.definition) {
-      schemaFunctions[result.name] = result.definition;
+  for (const [exportedFunctionName, functionDeclaration] of functionDeclarations) {
+    const result = deriveFunctionSchema(functionDeclaration, exportedFunctionName, typeDerivationContext);
+    if (result instanceof Ok) {
+      schemaFunctions[exportedFunctionName] = result.data;
+    } else {
+      functionIssues[exportedFunctionName] = result.error;
     }
   }
 
@@ -147,34 +161,20 @@ function deriveSchemaFromFunctions(sourceFile: ts.SourceFile, typeChecker: ts.Ty
   return [functionsSchema, functionIssues];
 }
 
-function isExportedFunction(node: ts.FunctionDeclaration): boolean {
-  return (node.modifiers ?? []).find(mod => mod.kind === ts.SyntaxKind.ExportKeyword) !== undefined;
-}
-
-// This result captures the possibility that we can fail to generate a definition for a function
-// (and captures the errors associated with that), but also captures that we can also
-// generate a definition but there still are issues.
-type DeriveFunctionSchemaResult = {
-  name: string,
-  definition: schema.FunctionDefinition | null,
-  issues: string[]
-}
-
-function deriveFunctionSchema(functionDeclaration: ts.FunctionDeclaration, context: TypeDerivationContext): DeriveFunctionSchemaResult {
+function deriveFunctionSchema(functionDeclaration: ts.FunctionDeclaration, exportedFunctionName: string, context: TypeDerivationContext): Result<schema.FunctionDefinition, string[]> {
   const functionIdentifier = functionDeclaration.name ?? throwError("Function didn't have an identifier");
-  const functionName = functionIdentifier.text
-  const functionSymbol = context.typeChecker.getSymbolAtLocation(functionIdentifier) ?? throwError(`Function '${functionName}' didn't have a symbol`);
+  const functionSymbol = context.typeChecker.getSymbolAtLocation(functionIdentifier) ?? throwError(`Function '${exportedFunctionName}' didn't have a symbol`);
   const functionType = context.typeChecker.getTypeOfSymbolAtLocation(functionSymbol, functionDeclaration);
 
   const functionDescription = ts.displayPartsToString(functionSymbol.getDocumentationComment(context.typeChecker)).trim();
   const markedReadonlyInJsDoc = functionSymbol.getJsDocTags().find(e => e.name === "readonly") !== undefined;
 
-  const functionCallSig = functionType.getCallSignatures()[0] ?? throwError(`Function '${functionName}' didn't have a call signature`)
+  const functionCallSig = functionType.getCallSignatures()[0] ?? throwError(`Function '${exportedFunctionName}' didn't have a call signature`)
   const functionSchemaArguments: Result<schema.ArgumentDefinition[], string[]> = Result.traverseAndCollectErrors(functionCallSig.getParameters(), paramSymbol => {
     const paramName = paramSymbol.getName();
     const paramDesc = ts.displayPartsToString(paramSymbol.getDocumentationComment(context.typeChecker)).trim();
-    const paramType = context.typeChecker.getTypeOfSymbolAtLocation(paramSymbol, paramSymbol.valueDeclaration ?? throwError(`Function '${functionName}' parameter '${paramName}' didn't have a value declaration`));
-    const paramTypePath: TypePathSegment[] = [{segmentType: "FunctionParameter", functionName, parameterName: paramName}];
+    const paramType = context.typeChecker.getTypeOfSymbolAtLocation(paramSymbol, paramSymbol.valueDeclaration ?? throwError(`Function '${exportedFunctionName}' parameter '${paramName}' didn't have a value declaration`));
+    const paramTypePath: TypePathSegment[] = [{segmentType: "FunctionParameter", functionName: exportedFunctionName, parameterName: paramName}];
 
     return deriveSchemaTypeForTsType(paramType, paramTypePath, context)
       .map(paramTypeResult => ({
@@ -185,29 +185,15 @@ function deriveFunctionSchema(functionDeclaration: ts.FunctionDeclaration, conte
   });
 
   const returnType = functionCallSig.getReturnType();
-  const returnTypeResult = deriveSchemaTypeForTsType(unwrapPromiseType(returnType, context.typeChecker) ?? returnType, [{segmentType: "FunctionReturn", functionName}], context);
+  const returnTypeResult = deriveSchemaTypeForTsType(unwrapPromiseType(returnType, context.typeChecker) ?? returnType, [{segmentType: "FunctionReturn", functionName: exportedFunctionName}], context);
 
-  const functionDefinition = Result.collectErrors(functionSchemaArguments, returnTypeResult)
+  return Result.collectErrors(functionSchemaArguments, returnTypeResult)
     .map(([functionSchemaArgs, returnType]) => ({
       description: functionDescription ? functionDescription : null,
       ndcKind: markedReadonlyInJsDoc ? schema.FunctionNdcKind.Function : schema.FunctionNdcKind.Procedure,
       arguments: functionSchemaArgs,
       resultType: returnType
     }));
-
-  if (functionDefinition instanceof Err) {
-    return {
-      name: functionName,
-      definition: null,
-      issues: functionDefinition.error
-    }
-  } else {
-    return {
-      name: functionName,
-      definition: functionDefinition.data,
-      issues: []
-    }
-  }
 }
 
 const MAX_TYPE_DERIVATION_RECURSION = 20; // Better to abort than get into an infinite loop, this could be increased if required.
