@@ -64,7 +64,9 @@ export function createConnector(options: ConnectorOptions): sdk.Connector<RawCon
       return {
         versions: "^0.1.0",
         capabilities: {
-          query: {},
+          query: {
+            variables: {}
+          },
         }
       };
     },
