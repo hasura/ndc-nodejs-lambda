@@ -1,4 +1,4 @@
-# ndc-nodejs-lambda
+# NodeJS Lambda Connector
 
 The NodeJS Lambda connector allows you to expose TypeScript functions as NDC functions/procedures for use in your Hasura DDN subgraphs.
 
