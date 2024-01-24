@@ -157,8 +157,8 @@ If functions are involved remote relationships in your Hasura metadata, then the
  * @readonly
  * @paralleldegree 5
  */
-export async function test(): Promise<string> {
-  const result = await fetch("http://httpstat.us/200")
+export async function test(statusCode: number): Promise<string> {
+  const result = await fetch("http://httpstat.us/${statusCode}")
   const responseBody = await result.json() as any;
   return responseBody.description;
 }
