@@ -19,6 +19,17 @@ The `package.config` has been created with `start` and `watch` scripts. These us
 ### Functions
 Any functions exported from `functions.ts` are made available as NDC functions/procedures to use in your Hasura metadata and expose as GraphQL fields in queries or mutation.
 
+If you write a function that performs a read-only operation, you should mark it with the `@readonly` JSDoc tag, and it will be exposed as an NDC function, which will ultimately show up as a GraphQL query field in Hasura.
+
+```typescript
+/** @readonly */
+export function add(x: number, y: number): number {
+  return x + y;
+}
+```
+
+Functions without the `@readonly` JSDoc tag are exposed as NDC procedures, which will ultimately show up as a GraphQL mutation field in Hasura.
+
 Arguments to the function end up being field arguments in GraphQL and the return value is what the field will return when queried. Every function must return a value; `void`, `null` or `undefined` is not supported.
 
 ```typescript
@@ -136,18 +147,24 @@ These types are unsupported as function parameter types or return types for func
 * [`void`](https://www.typescriptlang.org/docs/handbook/2/functions.html#void), [`object`](https://www.typescriptlang.org/docs/handbook/2/functions.html#object), [`unknown`](https://www.typescriptlang.org/docs/handbook/2/functions.html#unknown), [`never`](https://www.typescriptlang.org/docs/handbook/2/functions.html#never), [`any`](https://www.typescriptlang.org/docs/handbook/2/everyday-types.html#any) types - to accept and return arbitrary JSON, use `sdk.JSONValue` instead
 * `null` and `undefined` - unless used in a union with a single other type
 
+### Parallel execution
+If functions are involved remote relationships in your Hasura metadata, then they may be queried in a [batch-based fashion](https://hasura.github.io/ndc-spec/specification/queries/variables.html). In this situation, any async functions that are marked with the `@readonly` JSDoc tag may be executed in parallel. The default degree of parallelism per query request to the connector is 10, but you may customise this by using the `@paralleldegree` JSDoc tag on your function.
 
-### Impure/pure functions
-If you write a function that performs a read-only operation, you should mark it with the `@readonly` JSDoc tag, and it will be exposed as an NDC function, which will ultimately show up as a GraphQL query field in Hasura.
-
-```typescript
-/** @readonly */
-export function add(x: number, y: number): number {
-  return x + y;
+``` typescript
+/**
+ * This function will only run up to 5 http requests in parallel per query
+ *
+ * @readonly
+ * @paralleldegree 5
+ */
+export async function test(): Promise<string> {
+  const result = await fetch("http://httpstat.us/200")
+  const responseBody = await result.json() as any;
+  return responseBody.description;
 }
 ```
 
-Functions without the `@readonly` JSDoc tag are exposed as NDC procedures, which will ultimately show up as a GraphQL mutation field in Hasura.
+Non-readonly functions are not invoked in parallel within the same mutation request to the connector, so it is invalid to use the @paralleldegree JSDoc tag on those functions.
 
 ## Deploying with `hasura3 connector create`
 

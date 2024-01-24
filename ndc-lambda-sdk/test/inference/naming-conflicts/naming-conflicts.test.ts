@@ -15,6 +15,7 @@ describe("naming conflicts", function() {
           "foo": {
             ndcKind: FunctionNdcKind.Procedure,
             description: null,
+            parallelDegree: null,
             arguments: [],
             resultType: {
               name: "Foo",

@@ -7,6 +7,9 @@ describe("ndc schema", function() {
     const functionsSchema: FunctionsSchema = {
       functions: {
         "test_proc": {
+          ndcKind: FunctionNdcKind.Procedure,
+          description: null,
+          parallelDegree: null,
           arguments: [
             {
               argumentName: "nullableParam",
@@ -22,8 +25,6 @@ describe("ndc schema", function() {
               },
             },
           ],
-          description: null,
-          ndcKind: FunctionNdcKind.Procedure,
           resultType: {
             type: "nullable",
             nullOrUndefinability: NullOrUndefinability.AcceptsNullOnly,
@@ -35,6 +36,9 @@ describe("ndc schema", function() {
           },
         },
         "test_func": {
+          ndcKind: FunctionNdcKind.Function,
+          description: null,
+          parallelDegree: null,
           arguments: [
             {
               argumentName: "myObject",
@@ -46,8 +50,6 @@ describe("ndc schema", function() {
               },
             },
           ],
-          description: null,
-          ndcKind: FunctionNdcKind.Function,
           resultType: {
             type: "array",
             elementType: {

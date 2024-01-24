@@ -15,7 +15,8 @@ export type FunctionDefinition = {
   ndcKind: FunctionNdcKind
   description: string | null,
   arguments: ArgumentDefinition[] // Function arguments are ordered
-  resultType: TypeDefinition
+  resultType: TypeDefinition,
+  parallelDegree: number | null,
 }
 
 export enum FunctionNdcKind {

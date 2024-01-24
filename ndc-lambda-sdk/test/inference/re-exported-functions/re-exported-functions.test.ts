@@ -15,6 +15,7 @@ describe("re-exported functions", function() {
           "rootFileFunction": {
             ndcKind: FunctionNdcKind.Function,
             description: null,
+            parallelDegree: null,
             arguments: [
               {
                 argumentName: "input",
@@ -35,6 +36,7 @@ describe("re-exported functions", function() {
           "fileAChildFunction": {
             ndcKind: FunctionNdcKind.Procedure,
             description: null,
+            parallelDegree: null,
             arguments: [],
             resultType: {
               name: "String",
@@ -45,6 +47,7 @@ describe("re-exported functions", function() {
           "fileBChildFunction1": {
             ndcKind: FunctionNdcKind.Procedure,
             description: null,
+            parallelDegree: null,
             arguments: [],
             resultType: {
               name: "Boolean",
@@ -55,6 +58,7 @@ describe("re-exported functions", function() {
           "fileBChildFunction2": {
             ndcKind: FunctionNdcKind.Function,
             description: null,
+            parallelDegree: null,
             arguments: [
               {
                 argumentName: "input",
@@ -94,6 +98,7 @@ describe("re-exported functions", function() {
           "rootFileFunction": {
             ndcKind: FunctionNdcKind.Function,
             description: null,
+            parallelDegree: null,
             arguments: [
               {
                 argumentName: "input",
@@ -114,6 +119,7 @@ describe("re-exported functions", function() {
           "fileAChildFunction": {
             ndcKind: FunctionNdcKind.Procedure,
             description: null,
+            parallelDegree: null,
             arguments: [],
             resultType: {
               name: "String",
@@ -124,6 +130,7 @@ describe("re-exported functions", function() {
           "fileBChildFunction2": {
             ndcKind: FunctionNdcKind.Function,
             description: null,
+            parallelDegree: null,
             arguments: [
               {
                 argumentName: "input",
@@ -162,6 +169,7 @@ describe("re-exported functions", function() {
           "renamedFileAChildFunction": {
             ndcKind: FunctionNdcKind.Procedure,
             description: null,
+            parallelDegree: null,
             arguments: [],
             resultType: {
               name: "String",
@@ -172,6 +180,7 @@ describe("re-exported functions", function() {
           "renamedFileBChildFunction2": {
             ndcKind: FunctionNdcKind.Function,
             description: null,
+            parallelDegree: null,
             arguments: [
               {
                 argumentName: "input",
