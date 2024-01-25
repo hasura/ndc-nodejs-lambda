@@ -166,7 +166,7 @@ function deriveFunctionSchema(functionDeclaration: ts.FunctionDeclaration, expor
   const functionSymbol = context.typeChecker.getSymbolAtLocation(functionIdentifier) ?? throwError(`Function '${exportedFunctionName}' didn't have a symbol`);
   const functionType = context.typeChecker.getTypeOfSymbolAtLocation(functionSymbol, functionDeclaration);
 
-  const functionDescription = ts.displayPartsToString(functionSymbol.getDocumentationComment(context.typeChecker)).trim();
+  const functionDescription = getDescriptionFromJsDoc(functionSymbol, context.typeChecker);
   const markedReadonlyInJsDoc = functionSymbol.getJsDocTags().find(e => e.name === "readonly") !== undefined;
   const parallelDegreeResult = getParallelDegreeFromJsDoc(functionSymbol, markedReadonlyInJsDoc);
 
@@ -190,12 +190,17 @@ function deriveFunctionSchema(functionDeclaration: ts.FunctionDeclaration, expor
 
   return Result.collectErrors3(functionSchemaArguments, returnTypeResult, parallelDegreeResult)
     .map(([functionSchemaArgs, returnType, parallelDegree]) => ({
-      description: functionDescription ? functionDescription : null,
+      description: functionDescription,
       ndcKind: markedReadonlyInJsDoc ? schema.FunctionNdcKind.Function : schema.FunctionNdcKind.Procedure,
       arguments: functionSchemaArgs,
       resultType: returnType,
       parallelDegree,
     }));
+}
+
+function getDescriptionFromJsDoc(symbol: ts.Symbol, typeChecker: ts.TypeChecker): string | null {
+  const description = ts.displayPartsToString(symbol.getDocumentationComment(typeChecker)).trim()
+  return description ? description : null;
 }
 
 function getParallelDegreeFromJsDoc(functionSymbol: ts.Symbol, functionIsReadonly: boolean): Result<number | null, string[]> {
@@ -422,15 +427,15 @@ function deriveSchemaTypeIfObjectType(tsType: ts.Type, typePath: TypePathSegment
       return new Ok({ type: 'named', name: info.generatedTypeName, kind: "object" });
     }
 
-    context.objectTypeDefinitions[info.generatedTypeName] = { properties: [] }; // Break infinite recursion
+    context.objectTypeDefinitions[info.generatedTypeName] = { properties: [], description: null }; // Break infinite recursion
 
-    const propertyResults = Result.traverseAndCollectErrors(Array.from(info.members), ([propertyName, propertyType]) => {
-      return deriveSchemaTypeForTsType(propertyType, [...typePath, { segmentType: "ObjectProperty", typeName: info.generatedTypeName, propertyName }], context, recursionDepth + 1)
-        .map(propertyType => ({ propertyName: propertyName, type: propertyType }));
+    const propertyResults = Result.traverseAndCollectErrors(Array.from(info.properties), ([propertyName, propertyInfo]) => {
+      return deriveSchemaTypeForTsType(propertyInfo.tsType, [...typePath, { segmentType: "ObjectProperty", typeName: info.generatedTypeName, propertyName }], context, recursionDepth + 1)
+        .map(propertyType => ({ propertyName: propertyName, type: propertyType, description: propertyInfo.description }));
     });
 
     if (propertyResults instanceof Ok) {
-      context.objectTypeDefinitions[info.generatedTypeName] = { properties: propertyResults.data }
+      context.objectTypeDefinitions[info.generatedTypeName] = { properties: propertyResults.data, description: info.description }
       return new Ok({ type: 'named', name: info.generatedTypeName, kind: "object" })
     } else {
       // Remove the recursion short-circuit to ensure errors are raised if this type is encountered again
@@ -475,12 +480,19 @@ function unwrapNullableType(ty: ts.Type): [ts.Type, schema.NullOrUndefinability]
     : null;
 }
 
+type PropertyTypeInfo = {
+  tsType: ts.Type,
+  description: string | null,
+}
+
 type ObjectTypeInfo = {
   // The name of the type; it may be a generated name if it is an anonymous type, or if it from an external module
   generatedTypeName: string,
-  // The member properties of the object type. The types are
+  // The properties of the object type. The types are
   // concrete types after type parameter resolution
-  members: Map<string, ts.Type>
+  properties: Map<string, PropertyTypeInfo>,
+  // The JSDoc comment on the type
+  description: string | null,
 }
 
 // TODO: This can be vastly simplified when I yeet the name qualification stuff
@@ -490,6 +502,9 @@ function getObjectTypeInfo(tsType: ts.Type, typePath: TypePathSegment[], typeChe
     return null;
   }
 
+  const symbolForDocs = tsType.aliasSymbol ?? tsType.getSymbol();
+  const description = symbolForDocs ? getDescriptionFromJsDoc(symbolForDocs, typeChecker) : null;
+
   // Anonymous object type - this covers:
   // - {a: number, b: string}
   // - type Bar = { test: string }
@@ -497,7 +512,8 @@ function getObjectTypeInfo(tsType: ts.Type, typePath: TypePathSegment[], typeChe
   if (tsutils.isObjectType(tsType) && tsutils.isObjectFlagSet(tsType, ts.ObjectFlags.Anonymous)) {
     return {
       generatedTypeName: qualifyTypeName(tsType, typePath, tsType.aliasSymbol ? typeChecker.typeToString(tsType) : null, functionsFilePath),
-      members: getMembers(tsType.getProperties(), typeChecker)
+      properties: getMembers(tsType.getProperties(), typeChecker),
+      description,
     }
   }
   // Interface type - this covers:
@@ -505,7 +521,8 @@ function getObjectTypeInfo(tsType: ts.Type, typePath: TypePathSegment[], typeChe
   else if (tsutils.isObjectType(tsType) && tsutils.isObjectFlagSet(tsType, ts.ObjectFlags.Interface)) {
     return {
       generatedTypeName: tsType.getSymbol()?.name ?? generateTypeNameFromTypePath(typePath),
-      members: getMembers(tsType.getProperties(), typeChecker)
+      properties: getMembers(tsType.getProperties(), typeChecker),
+      description,
     }
   }
   // Generic interface type - this covers:
@@ -513,7 +530,8 @@ function getObjectTypeInfo(tsType: ts.Type, typePath: TypePathSegment[], typeChe
   else if (tsutils.isTypeReference(tsType) && tsutils.isObjectFlagSet(tsType.target, ts.ObjectFlags.Interface) && typeChecker.isArrayType(tsType) === false && tsType.getSymbol()?.getName() !== "Promise") {
     return {
       generatedTypeName: tsType.getSymbol()?.name ?? generateTypeNameFromTypePath(typePath),
-      members: getMembers(tsType.getProperties(), typeChecker)
+      properties: getMembers(tsType.getProperties(), typeChecker),
+      description,
     }
   }
   // Intersection type - this covers:
@@ -523,16 +541,21 @@ function getObjectTypeInfo(tsType: ts.Type, typePath: TypePathSegment[], typeChe
   else if (tsutils.isIntersectionType(tsType)) {
     return {
       generatedTypeName: qualifyTypeName(tsType, typePath, tsType.aliasSymbol ? typeChecker.typeToString(tsType) : null, functionsFilePath),
-      members: getMembers(tsType.getProperties(), typeChecker)
+      properties: getMembers(tsType.getProperties(), typeChecker),
+      description,
     }
   }
 
   return null;
 }
 
-function getMembers(propertySymbols: ts.Symbol[], typeChecker: ts.TypeChecker) {
+function getMembers(propertySymbols: ts.Symbol[], typeChecker: ts.TypeChecker): Map<string, PropertyTypeInfo> {
   return new Map(
-    propertySymbols.map(symbol => [symbol.name, typeChecker.getTypeOfSymbol(symbol)])
+    propertySymbols.map(symbol => {
+      const tsType = typeChecker.getTypeOfSymbol(symbol);
+      const description = getDescriptionFromJsDoc(symbol, typeChecker);
+      return [symbol.name, {tsType, description}]
+    })
   )
 }
 

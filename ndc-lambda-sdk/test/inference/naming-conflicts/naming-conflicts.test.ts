@@ -25,10 +25,12 @@ describe("naming conflicts", function() {
           }
         },
         objectTypes: {
-          Foo: {
+          "Foo": {
+            description: null,
             properties: [
               {
                 propertyName: "x",
+                description: null,
                 type: {
                   name: "Boolean",
                   kind: "scalar",
@@ -37,6 +39,7 @@ describe("naming conflicts", function() {
               },
               {
                 propertyName: "y",
+                description: null,
                 type: {
                   name: "conflict_from_import_dep_Foo",
                   kind: "object",
@@ -45,10 +48,12 @@ describe("naming conflicts", function() {
               },
             ]
           },
-          conflict_from_import_dep_Foo: {
+          "conflict_from_import_dep_Foo": {
+            description: null,
             properties: [
               {
                 propertyName: "a",
+                description: null,
                 type: {
                   name: "String",
                   kind: "scalar",
@@ -57,6 +62,7 @@ describe("naming conflicts", function() {
               },
               {
                 propertyName: "b",
+                description: null,
                 type: {
                   name: "Float",
                   kind: "scalar",

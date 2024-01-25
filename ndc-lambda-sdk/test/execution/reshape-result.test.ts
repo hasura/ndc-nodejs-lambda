@@ -89,17 +89,21 @@ describe("reshape result", function() {
   describe("projects object types using fields", function() {
     const objectTypes: ObjectTypeDefinitions = {
       "TestObjectType": {
+        description: null,
         properties: [
           {
             propertyName: "propA",
+            description: null,
             type: { type: "named", kind: "scalar", name: BuiltInScalarTypeName.String }
           },
           {
             propertyName: "propB",
+            description: null,
             type: { type: "named", kind: "scalar", name: BuiltInScalarTypeName.String }
           },
           {
             propertyName: "nested",
+            description: null,
             type: { type: "nullable", nullOrUndefinability: NullOrUndefinability.AcceptsEither, underlyingType: { type: "named", kind: "object", name: "TestObjectType" } }
           }
         ]
@@ -162,13 +166,16 @@ describe("reshape result", function() {
   describe("projects object types using fields through an array type", function() {
     const objectTypes: ObjectTypeDefinitions = {
       "TestObjectType": {
+        description: null,
         properties: [
           {
             propertyName: "propA",
+            description: null,
             type: { type: "named", kind: "scalar", name: BuiltInScalarTypeName.String }
           },
           {
             propertyName: "propB",
+            description: null,
             type: { type: "nullable", nullOrUndefinability: NullOrUndefinability.AcceptsEither, underlyingType: { type: "named", kind: "scalar", name: BuiltInScalarTypeName.String } }
           }
         ]

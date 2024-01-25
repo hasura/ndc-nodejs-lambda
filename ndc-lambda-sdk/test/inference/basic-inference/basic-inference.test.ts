@@ -173,10 +173,12 @@ describe("basic inference", function() {
           }
         },
         objectTypes: {
-          Result: {
+          "Result": {
+            description: null,
             properties: [
               {
                 propertyName: "num",
+                description: null,
                 type: {
                   name: "Float",
                   kind: "scalar",
@@ -185,6 +187,7 @@ describe("basic inference", function() {
               },
               {
                 propertyName: "str",
+                description: null,
                 type: {
                   name: "String",
                   kind: "scalar",
@@ -193,6 +196,7 @@ describe("basic inference", function() {
               },
               {
                 propertyName: "bod",
+                description: null,
                 type: {
                   name: "String",
                   kind: "scalar",
@@ -353,9 +357,11 @@ describe("basic inference", function() {
         },
         objectTypes: {
           "GenericBar<Bar>": {
+            description: null,
             properties: [
               {
                 propertyName: "data",
+                description: null,
                 type: {
                   kind: "object",
                   name: "Bar",
@@ -365,9 +371,11 @@ describe("basic inference", function() {
             ]
           },
           "GenericBar<string>": {
+            description: null,
             properties: [
               {
                 propertyName: "data",
+                description: null,
                 type: {
                   name: "String",
                   kind: "scalar",
@@ -377,9 +385,11 @@ describe("basic inference", function() {
             ],
           },
           "GenericIntersectionObject<string>": {
+            description: null,
             properties: [
               {
                 propertyName: "data",
+                description: null,
                 type: {
                   name: "String",
                   kind: "scalar",
@@ -388,6 +398,7 @@ describe("basic inference", function() {
               },
               {
                 propertyName: "test",
+                description: null,
                 type: {
                   name: "String",
                   kind: "scalar",
@@ -396,10 +407,12 @@ describe("basic inference", function() {
               },
             ],
           },
-          Bar: {
+          "Bar": {
+            description: null,
             properties: [
               {
                 propertyName: "test",
+                description: null,
                 type: {
                   name: "String",
                   kind: "scalar",
@@ -408,10 +421,12 @@ describe("basic inference", function() {
               },
             ],
           },
-          IGenericThing: {
+          "IGenericThing": {
+            description: null,
             properties: [
               {
                 propertyName: "data",
+                description: null,
                 type: {
                   name: "String",
                   kind: "scalar",
@@ -420,10 +435,12 @@ describe("basic inference", function() {
               },
             ],
           },
-          IThing: {
+          "IThing": {
+            description: null,
             properties: [
               {
                 propertyName: "prop",
+                description: null,
                 type: {
                   name: "String",
                   kind: "scalar",
@@ -432,10 +449,12 @@ describe("basic inference", function() {
               },
             ],
           },
-          IntersectionObject: {
+          "IntersectionObject": {
+            description: null,
             properties: [
               {
                 propertyName: "wow",
+                description: null,
                 type: {
                   name: "String",
                   kind: "scalar",
@@ -444,6 +463,7 @@ describe("basic inference", function() {
               },
               {
                 propertyName: "test",
+                description: null,
                 type: {
                   name: "String",
                   kind: "scalar",
@@ -452,10 +472,12 @@ describe("basic inference", function() {
               },
             ],
           },
-          bar_arguments_anonIntersectionObj: {
+          "bar_arguments_anonIntersectionObj": {
+            description: null,
             properties: [
               {
                 propertyName: "num",
+                description: null,
                 type: {
                   name: "Float",
                   kind: "scalar",
@@ -464,6 +486,7 @@ describe("basic inference", function() {
               },
               {
                 propertyName: "test",
+                description: null,
                 type: {
                   name: "String",
                   kind: "scalar",
@@ -472,10 +495,12 @@ describe("basic inference", function() {
               },
             ],
           },
-          bar_arguments_anonObj: {
+          "bar_arguments_anonObj": {
+            description: null,
             properties: [
               {
                 propertyName: "a",
+                description: null,
                 type: {
                   name: "Float",
                   kind: "scalar",
@@ -484,6 +509,7 @@ describe("basic inference", function() {
               },
               {
                 propertyName: "b",
+                description: null,
                 type: {
                   name: "String",
                   kind: "scalar",
@@ -589,9 +615,11 @@ describe("basic inference", function() {
         },
         objectTypes: {
           "MyObject": {
+            description: null,
             properties: [
               {
                 propertyName: "string",
+                description: null,
                 type: {
                   kind: "scalar",
                   name: "String",
@@ -600,6 +628,7 @@ describe("basic inference", function() {
               },
               {
                 propertyName: "nullableString",
+                description: null,
                 type: {
                   type: "nullable",
                   nullOrUndefinability: NullOrUndefinability.AcceptsNullOnly,
@@ -612,6 +641,7 @@ describe("basic inference", function() {
               },
               {
                 propertyName: "optionalString",
+                description: null,
                 type: {
                   type: "nullable",
                   nullOrUndefinability: NullOrUndefinability.AcceptsUndefinedOnly,
@@ -624,6 +654,7 @@ describe("basic inference", function() {
               },
               {
                 propertyName: "undefinedString",
+                description: null,
                 type: {
                   type: "nullable",
                   nullOrUndefinability: NullOrUndefinability.AcceptsUndefinedOnly,
@@ -636,6 +667,7 @@ describe("basic inference", function() {
               },
               {
                 propertyName: "nullOrUndefinedString",
+                description: null,
                 type: {
                   type: "nullable",
                   nullOrUndefinability: NullOrUndefinability.AcceptsEither,
@@ -677,10 +709,12 @@ describe("basic inference", function() {
           }
         },
         objectTypes: {
-          Foo: {
+          "Foo": {
+            description: null,
             properties: [
               {
                 propertyName: "a",
+                description: null,
                 type: {
                   type: "named",
                   kind: "scalar",
@@ -689,6 +723,7 @@ describe("basic inference", function() {
               },
               {
                 propertyName: "b",
+                description: null,
                 type: {
                   type: "array",
                   elementType: {
@@ -736,9 +771,11 @@ describe("basic inference", function() {
         },
         objectTypes: {
           "LiteralProps": {
+            description: null,
             properties: [
               {
                 propertyName: "literalString",
+                description: null,
                 type: {
                   type: "named",
                   kind: "scalar",
@@ -748,6 +785,7 @@ describe("basic inference", function() {
               },
               {
                 propertyName: "literalNumber",
+                description: null,
                 type: {
                   type: "named",
                   kind: "scalar",
@@ -757,6 +795,7 @@ describe("basic inference", function() {
               },
               {
                 propertyName: "literalBoolean",
+                description: null,
                 type: {
                   type: "named",
                   kind: "scalar",
@@ -766,6 +805,7 @@ describe("basic inference", function() {
               },
               {
                 propertyName: "literalBigInt",
+                description: null,
                 type: {
                   type: "named",
                   kind: "scalar",
@@ -775,6 +815,7 @@ describe("basic inference", function() {
               },
               {
                 propertyName: "literalStringEnum",
+                description: null,
                 type: {
                   type: "named",
                   kind: "scalar",
@@ -784,6 +825,7 @@ describe("basic inference", function() {
               },
               {
                 propertyName: "literalNumericEnum",
+                description: null,
                 type: {
                   type: "named",
                   kind: "scalar",

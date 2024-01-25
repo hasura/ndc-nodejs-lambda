@@ -129,9 +129,11 @@ describe("external dependencies", function() {
         },
         objectTypes: {
           "delete_todos_output": {
+            description: null,
             properties: [
               {
                 propertyName: "error",
+                description: null,
                 type: {
                   nullOrUndefinability: NullOrUndefinability.AcceptsUndefinedOnly,
                   type: "nullable",
@@ -144,6 +146,7 @@ describe("external dependencies", function() {
               },
               {
                 propertyName: "result",
+                description: null,
                 type: {
                   nullOrUndefinability: NullOrUndefinability.AcceptsUndefinedOnly,
                   type: "nullable",
