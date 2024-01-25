@@ -4,6 +4,8 @@ This changelog documents the changes between release versions.
 ## main
 Changes to be included in the next upcoming release
 
+- Add support for parallel execution of readonly functions ([#2](https://github.com/hasura/ndc-nodejs-lambda/pull/2))
+
 ## v0.10.0
 - Add missing query.variables capability
 

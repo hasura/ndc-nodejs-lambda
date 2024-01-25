@@ -19,6 +19,7 @@ describe("external dependencies", function() {
           "useImportedPackage": {
             ndcKind: FunctionNdcKind.Function,
             description: null,
+            parallelDegree: null,
             arguments: [
               {
                 argumentName: "s",
@@ -52,6 +53,7 @@ describe("external dependencies", function() {
           "insert_user": {
             ndcKind: FunctionNdcKind.Procedure,
             description: null,
+            parallelDegree: null,
             arguments: [
               {
                 argumentName: "user_name",
@@ -72,6 +74,7 @@ describe("external dependencies", function() {
           "insert_todos": {
             ndcKind: FunctionNdcKind.Procedure,
             description: null,
+            parallelDegree: null,
             arguments: [
               {
                 argumentName: "user_id",
@@ -101,6 +104,7 @@ describe("external dependencies", function() {
           "delete_todos": {
             ndcKind: FunctionNdcKind.Procedure,
             description: null,
+            parallelDegree: null,
             arguments: [
               {
                 argumentName: "todo_id",

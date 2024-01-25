@@ -24,6 +24,7 @@ describe("basic inference", function() {
           "hello": {
             ndcKind: FunctionNdcKind.Procedure,
             description: null,
+            parallelDegree: null,
             arguments: [],
             resultType: {
               name: "String",
@@ -34,6 +35,7 @@ describe("basic inference", function() {
           "add": {
             ndcKind: FunctionNdcKind.Function,
             description: null,
+            parallelDegree: null,
             arguments: [
               {
                 argumentName: "a",
@@ -63,6 +65,7 @@ describe("basic inference", function() {
           "isEven": {
             ndcKind: FunctionNdcKind.Function,
             description: null,
+            parallelDegree: null,
             arguments: [
               {
                 argumentName: "x",
@@ -83,6 +86,7 @@ describe("basic inference", function() {
           "dateTime": {
             ndcKind: FunctionNdcKind.Procedure,
             description: null,
+            parallelDegree: null,
             arguments: [],
             resultType: {
               name: "DateTime",
@@ -93,6 +97,7 @@ describe("basic inference", function() {
           "json": {
             ndcKind: FunctionNdcKind.Function,
             description: null,
+            parallelDegree: null,
             arguments: [
               {
                 argumentName: "input",
@@ -126,6 +131,7 @@ describe("basic inference", function() {
           "complex": {
             ndcKind: FunctionNdcKind.Procedure,
             description: null,
+            parallelDegree: null,
             arguments: [
               {
                 argumentName: "a",
@@ -215,6 +221,7 @@ describe("basic inference", function() {
           "bar": {
             ndcKind: FunctionNdcKind.Procedure,
             description: null,
+            parallelDegree: null,
             arguments: [
               {
                 argumentName: "string",
@@ -503,6 +510,9 @@ describe("basic inference", function() {
       functionsSchema: {
         functions: {
           "test": {
+            ndcKind: FunctionNdcKind.Procedure,
+            description: null,
+            parallelDegree: null,
             arguments: [
               {
                 argumentName: "myObject",
@@ -566,8 +576,6 @@ describe("basic inference", function() {
                 },
               },
             ],
-            description: null,
-            ndcKind: FunctionNdcKind.Procedure,
             resultType: {
               type: "nullable",
               nullOrUndefinability: NullOrUndefinability.AcceptsNullOnly,
@@ -659,6 +667,7 @@ describe("basic inference", function() {
           "bar": {
             ndcKind: FunctionNdcKind.Procedure,
             description: null,
+            parallelDegree: null,
             arguments: [],
             resultType: {
               type: "named",
@@ -717,6 +726,7 @@ describe("basic inference", function() {
             ndcKind: FunctionNdcKind.Procedure,
             description: null,
             arguments: [],
+            parallelDegree: null,
             resultType: {
               name: "LiteralProps",
               kind: "object",

@@ -1,10 +1,15 @@
 import * as sdk from "@hasura/ndc-sdk-typescript"
+import pLimit from "p-limit";
 import * as schema from "./schema"
 import { isArray, mapObjectValues, unreachable } from "./util"
 
 export type RuntimeFunctions = {
   [functionName: string]: Function
 }
+
+// This number is chosen arbitrarily, just to place _some_ limit on the amount of
+// parallelism going on within a single query
+const DEFAULT_PARALLEL_DEGREE = 10;
 
 export async function executeQuery(queryRequest: sdk.QueryRequest, functionsSchema: schema.FunctionsSchema, runtimeFunctions: RuntimeFunctions): Promise<sdk.QueryResponse> {
   const functionName = queryRequest.collection;
@@ -25,21 +30,21 @@ export async function executeQuery(queryRequest: sdk.QueryRequest, functionsSche
     return prepareArguments(resolvedArgs, functionDefinition, functionsSchema.objectTypes);
   });
 
-  const rowSets: sdk.RowSet[] = [];
-  for (const invocationPreparedArgs of functionInvocationPreparedArgs) {
+  const parallelLimit = pLimit(functionDefinition.parallelDegree ?? DEFAULT_PARALLEL_DEGREE);
+  const functionInvocations: Promise<sdk.RowSet>[] = functionInvocationPreparedArgs.map(invocationPreparedArgs => parallelLimit(async () => {
     const result = await invokeFunction(runtimeFunction, invocationPreparedArgs, functionName);
     const prunedResult = reshapeResultToNdcResponseValue(result, functionDefinition.resultType, [], queryRequest.query.fields ?? {}, functionsSchema.objectTypes);
-    rowSets.push({
+    return {
       aggregates: {},
       rows: [
         {
           __value: prunedResult
         }
       ]
-    });
-  }
+    };
+  }));
 
-  return rowSets;
+  return await Promise.all(functionInvocations);
 }
 
 export async function executeMutation(mutationRequest: sdk.MutationRequest, functionsSchema: schema.FunctionsSchema, runtimeFunctions: RuntimeFunctions): Promise<sdk.MutationResponse> {

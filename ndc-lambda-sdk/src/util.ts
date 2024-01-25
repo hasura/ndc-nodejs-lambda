@@ -29,3 +29,7 @@ export function getFlags(flagsEnum: Record<string, string | number>, value: numb
           : []
     });
 }
+
+export function sleep(ms: number): Promise<void> {
+  return new Promise((r) => setTimeout(r, ms))
+}

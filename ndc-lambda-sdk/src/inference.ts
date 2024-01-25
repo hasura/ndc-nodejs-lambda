@@ -168,6 +168,7 @@ function deriveFunctionSchema(functionDeclaration: ts.FunctionDeclaration, expor
 
   const functionDescription = ts.displayPartsToString(functionSymbol.getDocumentationComment(context.typeChecker)).trim();
   const markedReadonlyInJsDoc = functionSymbol.getJsDocTags().find(e => e.name === "readonly") !== undefined;
+  const parallelDegreeResult = getParallelDegreeFromJsDoc(functionSymbol, markedReadonlyInJsDoc);
 
   const functionCallSig = functionType.getCallSignatures()[0] ?? throwError(`Function '${exportedFunctionName}' didn't have a call signature`)
   const functionSchemaArguments: Result<schema.ArgumentDefinition[], string[]> = Result.traverseAndCollectErrors(functionCallSig.getParameters(), paramSymbol => {
@@ -187,13 +188,35 @@ function deriveFunctionSchema(functionDeclaration: ts.FunctionDeclaration, expor
   const returnType = functionCallSig.getReturnType();
   const returnTypeResult = deriveSchemaTypeForTsType(unwrapPromiseType(returnType, context.typeChecker) ?? returnType, [{segmentType: "FunctionReturn", functionName: exportedFunctionName}], context);
 
-  return Result.collectErrors(functionSchemaArguments, returnTypeResult)
-    .map(([functionSchemaArgs, returnType]) => ({
+  return Result.collectErrors3(functionSchemaArguments, returnTypeResult, parallelDegreeResult)
+    .map(([functionSchemaArgs, returnType, parallelDegree]) => ({
       description: functionDescription ? functionDescription : null,
       ndcKind: markedReadonlyInJsDoc ? schema.FunctionNdcKind.Function : schema.FunctionNdcKind.Procedure,
       arguments: functionSchemaArgs,
-      resultType: returnType
+      resultType: returnType,
+      parallelDegree,
     }));
+}
+
+function getParallelDegreeFromJsDoc(functionSymbol: ts.Symbol, functionIsReadonly: boolean): Result<number | null, string[]> {
+  const parallelDegreeTag = functionSymbol.getJsDocTags().find(e => e.name === "paralleldegree");
+  if (parallelDegreeTag === undefined) {
+    return new Ok(null);
+  } else {
+    if (!functionIsReadonly)
+      return new Err(["The @paralleldegree JSDoc tag is only supported on functions also marked with the @readonly JSDoc tag"]);
+
+    const tagSymbolDisplayPart = parallelDegreeTag.text?.[0]
+    if (tagSymbolDisplayPart === undefined)
+      return new Err(["The @paralleldegree JSDoc tag must specify an integer degree value"]);
+
+    const tagText = tagSymbolDisplayPart.text.trim();
+    const parallelDegreeInt = parseInt(tagText, 10);
+    if (isNaN(parallelDegreeInt) || parallelDegreeInt <= 0)
+      return new Err([`The @paralleldegree JSDoc tag must specify an integer degree value that is greater than 0. Current value: '${tagText}'`]);
+
+    return new Ok(parallelDegreeInt);
+  }
 }
 
 const MAX_TYPE_DERIVATION_RECURSION = 20; // Better to abort than get into an infinite loop, this could be increased if required.

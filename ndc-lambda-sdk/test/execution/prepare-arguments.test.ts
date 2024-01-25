@@ -9,6 +9,7 @@ describe("prepare arguments", function() {
     const functionDefinition: FunctionDefinition = {
       ndcKind: FunctionNdcKind.Function,
       description: null,
+      parallelDegree: null,
       arguments: [
         {
           argumentName: "c",
@@ -60,6 +61,7 @@ describe("prepare arguments", function() {
     const functionDefinition: FunctionDefinition = {
       ndcKind: FunctionNdcKind.Function,
       description: null,
+      parallelDegree: null,
       arguments: [
         {
           argumentName: "nullOnlyArg",
@@ -314,6 +316,7 @@ describe("prepare arguments", function() {
     const functionDefinition: FunctionDefinition = {
       ndcKind: FunctionNdcKind.Function,
       description: null,
+      parallelDegree: null,
       arguments: [
         {
           argumentName: "stringArg",
@@ -396,6 +399,7 @@ describe("prepare arguments", function() {
     const functionDefinition: FunctionDefinition = {
       ndcKind: FunctionNdcKind.Function,
       description: null,
+      parallelDegree: null,
       arguments: [
         {
           argumentName: "dateTime",
@@ -449,6 +453,7 @@ describe("prepare arguments", function() {
     const functionDefinition: FunctionDefinition = {
       ndcKind: FunctionNdcKind.Function,
       description: null,
+      parallelDegree: null,
       arguments: [
         {
           argumentName: "literalString",
