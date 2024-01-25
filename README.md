@@ -166,6 +166,42 @@ export async function test(statusCode: number): Promise<string> {
 
 Non-readonly functions are not invoked in parallel within the same mutation request to the connector, so it is invalid to use the @paralleldegree JSDoc tag on those functions.
 
+### Documentation
+*Note: this feature is still in development.*
+
+JSDoc comments on your functions and types are used to provide descriptions for types exposed in your GraphQL schema. For example:
+
+```typescript
+/** Different types of greetings */
+interface Greeting {
+  /** A greeting if you want to be polite */
+  polite: string
+  /** A casual-toned greeting */
+  casual: string
+}
+
+/**
+ * Creates a greeting string using the specified name
+ *
+ * @param title The person's title, for example, Mr or Mrs
+ * @param firstName The person's first name
+ * @param lastName The person's last name (surname)
+ * @readonly
+ */
+export function greet(title: string, firstName: string, lastName: string): Greeting {
+  return {
+    polite: `Hello ${name.title} ${name.lastName}`,
+    casual: `G'day ${name.firstName}`
+  }
+}
+```
+
+Descriptions are collected for:
+* Functions
+* Function parameters
+* Types
+* Type properties
+
 ## Deploying with `hasura3 connector create`
 
 You will need:
