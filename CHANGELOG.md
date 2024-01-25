@@ -5,6 +5,7 @@ This changelog documents the changes between release versions.
 Changes to be included in the next upcoming release
 
 - Add support for JSDoc descriptions from object types ([#3](https://github.com/hasura/ndc-nodejs-lambda/pull/3))
+- Fix type name conflicts when using generic interfaces ([#4](https://github.com/hasura/ndc-nodejs-lambda/pull/4))
 
 ## v0.11.0
 - Add support for parallel execution of readonly functions ([#2](https://github.com/hasura/ndc-nodejs-lambda/pull/2))
