@@ -8,12 +8,12 @@ describe("ndc schema", function() {
       functions: {
         "test_proc": {
           ndcKind: FunctionNdcKind.Procedure,
-          description: null,
+          description: "My procedure",
           parallelDegree: null,
           arguments: [
             {
               argumentName: "nullableParam",
-              description: null,
+              description: "A nullable param",
               type: {
                 type: "nullable",
                 nullOrUndefinability: NullOrUndefinability.AcceptsNullOnly,
@@ -37,12 +37,12 @@ describe("ndc schema", function() {
         },
         "test_func": {
           ndcKind: FunctionNdcKind.Function,
-          description: null,
+          description: "My function",
           parallelDegree: null,
           arguments: [
             {
               argumentName: "myObject",
-              description: null,
+              description: "My object param",
               type: {
                 kind: "object",
                 name: "MyObject",
@@ -62,9 +62,11 @@ describe("ndc schema", function() {
       },
       objectTypes: {
         "MyObject": {
+          description: "My Object Type",
           properties: [
             {
               propertyName: "string",
+              description: "A string",
               type: {
                 kind: "scalar",
                 name: "String",
@@ -73,6 +75,7 @@ describe("ndc schema", function() {
             },
             {
               propertyName: "nullableString",
+              description: "A nullable string",
               type: {
                 type: "nullable",
                 nullOrUndefinability: NullOrUndefinability.AcceptsNullOnly,
@@ -99,8 +102,10 @@ describe("ndc schema", function() {
       functions: [
         {
           name: "test_func",
+          description: "My function",
           arguments: {
             "myObject": {
+              description: "My object param",
               type: {
                 name: "MyObject",
                 type: "named",
@@ -119,8 +124,10 @@ describe("ndc schema", function() {
       procedures: [
         {
           name: "test_proc",
+          description: "My procedure",
           arguments: {
             "nullableParam": {
+              description: "A nullable param",
               type: {
                 type: "nullable",
                 underlying_type: {
@@ -141,14 +148,17 @@ describe("ndc schema", function() {
       ],
       object_types: {
         "MyObject": {
+          description: "My Object Type",
           fields: {
             "string": {
+              description: "A string",
               type: {
                 name: "String",
                 type: "named",
               },
             },
             "nullableString": {
+              description: "A nullable string",
               type: {
                 type: "nullable",
                 underlying_type: {

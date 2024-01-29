@@ -35,11 +35,13 @@ export type ObjectTypeDefinitions = {
 }
 
 export type ObjectTypeDefinition = {
+  description: string | null,
   properties: ObjectPropertyDefinition[]
 }
 
 export type ObjectPropertyDefinition = {
   propertyName: string,
+  description: string | null,
   type: TypeDefinition,
 }
 
@@ -193,7 +195,14 @@ export function getNdcSchema(functionsSchema: FunctionsSchema): sdk.SchemaRespon
 
   const objectTypes = mapObjectValues(functionsSchema.objectTypes, objDef => {
     return {
-      fields: Object.fromEntries(objDef.properties.map(propDef => [propDef.propertyName, { type: convertTypeDefinitionToSdkType(propDef.type)}]))
+      fields: Object.fromEntries(objDef.properties.map(propDef => {
+        const objField: sdk.ObjectField = {
+          type: convertTypeDefinitionToSdkType(propDef.type),
+          ...(propDef.description ? { description: propDef.description } : {})
+        }
+        return [propDef.propertyName, objField];
+      })),
+      ...(objDef.description ? { description: objDef.description } : {})
     }
   });
 

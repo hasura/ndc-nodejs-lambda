@@ -168,9 +168,11 @@ describe("prepare arguments", function() {
     }
     const objectTypes: ObjectTypeDefinitions = {
       "MyObject": {
+        description: null,
         properties: [
           {
             propertyName: "nullOnlyProp",
+            description: null,
             type: {
               type: "nullable",
               nullOrUndefinability: NullOrUndefinability.AcceptsNullOnly,
@@ -183,6 +185,7 @@ describe("prepare arguments", function() {
           },
           {
             propertyName: "undefinedOnlyProp",
+            description: null,
             type: {
               type: "nullable",
               nullOrUndefinability: NullOrUndefinability.AcceptsUndefinedOnly,
@@ -195,6 +198,7 @@ describe("prepare arguments", function() {
           },
           {
             propertyName: "nullOrUndefinedProp",
+            description: null,
             type: {
               type: "nullable",
               nullOrUndefinability: NullOrUndefinability.AcceptsEither,
