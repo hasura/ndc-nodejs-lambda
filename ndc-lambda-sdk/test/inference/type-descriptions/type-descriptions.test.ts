@@ -77,7 +77,7 @@ describe("type descriptions", function() {
                 argumentName: "genericInterface",
                 description: null,
                 type: {
-                  name: "IGenericInterface",
+                  name: "IGenericInterface<string>",
                   kind: "object",
                   type: "named",
                 }
@@ -131,7 +131,7 @@ describe("type descriptions", function() {
               }
             ]
           },
-          "IGenericInterface": {
+          "IGenericInterface<string>": {
             description: "The most generic of interfaces",
             properties: [
               {

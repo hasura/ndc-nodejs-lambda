@@ -312,12 +312,39 @@ describe("basic inference", function() {
                 }
               },
               {
+                argumentName: "aliasedInterface",
+                description: null,
+                type: {
+                  type: "named",
+                  kind: "object",
+                  name: "IThing"
+                }
+              },
+              {
                 argumentName: "genericInterface",
                 description: null,
                 type: {
                   type: "named",
                   kind: "object",
-                  name: "IGenericThing"
+                  name: "IGenericThing<string>"
+                }
+              },
+              {
+                argumentName: "aliasedGenericInterface",
+                description: null,
+                type: {
+                  type: "named",
+                  kind: "object",
+                  name: "AliasedIGenericThing<number>"
+                }
+              },
+              {
+                argumentName: "aliasedClosedInterface",
+                description: null,
+                type: {
+                  type: "named",
+                  kind: "object",
+                  name: "AliasedClosedIGenericThing"
                 }
               },
               {
@@ -421,7 +448,7 @@ describe("basic inference", function() {
               },
             ],
           },
-          "IGenericThing": {
+          "IGenericThing<string>": {
             description: null,
             properties: [
               {
@@ -429,6 +456,34 @@ describe("basic inference", function() {
                 description: null,
                 type: {
                   name: "String",
+                  kind: "scalar",
+                  type: "named",
+                },
+              },
+            ],
+          },
+          "AliasedIGenericThing<number>": {
+            description: null,
+            properties: [
+              {
+                propertyName: "data",
+                description: null,
+                type: {
+                  name: "Float",
+                  kind: "scalar",
+                  type: "named",
+                },
+              },
+            ],
+          },
+          "AliasedClosedIGenericThing": {
+            description: null,
+            properties: [
+              {
+                propertyName: "data",
+                description: null,
+                type: {
+                  name: "Float",
                   kind: "scalar",
                   type: "named",
                 },

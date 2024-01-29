@@ -518,18 +518,21 @@ function getObjectTypeInfo(tsType: ts.Type, typePath: TypePathSegment[], typeChe
   }
   // Interface type - this covers:
   // interface IThing { test: string }
+  // type AliasedIThing = IThing (the alias is erased by the compiler)
   else if (tsutils.isObjectType(tsType) && tsutils.isObjectFlagSet(tsType, ts.ObjectFlags.Interface)) {
     return {
-      generatedTypeName: tsType.getSymbol()?.name ?? generateTypeNameFromTypePath(typePath),
+      generatedTypeName: typeChecker.typeToString(tsType),
       properties: getMembers(tsType.getProperties(), typeChecker),
       description,
     }
   }
   // Generic interface type - this covers:
   // interface IGenericThing<T> { data: T }
+  // type AliasedIGenericThing<T> = IGenericThing<T>
+  // type AliasedClosedIGenericThing = IGenericThing<string>
   else if (tsutils.isTypeReference(tsType) && tsutils.isObjectFlagSet(tsType.target, ts.ObjectFlags.Interface) && typeChecker.isArrayType(tsType) === false && tsType.getSymbol()?.getName() !== "Promise") {
     return {
-      generatedTypeName: tsType.getSymbol()?.name ?? generateTypeNameFromTypePath(typePath),
+      generatedTypeName: typeChecker.typeToString(tsType),
       properties: getMembers(tsType.getProperties(), typeChecker),
       description,
     }
