@@ -183,18 +183,27 @@ export function getErrorDetails(error: Error): ErrorDetails {
 }
 
 function buildCausalStackTrace(error: Error): string {
+  let seenErrs: Error[] = [];
   let currErr: Error | undefined = error;
   let stackTrace = "";
 
   while (currErr) {
+    seenErrs.push(currErr);
+
     if (currErr.stack) {
       stackTrace += `${currErr.stack}${EOL}`;
     } else {
       stackTrace += `${currErr.toString()}${EOL}`;
     }
     if (currErr.cause instanceof Error) {
-      stackTrace += `caused by `;
-      currErr = currErr.cause;
+      if (seenErrs.includes(currErr.cause)) {
+        stackTrace += "<circular error cause loop>"
+        currErr = undefined;
+      } else {
+        stackTrace += `caused by `;
+        currErr = currErr.cause;
+      }
+
     } else {
       currErr = undefined;
     }
