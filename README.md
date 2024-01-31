@@ -147,6 +147,68 @@ These types are unsupported as function parameter types or return types for func
 * [`void`](https://www.typescriptlang.org/docs/handbook/2/functions.html#void), [`object`](https://www.typescriptlang.org/docs/handbook/2/functions.html#object), [`unknown`](https://www.typescriptlang.org/docs/handbook/2/functions.html#unknown), [`never`](https://www.typescriptlang.org/docs/handbook/2/functions.html#never), [`any`](https://www.typescriptlang.org/docs/handbook/2/everyday-types.html#any) types - to accept and return arbitrary JSON, use `sdk.JSONValue` instead
 * `null` and `undefined` - unless used in a union with a single other type
 
+### Error handling
+By default, unhandled errors thrown from functions are caught by the Lambda SDK host, and an `InternalServerError` is returned to Hasura. The details of the uncaught error (the message and stack trace) is captured and will be logged in the OpenTelemetry trace associated with the GraphQL request. However, the GraphQL API caller will receive a generic "internal error" response to their query. This is to ensure internal error details are not leaked to GraphQL API clients.
+
+If you want to return specific error details to the GraphQL API client, you can deliberately throw one of the below error classes (these error types correspond with the error status codes in the [NDC Specification](https://hasura.github.io/ndc-spec/specification/error-handling.html)):
+
+| Error Class              | Used When |
+|--------------------------|-----------|
+| sdk.Forbidden            | A permission check failed - for example, a mutation might fail because a check constraint was not met. |
+| sdk.Conflict             | A conflicting state would be created for the data source - for example, a mutation might fail because a foreign key constraint was not met. |
+| sdk.UnprocessableContent | There was something semantically incorrect in the request. For example, an invalid value for a function argument was received. |
+
+```typescript
+import * as sdk from "@hasura/ndc-lambda-sdk"
+
+/** @readonly */
+export function divide(x: number, y: number): number {
+  if (y === 0) {
+    throw new sdk.UnprocessableContent("Cannot divide by zero", { myErrorMetadata: "stuff", x, y })
+  }
+  return x / y;
+}
+```
+
+The GraphQL API will return the error from the API looking similar to this:
+
+```json
+{
+  "data": null,
+  "errors": [
+    {
+      "message": "ndc: Cannot divide by zero",
+      "path": ["divide"],
+      "extensions": {
+        "details": {
+          "myErrorMetadata": "stuff",
+          "x": 10,
+          "y": 0
+        }
+      }
+    }
+  ]
+}
+```
+
+If you must include stack traces in the GraphQL API response, you can collect and add them to the error details yourself using a helper function (`sdk.getErrorDetails`). However, it is not recommended to expose stack traces to API end users. Instead, API administrators can look in the GraphQL API tracing to find the stack traces logged.
+
+```typescript
+import * as sdk from "@hasura/ndc-lambda-sdk"
+
+/** @readonly */
+export function getStrings(): Promise<string[]> {
+  try {
+    return await queryForStrings();
+  } catch (e) {
+    const details = e instanceof Error
+      ? sdk.getErrorDetails(e) // Returns { message: string, stack: string }
+      : {};
+    throw new sdk.UnprocessableContent("Something went wrong :/", details)
+  }
+}
+```
+
 ### Parallel execution
 If functions are involved remote relationships in your Hasura metadata, then they may be queried in a [batch-based fashion](https://hasura.github.io/ndc-spec/specification/queries/variables.html). In this situation, any async functions that are marked with the `@readonly` JSDoc tag may be executed in parallel. The default degree of parallelism per query request to the connector is 10, but you may customise this by using the `@paralleldegree` JSDoc tag on your function.
 

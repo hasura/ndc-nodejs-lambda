@@ -1,3 +1,4 @@
+import { EOL } from "os";
 import * as sdk from "@hasura/ndc-sdk-typescript"
 import pLimit from "p-limit";
 import * as schema from "./schema"
@@ -157,14 +158,48 @@ async function invokeFunction(func: Function, preparedArgs: unknown[], functionN
     }
     return result;
   } catch (e) {
-    if (e instanceof Error) {
-      throw new sdk.InternalServerError(`Error encountered when invoking function '${functionName}'`, { message: e.message, stack: e.stack });
+    if (e instanceof sdk.ConnectorError) {
+      throw e;
+    } else if (e instanceof Error) {
+      throw new sdk.InternalServerError(`Error encountered when invoking function '${functionName}'`, getErrorDetails(e));
     } else if (typeof e === "string") {
       throw new sdk.InternalServerError(`Error encountered when invoking function '${functionName}'`, { message: e });
     } else {
       throw new sdk.InternalServerError(`Error encountered when invoking function '${functionName}'`);
     }
   }
+}
+
+export type ErrorDetails = {
+  message: string
+  stack: string
+}
+
+export function getErrorDetails(error: Error): ErrorDetails {
+  return {
+    message: error.message,
+    stack: buildCausalStackTrace(error),
+  }
+}
+
+function buildCausalStackTrace(error: Error): string {
+  let currErr: Error | undefined = error;
+  let stackTrace = "";
+
+  while (currErr) {
+    if (currErr.stack) {
+      stackTrace += `${currErr.stack}${EOL}`;
+    } else {
+      stackTrace += `${currErr.toString()}${EOL}`;
+    }
+    if (currErr.cause instanceof Error) {
+      stackTrace += `caused by `;
+      currErr = currErr.cause;
+    } else {
+      currErr = undefined;
+    }
+  }
+  return stackTrace;
 }
 
 export function reshapeResultToNdcResponseValue(value: unknown, type: schema.TypeDefinition, valuePath: string[], fields: Record<string, sdk.Field> | "AllColumns", objectTypes: schema.ObjectTypeDefinitions): unknown {
