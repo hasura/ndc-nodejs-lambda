@@ -30,11 +30,12 @@ export async function executeQuery(queryRequest: sdk.QueryRequest, functionsSche
     const resolvedArgs = resolveArgumentValues(queryRequest.arguments, variables)
     return prepareArguments(resolvedArgs, functionDefinition, functionsSchema.objectTypes);
   });
+  const fieldSelection = prepareResultReshapingFieldSelection(queryRequest.query.fields, functionDefinition.resultType);
 
   const parallelLimit = pLimit(functionDefinition.parallelDegree ?? DEFAULT_PARALLEL_DEGREE);
   const functionInvocations: Promise<sdk.RowSet>[] = functionInvocationPreparedArgs.map(invocationPreparedArgs => parallelLimit(async () => {
     const result = await invokeFunction(runtimeFunction, invocationPreparedArgs, functionName);
-    const prunedResult = reshapeResultToNdcResponseValue(result, functionDefinition.resultType, [], queryRequest.query.fields ?? {}, functionsSchema.objectTypes);
+    const prunedResult = reshapeResultToNdcResponseValue(result, functionDefinition.resultType, queryRequest.query.fields, functionsSchema.objectTypes);
     return {
       aggregates: {},
       rows: [
@@ -77,7 +78,7 @@ async function executeMutationOperation(mutationOperation: sdk.MutationOperation
 
   const preparedArgs = prepareArguments(mutationOperation.arguments, functionDefinition, functionsSchema.objectTypes);
   const result = await invokeFunction(runtimeFunction, preparedArgs, functionName);
-  const prunedResult = reshapeResultToNdcResponseValue(result, functionDefinition.resultType, [], mutationOperation.fields ?? {}, functionsSchema.objectTypes);
+  const prunedResult = reshapeResultToNdcResponseValue(result, functionDefinition.resultType, mutationOperation.fields, functionsSchema.objectTypes);
 
   return {
     affected_rows: 1,
@@ -211,20 +212,68 @@ function buildCausalStackTrace(error: Error): string {
   return stackTrace;
 }
 
-export function reshapeResultToNdcResponseValue(value: unknown, type: schema.TypeDefinition, valuePath: string[], fields: Record<string, sdk.Field> | "AllColumns", objectTypes: schema.ObjectTypeDefinitions): unknown {
+export function reshapeResultToNdcResponseValue(value: unknown, type: schema.TypeDefinition, fields: Record<string, sdk.Field> | null | undefined, objectTypes: schema.ObjectTypeDefinitions): unknown {
+  const fieldSelection = prepareResultReshapingFieldSelection(fields, type)
+  return reshapeResultToUsingFieldSelection(value, type, [], fieldSelection, objectTypes);
+}
+
+// Represents either selecting a scalar (ie. the whole value, opaquely), an object (selecting properties), or an array (select whole array)
+type FieldSelection = sdk.NestedField | { type: "scalar" }
+
+function prepareResultReshapingFieldSelection(fields: Record<string, sdk.Field> | null | undefined, functionResultType: schema.TypeDefinition): FieldSelection {
+  const underlyingResultType =
+    functionResultType.type === "nullable"
+      ? functionResultType.underlyingType
+      : functionResultType;
+
+  switch (underlyingResultType.type) {
+    case "array":
+      return fields
+         ? { type: "array", fields: { type: "object", fields } }
+         : { type: "scalar" }; // Select all array elements and everything in each element
+    case "named":
+      switch (underlyingResultType.kind) {
+        case "object":
+          return fields
+            ? { type: "object", fields }
+            : { type: "scalar" }; // Select all properties
+        case "scalar":
+          return { type: "scalar" }
+        default:
+          return unreachable(underlyingResultType["kind"]);
+      }
+    case "nullable":
+      throw new sdk.InternalServerError("Invalid function return type, double nested nullable found");
+
+    default:
+      return unreachable(underlyingResultType["type"]);
+  }
+}
+
+function reshapeResultToUsingFieldSelection(value: unknown, type: schema.TypeDefinition, valuePath: string[], fieldSelection: FieldSelection, objectTypes: schema.ObjectTypeDefinitions): unknown {
   switch (type.type) {
     case "array":
-      if (isArray(value)) {
-        return value.map((elementValue, index) => reshapeResultToNdcResponseValue(elementValue, type.elementType, [...valuePath, `[${index}]`], fields, objectTypes))
-      }
-      break;
+      if (!isArray(value))
+        throw new sdk.InternalServerError(`Expected an array, but received '${value === null ? "null" : null ?? typeof value}'`);
+
+      const elementFieldSelection = (() => {
+        switch (fieldSelection.type) {
+          case "scalar": return fieldSelection;
+          case "array": return fieldSelection.fields;
+          case "object": throw new sdk.InternalServerError("Trying to perform an object selection on an array type")
+          default: return unreachable(fieldSelection["type"]);
+        }
+      })();
+
+      return value.map((elementValue, index) => reshapeResultToUsingFieldSelection(elementValue, type.elementType, [...valuePath, `[${index}]`], elementFieldSelection, objectTypes))
+
 
     case "nullable":
       // Selected fields must always return a value, so they cannot be undefined. So all
       // undefineds are coerced to nulls so that the field is included with a null value.
       return value === null || value === undefined
         ? null
-        : reshapeResultToNdcResponseValue(value, type.underlyingType, valuePath, fields, objectTypes);
+        : reshapeResultToUsingFieldSelection(value, type.underlyingType, valuePath, fieldSelection, objectTypes);
 
     case "named":
       switch (type.kind) {
@@ -240,10 +289,14 @@ export function reshapeResultToNdcResponseValue(value: unknown, type: schema.Typ
           if (value === null || Array.isArray(value) || typeof value !== "object")
             throw new sdk.InternalServerError(`Expected an object, but received '${value === null ? "null" : null ?? Array.isArray(value) ? "array" : null ?? typeof value}'`);
 
-          const selectedFields: Record<string, sdk.Field> =
-            fields === "AllColumns"
-              ? Object.fromEntries(objectType.properties.map(propDef => [propDef.propertyName, { type: "column", column: propDef.propertyName }]))
-              : fields;
+          const selectedFields: Record<string, sdk.Field> = (() => {
+            switch (fieldSelection.type) {
+              case "scalar": return Object.fromEntries(objectType.properties.map(propDef => [propDef.propertyName, { type: "column", column: propDef.propertyName }]));
+              case "array": throw new sdk.InternalServerError("Trying to perform an array selection on an object type");
+              case "object": return fieldSelection.fields;
+              default: return unreachable(fieldSelection["type"]);
+            }
+          })();
 
           return mapObjectValues(selectedFields, (field, fieldName) => {
             switch(field.type) {
@@ -252,11 +305,14 @@ export function reshapeResultToNdcResponseValue(value: unknown, type: schema.Typ
                 if (objPropDef === undefined)
                   throw new sdk.InternalServerError(`Unable to find property definition '${field.column}' on object type '${type.name}'`);
 
-                // We pass "AllColumns" as the fields because we don't yet support nested field selections, so we just include all columns by default for now
-                return reshapeResultToNdcResponseValue((value as Record<string, unknown>)[field.column], objPropDef.type, [...valuePath, field.column], "AllColumns", objectTypes)
+                const columnFieldSelection = field.fields ?? { type: "scalar" };
+                return reshapeResultToUsingFieldSelection((value as Record<string, unknown>)[field.column], objPropDef.type, [...valuePath, field.column], columnFieldSelection, objectTypes)
+
+              case "relationship":
+                throw new sdk.NotSupported(`Field '${fieldName}' is a relationship field, which is unsupported.'`)
 
               default:
-                throw new sdk.NotSupported(`Field '${fieldName}' uses an unsupported field type: '${field.type}'`)
+                return unreachable(field["type"]);
             }
           })
 
