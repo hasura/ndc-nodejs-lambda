@@ -2,6 +2,7 @@ type MyObject = {
   string: string,
   nullableString: string | null,
   optionalString?: string
+  optionalBoolean?: boolean
   undefinedString: string | undefined
   nullOrUndefinedString: string | undefined | null
 }

@@ -334,7 +334,7 @@ function deriveSchemaTypeIfTsArrayType(tsType: ts.Type, typePath: TypePathSegmen
 }
 
 function deriveSchemaTypeIfScalarType(tsType: ts.Type, context: TypeDerivationContext): Result<schema.TypeDefinition, string[]> | undefined {
-  if (tsutils.isIntrinsicBooleanType(tsType)) {
+  if (tsutils.isIntrinsicBooleanType(tsType) || isBooleanUnionType(tsType)) {
     context.scalarTypeDefinitions[schema.BuiltInScalarTypeName.Boolean] = {};
     return new Ok({ type: "named", kind: "scalar", name: schema.BuiltInScalarTypeName.Boolean });
   }
@@ -394,6 +394,18 @@ function isMapType(tsType: ts.Type): boolean {
   return symbol.escapedName === "Map" && symbol.members?.has(ts.escapeLeadingUnderscores("keys")) === true && symbol.members?.has(ts.escapeLeadingUnderscores("values")) === true && symbol.members?.has(ts.escapeLeadingUnderscores("entries")) === true;
 }
 
+// Identifies the 'true | false' type (which is distinct from the 'boolean' type)
+function isBooleanUnionType(tsType: ts.Type): boolean {
+  if (!tsutils.isUnionType(tsType)) return false;
+
+  return tsType.types.length === 2 && unionTypeContainsBothBooleanLiterals(tsType);
+}
+
+function unionTypeContainsBothBooleanLiterals(tsUnionType: ts.UnionType): boolean {
+  return tsUnionType.types.find(tsType => tsutils.isBooleanLiteralType(tsType) && tsType.intrinsicName === "true") !== undefined
+    && tsUnionType.types.find(tsType => tsutils.isBooleanLiteralType(tsType) && tsType.intrinsicName === "false") !== undefined;
+}
+
 function isJSONValueType(tsType: ts.Type, ndcLambdaSdkModule: ts.ResolvedModuleFull): boolean {
   // Must be a class type
   if (!tsutils.isObjectType(tsType) || !tsutils.isObjectFlagSet(tsType, ts.ObjectFlags.Class))
@@ -411,7 +423,7 @@ function isJSONValueType(tsType: ts.Type, ndcLambdaSdkModule: ts.ResolvedModuleF
 }
 
 function deriveSchemaTypeIfNullableType(tsType: ts.Type, typePath: TypePathSegment[], context: TypeDerivationContext, recursionDepth: number): Result<schema.TypeDefinition, string[]> | undefined {
-  const notNullableResult = unwrapNullableType(tsType);
+  const notNullableResult = unwrapNullableType(tsType, context.typeChecker);
   if (notNullableResult !== null) {
     const [notNullableType, nullOrUndefinability] = notNullableResult;
     return deriveSchemaTypeForTsType(notNullableType, typePath, context, recursionDepth + 1)
@@ -456,11 +468,11 @@ function unwrapPromiseType(tsType: ts.Type, typeChecker: ts.TypeChecker): ts.Typ
   }
 }
 
-function unwrapNullableType(ty: ts.Type): [ts.Type, schema.NullOrUndefinability] | null {
-  if (!ty.isUnion()) return null;
+function unwrapNullableType(tsType: ts.Type, typeChecker: ts.TypeChecker): [ts.Type, schema.NullOrUndefinability] | null {
+  if (!tsType.isUnion()) return null;
 
-  const isNullable = ty.types.find(tsutils.isIntrinsicNullType) !== undefined;
-  const isUndefined = ty.types.find(tsutils.isIntrinsicUndefinedType) !== undefined;
+  const isNullable = tsType.types.find(tsutils.isIntrinsicNullType) !== undefined;
+  const isUndefined = tsType.types.find(tsutils.isIntrinsicUndefinedType) !== undefined;
   const nullOrUndefinability =
     isNullable
       ? ( isUndefined
@@ -472,12 +484,21 @@ function unwrapNullableType(ty: ts.Type): [ts.Type, schema.NullOrUndefinability]
           : null
         );
 
-  const typesWithoutNullAndUndefined = ty.types
+  const typesWithoutNullAndUndefined = tsType.types
     .filter(t => !tsutils.isIntrinsicNullType(t) && !tsutils.isIntrinsicUndefinedType(t));
 
-  return typesWithoutNullAndUndefined.length === 1 && nullOrUndefinability
-    ? [typesWithoutNullAndUndefined[0]!, nullOrUndefinability]
-    : null;
+  // The case where one type is unioned with either or both of null and undefined
+  if (typesWithoutNullAndUndefined.length === 1 && nullOrUndefinability) {
+    return [typesWithoutNullAndUndefined[0]!, nullOrUndefinability];
+  }
+  // The weird edge case where null or undefined is unioned with both 'true' and 'false'
+  // We simplify this to being unioned with 'boolean' instead
+  else if (nullOrUndefinability && typesWithoutNullAndUndefined.length === 2 && unionTypeContainsBothBooleanLiterals(tsType)) {
+    return [typeChecker.getBooleanType(), nullOrUndefinability];
+  }
+  else {
+    return null;
+  }
 }
 
 type PropertyTypeInfo = {
