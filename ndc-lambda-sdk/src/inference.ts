@@ -122,7 +122,7 @@ function deriveSchemaFromFunctions(sourceFile: ts.SourceFile, typeChecker: ts.Ty
   const functionIssues: FunctionIssues = {};
 
   const sourceFileSymbol = typeChecker.getSymbolAtLocation(sourceFile) ?? throwError("sourceFile does not have a symbol");
-  const functionDeclarations: [string, ts.FunctionDeclaration][] = typeChecker.getExportsOfModule(sourceFileSymbol).flatMap(exportedSymbol => {
+  const functionDeclarations: [string, ts.FunctionDeclaration | ts.MethodDeclaration][] = typeChecker.getExportsOfModule(sourceFileSymbol).flatMap<[string, ts.FunctionDeclaration | ts.MethodDeclaration]>(exportedSymbol => {
     const declaration = exportedSymbol.getDeclarations()?.[0] ?? throwError("exported symbol does not have a declaration");
 
     // If exported via 'export { name } from "./imported"'
@@ -138,6 +138,35 @@ function deriveSchemaFromFunctions(sourceFile: ts.SourceFile, typeChecker: ts.Ty
     else if (ts.isFunctionDeclaration(declaration)) {
       const identifier = declaration.name ?? throwError("function declaration didn't have an identifier");
       return [[identifier.text, declaration]];
+    }
+    // If exported via 'export const { bindingElement } = something';
+    else if (ts.isBindingElement(declaration)) {
+      const identifier = declaration.name ?? throwError("binding element didn't have an identifier");
+      const bindingElementType = typeChecker.getTypeAtLocation(declaration);
+      const exportedDeclaration = bindingElementType.getSymbol()?.declarations?.[0];
+
+      // export const {
+      //   myMethod: test
+      // } = {
+      //   /** @readonly */
+      //   myMethod: classInstance.myMethod.bind(classInstance)
+      // };
+      // Use: declaration.parent.parent.initializer.symbol.members.get("myMethod").getJsDocTags()
+
+      // const other = {
+      //   /** @readonly */
+      //   myMethod: classInstance.myMethod.bind(classInstance)
+      // }
+      // export const {
+      //   myMethod: test
+      // } = other;
+      // Use: typeChecker.getTypeOfSymbolAtLocation(typeChecker.getSymbolAtLocation(declaration.parent.parent.initializer), typeChecker.getSymbolAtLocation(declaration.parent.parent.initializer).declarations[0]).members.get("myMethod").getJsDocTags()
+
+      if (exportedDeclaration !== undefined && ts.isFunctionDeclaration(exportedDeclaration)) {
+        return [[identifier.getText(), exportedDeclaration]]
+      } else if (exportedDeclaration !== undefined && ts.isMethodDeclaration(exportedDeclaration)) {
+        return [[identifier.getText(), exportedDeclaration]]
+      }
     }
 
     return [];
@@ -161,7 +190,7 @@ function deriveSchemaFromFunctions(sourceFile: ts.SourceFile, typeChecker: ts.Ty
   return [functionsSchema, functionIssues];
 }
 
-function deriveFunctionSchema(functionDeclaration: ts.FunctionDeclaration, exportedFunctionName: string, context: TypeDerivationContext): Result<schema.FunctionDefinition, string[]> {
+function deriveFunctionSchema(functionDeclaration: ts.FunctionDeclaration | ts.MethodDeclaration, exportedFunctionName: string, context: TypeDerivationContext): Result<schema.FunctionDefinition, string[]> {
   const functionIdentifier = functionDeclaration.name ?? throwError("Function didn't have an identifier");
   const functionSymbol = context.typeChecker.getSymbolAtLocation(functionIdentifier) ?? throwError(`Function '${exportedFunctionName}' didn't have a symbol`);
   const functionType = context.typeChecker.getTypeOfSymbolAtLocation(functionSymbol, functionDeclaration);
