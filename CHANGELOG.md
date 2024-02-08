@@ -4,6 +4,8 @@ This changelog documents the changes between release versions.
 ## main
 Changes to be included in the next upcoming release
 
+- Add support for treating 'true | false' as a Boolean type ([#7](https://github.com/hasura/ndc-nodejs-lambda/pull/7))
+
 ## v0.12.0
 - Add support for JSDoc descriptions from object types ([#3](https://github.com/hasura/ndc-nodejs-lambda/pull/3))
 - Fix type name conflicts when using generic interfaces ([#4](https://github.com/hasura/ndc-nodejs-lambda/pull/4))
