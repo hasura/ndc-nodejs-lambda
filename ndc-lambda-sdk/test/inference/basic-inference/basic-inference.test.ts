@@ -255,6 +255,15 @@ describe("basic inference", function() {
                 }
               },
               {
+                argumentName: "booleanUnion",
+                description: null,
+                type: {
+                  type: "named",
+                  kind: "scalar",
+                  name: "Boolean"
+                }
+              },
+              {
                 argumentName: "array",
                 description: null,
                 type: {
@@ -575,6 +584,7 @@ describe("basic inference", function() {
           },
         },
         scalarTypes: {
+          Boolean: {},
           Float: {},
           String: {},
         }
@@ -708,6 +718,19 @@ describe("basic inference", function() {
                 },
               },
               {
+                propertyName: "optionalBoolean",
+                description: null,
+                type: {
+                  type: "nullable",
+                  nullOrUndefinability: NullOrUndefinability.AcceptsUndefinedOnly,
+                  underlyingType: {
+                    kind: "scalar",
+                    name: "Boolean",
+                    type: "named",
+                  },
+                },
+              },
+              {
                 propertyName: "undefinedString",
                 description: null,
                 type: {
@@ -737,6 +760,7 @@ describe("basic inference", function() {
           },
         },
         scalarTypes: {
+          Boolean: {},
           String: {},
         },
       }
