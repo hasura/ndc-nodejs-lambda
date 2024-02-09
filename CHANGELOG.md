@@ -4,8 +4,15 @@ This changelog documents the changes between release versions.
 ## main
 Changes to be included in the next upcoming release
 
+## v0.13.0
+- Add support for treating 'true | false' as a Boolean type ([#7](https://github.com/hasura/ndc-nodejs-lambda/pull/7))
+
+## v0.12.0
 - Add support for JSDoc descriptions from object types ([#3](https://github.com/hasura/ndc-nodejs-lambda/pull/3))
 - Fix type name conflicts when using generic interfaces ([#4](https://github.com/hasura/ndc-nodejs-lambda/pull/4))
+- Improve error handling of errors thrown from functions ([#5](https://github.com/hasura/ndc-nodejs-lambda/pull/5))
+  - The entire causal stack trace is now captured as an error detail for unhandled errors
+  - `sdk.Forbidden`, `sdk.Conflict`, `sdk.UnprocessableContent` can be thrown to return error details to GraphQL API clients
 
 ## v0.11.0
 - Add support for parallel execution of readonly functions ([#2](https://github.com/hasura/ndc-nodejs-lambda/pull/2))

@@ -36,6 +36,7 @@ export function bar(
   string: string,
   aliasedString: AliasedString,
   genericScalar: GenericScalar<string>,
+  booleanUnion: true | false,
   array: string[],
   anonObj: {a: number, b: string},
   aliasedObj: Bar,

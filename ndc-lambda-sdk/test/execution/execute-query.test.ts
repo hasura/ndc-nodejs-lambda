@@ -1,5 +1,5 @@
 import { describe, it } from "mocha";
-import { assert } from "chai";
+import { assert, expect } from "chai";
 import * as sdk from "@hasura/ndc-sdk-typescript"
 import { executeQuery } from "../../src/execution";
 import { FunctionNdcKind, FunctionsSchema } from "../../src/schema";
@@ -271,4 +271,97 @@ describe("execute query", function() {
     ]);
     assert.deepStrictEqual(functionCallCompletions, ["first", "third", "fourth", "second"]);
   });
+
+  describe("function error handling", function() {
+    const functionSchema: FunctionsSchema = {
+      functions: {
+        "theFunction": {
+          ndcKind: FunctionNdcKind.Function,
+          description: null,
+          parallelDegree: null,
+          arguments: [],
+          resultType: {
+            type: "named",
+            kind: "scalar",
+            name: "String"
+          }
+        }
+      },
+      objectTypes: {},
+      scalarTypes: {
+        "String": {}
+      }
+    };
+    const queryRequest: sdk.QueryRequest = {
+      collection: "theFunction",
+      query: {
+        fields: {},
+      },
+      arguments: {
+        "param": {
+          type: "literal",
+          value: "test"
+        }
+      },
+      collection_relationships: {}
+    };
+
+    it("Error -> sdk.InternalServerError", async function() {
+      const runtimeFunctions = {
+        "theFunction": () => {
+          throw new Error("BOOM!");
+        }
+      };
+
+      await expect(executeQuery(queryRequest, functionSchema, runtimeFunctions))
+        .to.be.rejectedWith(sdk.InternalServerError, "Error encountered when invoking function 'theFunction'")
+        .which.eventually.has.property("details")
+        .which.include.keys("stack")
+        .and.has.property("message", "BOOM!");
+    });
+
+    it("string -> sdk.InternalServerError", async function() {
+      const runtimeFunctions = {
+        "theFunction": () => {
+          throw "A bad way to throw errors";
+        }
+      };
+
+      await expect(executeQuery(queryRequest, functionSchema, runtimeFunctions))
+        .to.be.rejectedWith(sdk.InternalServerError, "Error encountered when invoking function 'theFunction'")
+        .which.eventually.has.property("details")
+        .and.has.property("message", "A bad way to throw errors");
+    });
+
+    it("unknown -> sdk.InternalServerError", async function() {
+      const runtimeFunctions = {
+        "theFunction": () => {
+          throw 666; // What are you even doing? 👊
+        }
+      };
+
+      await expect(executeQuery(queryRequest, functionSchema, runtimeFunctions))
+        .to.be.rejectedWith(sdk.InternalServerError, "Error encountered when invoking function 'theFunction'");
+    });
+
+    describe("sdk exceptions are passed through", function() {
+      const exceptions = [
+        sdk.BadRequest, sdk.Forbidden, sdk.Conflict, sdk.UnprocessableContent, sdk.InternalServerError, sdk.NotSupported, sdk.BadGateway
+      ];
+
+      for (const exceptionCtor of exceptions) {
+        it(`sdk.${exceptionCtor.name}`, async function() {
+          const runtimeFunctions = {
+            "theFunction": () => {
+              throw new exceptionCtor("Nope!", { deets: "stuff" });
+            }
+          };
+
+          await expect(executeQuery(queryRequest, functionSchema, runtimeFunctions))
+            .to.be.rejectedWith(exceptionCtor, "Nope!")
+            .and.eventually.property("details").deep.equals({"deets": "stuff"});
+        });
+      }
+    });
+  })
 });
