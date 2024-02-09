@@ -33,10 +33,12 @@ export default class extends Generator {
 
     const openapi = this.options['openapi'];
     if(openapi !== ''){
+      const isUrl = /^https?:/.test(openapi)
       this.log.info("Generating API class from OpenAPI file...")
       await generateApi({
         name: "Api.ts",
-        input: openapi,
+        url: isUrl ? openapi : null,
+        input: !isUrl ? openapi : null,
         output: path.resolve(process.cwd())
       })
     }
