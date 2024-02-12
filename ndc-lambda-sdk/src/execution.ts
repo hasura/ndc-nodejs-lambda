@@ -30,20 +30,11 @@ export async function executeQuery(queryRequest: sdk.QueryRequest, functionsSche
     const resolvedArgs = resolveArgumentValues(queryRequest.arguments, variables)
     return prepareArguments(resolvedArgs, functionDefinition, functionsSchema.objectTypes);
   });
-  const fieldSelection = prepareResultReshapingFieldSelection(queryRequest.query.fields, functionDefinition.resultType);
 
   const parallelLimit = pLimit(functionDefinition.parallelDegree ?? DEFAULT_PARALLEL_DEGREE);
   const functionInvocations: Promise<sdk.RowSet>[] = functionInvocationPreparedArgs.map(invocationPreparedArgs => parallelLimit(async () => {
     const result = await invokeFunction(runtimeFunction, invocationPreparedArgs, functionName);
-    const prunedResult = reshapeResultToNdcResponseValue(result, functionDefinition.resultType, queryRequest.query.fields, functionsSchema.objectTypes);
-    return {
-      aggregates: {},
-      rows: [
-        {
-          __value: prunedResult
-        }
-      ]
-    };
+    return reshapeResultUsingFunctionCallingConvention(result, functionDefinition.resultType, queryRequest.query, functionsSchema.objectTypes);
   }));
 
   return await Promise.all(functionInvocations);
@@ -212,13 +203,56 @@ function buildCausalStackTrace(error: Error): string {
   return stackTrace;
 }
 
-export function reshapeResultToNdcResponseValue(value: unknown, type: schema.TypeDefinition, fields: Record<string, sdk.Field> | null | undefined, objectTypes: schema.ObjectTypeDefinitions): unknown {
+function reshapeResultToNdcResponseValue(value: unknown, type: schema.TypeDefinition, fields: Record<string, sdk.Field> | null | undefined, objectTypes: schema.ObjectTypeDefinitions): unknown {
   const fieldSelection = prepareResultReshapingFieldSelection(fields, type)
-  return reshapeResultToUsingFieldSelection(value, type, [], fieldSelection, objectTypes);
+  return reshapeResultUsingFieldSelection(value, type, [], fieldSelection, objectTypes);
 }
 
 // Represents either selecting a scalar (ie. the whole value, opaquely), an object (selecting properties), or an array (select whole array)
-type FieldSelection = sdk.NestedField | { type: "scalar" }
+export type FieldSelection = sdk.NestedField | { type: "scalar" }
+
+function reshapeResultUsingFunctionCallingConvention(functionResultValue: unknown, functionResultType: schema.TypeDefinition, query: sdk.Query, objectTypes: schema.ObjectTypeDefinitions): sdk.RowSet {
+  if (query.aggregates) throw new sdk.NotSupported("Query aggregates are not supported");
+  if (query.order_by) throw new sdk.NotSupported("Query order_by is not supported");
+  if (query.predicate) throw new sdk.NotSupported("Query predicate is not supported");
+  if (!query.fields) {
+    return {
+      aggregates: null,
+      rows: null,
+    }
+  }
+  // There's one virtual row in the function calling convention, so if the query (pointlessly) usees
+  // pagination to skip it, just do what it says
+  if (query.limit !== undefined && query.limit !== null && query.limit <= 0
+      || query.offset !== undefined && query.offset !== null && query.offset >= 1) {
+    return {
+      aggregates: null,
+      rows: [],
+    }
+  }
+
+  const rowValue = mapObjectValues(query.fields, (field: sdk.Field, fieldName: string) => {
+    switch (field.type) {
+      case "column":
+        if (field.column === "__value") {
+          return reshapeResultUsingFieldSelection(functionResultValue, functionResultType, [fieldName], field.fields ?? { type: "scalar" }, objectTypes);
+        } else {
+          throw new sdk.BadRequest(`Unknown column '${field.column}' used in root query field`)
+        }
+
+      case "relationship":
+        throw new sdk.NotSupported(`Field '${fieldName}' is a relationship field, which is unsupported.'`)
+
+      default:
+        return unreachable(field["type"]);
+    }
+  });
+
+  return {
+    aggregates: null,
+    rows: [rowValue]
+  }
+}
 
 function prepareResultReshapingFieldSelection(fields: Record<string, sdk.Field> | null | undefined, functionResultType: schema.TypeDefinition): FieldSelection {
   const underlyingResultType =
@@ -250,7 +284,7 @@ function prepareResultReshapingFieldSelection(fields: Record<string, sdk.Field> 
   }
 }
 
-function reshapeResultToUsingFieldSelection(value: unknown, type: schema.TypeDefinition, valuePath: string[], fieldSelection: FieldSelection, objectTypes: schema.ObjectTypeDefinitions): unknown {
+export function reshapeResultUsingFieldSelection(value: unknown, type: schema.TypeDefinition, valuePath: string[], fieldSelection: FieldSelection, objectTypes: schema.ObjectTypeDefinitions): unknown {
   switch (type.type) {
     case "array":
       if (!isArray(value))
@@ -260,12 +294,12 @@ function reshapeResultToUsingFieldSelection(value: unknown, type: schema.TypeDef
         switch (fieldSelection.type) {
           case "scalar": return fieldSelection;
           case "array": return fieldSelection.fields;
-          case "object": throw new sdk.InternalServerError("Trying to perform an object selection on an array type")
+          case "object": throw new sdk.BadRequest(`Trying to perform an object selection on an array type at '${valuePath.join(".")}'`)
           default: return unreachable(fieldSelection["type"]);
         }
       })();
 
-      return value.map((elementValue, index) => reshapeResultToUsingFieldSelection(elementValue, type.elementType, [...valuePath, `[${index}]`], elementFieldSelection, objectTypes))
+      return value.map((elementValue, index) => reshapeResultUsingFieldSelection(elementValue, type.elementType, [...valuePath, `[${index}]`], elementFieldSelection, objectTypes))
 
 
     case "nullable":
@@ -273,7 +307,7 @@ function reshapeResultToUsingFieldSelection(value: unknown, type: schema.TypeDef
       // undefineds are coerced to nulls so that the field is included with a null value.
       return value === null || value === undefined
         ? null
-        : reshapeResultToUsingFieldSelection(value, type.underlyingType, valuePath, fieldSelection, objectTypes);
+        : reshapeResultUsingFieldSelection(value, type.underlyingType, valuePath, fieldSelection, objectTypes);
 
     case "named":
       switch (type.kind) {
@@ -292,7 +326,7 @@ function reshapeResultToUsingFieldSelection(value: unknown, type: schema.TypeDef
           const selectedFields: Record<string, sdk.Field> = (() => {
             switch (fieldSelection.type) {
               case "scalar": return Object.fromEntries(objectType.properties.map(propDef => [propDef.propertyName, { type: "column", column: propDef.propertyName }]));
-              case "array": throw new sdk.InternalServerError("Trying to perform an array selection on an object type");
+              case "array": throw new sdk.BadRequest(`Trying to perform an array selection on an object type at '${valuePath.join(".")}'`);
               case "object": return fieldSelection.fields;
               default: return unreachable(fieldSelection["type"]);
             }
@@ -303,10 +337,10 @@ function reshapeResultToUsingFieldSelection(value: unknown, type: schema.TypeDef
               case "column":
                 const objPropDef = objectType.properties.find(prop => prop.propertyName === field.column);
                 if (objPropDef === undefined)
-                  throw new sdk.InternalServerError(`Unable to find property definition '${field.column}' on object type '${type.name}'`);
+                  throw new sdk.BadRequest(`Unable to find property definition '${field.column}' on object type '${type.name}' at '${valuePath.join(".")}'`);
 
                 const columnFieldSelection = field.fields ?? { type: "scalar" };
-                return reshapeResultToUsingFieldSelection((value as Record<string, unknown>)[field.column], objPropDef.type, [...valuePath, field.column], columnFieldSelection, objectTypes)
+                return reshapeResultUsingFieldSelection((value as Record<string, unknown>)[field.column], objPropDef.type, [...valuePath, fieldName], columnFieldSelection, objectTypes)
 
               case "relationship":
                 throw new sdk.NotSupported(`Field '${fieldName}' is a relationship field, which is unsupported.'`)
