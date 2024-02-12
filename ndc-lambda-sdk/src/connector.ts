@@ -15,7 +15,7 @@ export type State = {
 }
 
 export const RAW_CONFIGURATION_SCHEMA: JSONSchemaObject = {
-  description: 'NodeJS Functions SDK Connector Configuration',
+  description: 'NodeJS Lambda SDK Connector Configuration',
   type: 'object',
   required: [],
   properties: {}
