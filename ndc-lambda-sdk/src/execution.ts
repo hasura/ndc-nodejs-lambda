@@ -41,15 +41,16 @@ export async function executeQuery(queryRequest: sdk.QueryRequest, functionsSche
 }
 
 export async function executeMutation(mutationRequest: sdk.MutationRequest, functionsSchema: schema.FunctionsSchema, runtimeFunctions: RuntimeFunctions): Promise<sdk.MutationResponse> {
-  const operationResults: sdk.MutationOperationResults[] = [];
+  if (mutationRequest.operations.length > 1)
+    throw new sdk.NotSupported("Transactional mutations (multiple operations) are not supported");
+  if (mutationRequest.operations.length <= 0)
+    throw new sdk.BadRequest("One mutation operation must be provided")
 
-  for (const mutationOperation of mutationRequest.operations) {
-    const result = await executeMutationOperation(mutationOperation, functionsSchema, runtimeFunctions);
-    operationResults.push(result);
-  }
+  const mutationOperation = mutationRequest.operations[0]!;
+  const result = await executeMutationOperation(mutationOperation, functionsSchema, runtimeFunctions);
 
   return {
-    operation_results: operationResults
+    operation_results: [result]
   };
 }
 

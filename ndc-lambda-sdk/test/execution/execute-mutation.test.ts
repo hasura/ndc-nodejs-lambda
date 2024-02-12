@@ -42,7 +42,7 @@ describe("execute mutation", function() {
         "String": {}
       }
     };
-    const queryRequest: sdk.MutationRequest = {
+    const mutationRequest: sdk.MutationRequest = {
       operations: [
         {
           type: "procedure",
@@ -56,7 +56,7 @@ describe("execute mutation", function() {
       collection_relationships: {}
     };
 
-    const result = await executeMutation(queryRequest, functionSchema, runtimeFunctions);
+    const result = await executeMutation(mutationRequest, functionSchema, runtimeFunctions);
     assert.deepStrictEqual(result, {
       operation_results: [
         {
@@ -68,6 +68,70 @@ describe("execute mutation", function() {
       ]
     });
     assert.equal(functionCallCount, 1);
+  });
+
+  it("blocks execution of multiple operations", async function() {
+    let functionCallCount = 0;
+    const runtimeFunctions = {
+      "theFunction": (param: string) => {
+        functionCallCount++;
+        return `First function called with '${param}'`;
+      }
+    };
+    const functionSchema: FunctionsSchema = {
+      functions: {
+        "theFunction": {
+          ndcKind: FunctionNdcKind.Procedure,
+          description: null,
+          parallelDegree: null,
+          arguments: [
+            {
+              argumentName: "param",
+              description: null,
+              type: {
+                type: "named",
+                kind: "scalar",
+                name: "String"
+              }
+            },
+          ],
+          resultType: {
+            type: "named",
+            kind: "scalar",
+            name: "String"
+          }
+        }
+      },
+      objectTypes: {},
+      scalarTypes: {
+        "String": {}
+      }
+    };
+    const mutationRequest: sdk.MutationRequest = {
+      operations: [
+        {
+          type: "procedure",
+          name: "theFunction",
+          fields: {},
+          arguments: {
+            "param": "test"
+          }
+        },
+        {
+          type: "procedure",
+          name: "theFunction",
+          fields: {},
+          arguments: {
+            "param": "test2"
+          }
+        }
+      ],
+      collection_relationships: {}
+    };
+
+    await expect(executeMutation(mutationRequest, functionSchema, runtimeFunctions))
+        .to.be.rejectedWith(sdk.NotSupported, "Transactional mutations (multiple operations) are not supported");
+    assert.equal(functionCallCount, 0);
   });
 
   describe("function error handling", function() {
