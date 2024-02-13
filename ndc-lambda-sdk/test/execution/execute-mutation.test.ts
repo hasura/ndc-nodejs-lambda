@@ -47,7 +47,7 @@ describe("execute mutation", function() {
         {
           type: "procedure",
           name: "theFunction",
-          fields: {},
+          fields: null,
           arguments: {
             "param": "test"
           }
@@ -60,10 +60,124 @@ describe("execute mutation", function() {
     assert.deepStrictEqual(result, {
       operation_results: [
         {
-          affected_rows: 1,
-          returning: [
-            { __value: "Called with 'test'" }
+          type: "procedure",
+          result: "Called with 'test'"
+        }
+      ]
+    });
+    assert.equal(functionCallCount, 1);
+  });
+
+  it("can select into the result using nested fields", async function() {
+    let functionCallCount = 0;
+    const runtimeFunctions = {
+      "theFunction": (param: string) => {
+        functionCallCount++;
+        return {
+          calledWithStr: `Called with '${param}'`,
+          param,
+          functionCallCount,
+        };
+      }
+    };
+    const functionSchema: FunctionsSchema = {
+      functions: {
+        "theFunction": {
+          ndcKind: FunctionNdcKind.Procedure,
+          description: null,
+          parallelDegree: null,
+          arguments: [
+            {
+              argumentName: "param",
+              description: null,
+              type: {
+                type: "named",
+                kind: "scalar",
+                name: "String"
+              }
+            },
+          ],
+          resultType: {
+            type: "named",
+            kind: "object",
+            name: "FunctionResult"
+          }
+        }
+      },
+      objectTypes: {
+        "FunctionResult": {
+          description: null,
+          properties: [
+            {
+              propertyName: "calledWithStr",
+              description: null,
+              type: {
+                type: "named",
+                kind: "scalar",
+                name: "String"
+              }
+            },
+            {
+              propertyName: "param",
+              description: null,
+              type: {
+                type: "named",
+                kind: "scalar",
+                name: "String"
+              }
+            },
+            {
+              propertyName: "functionCallCount",
+              description: null,
+              type: {
+                type: "named",
+                kind: "scalar",
+                name: "Float"
+              }
+            }
           ]
+        }
+      },
+      scalarTypes: {
+        "Float": {},
+        "String": {},
+      }
+    };
+    const mutationRequest: sdk.MutationRequest = {
+      operations: [
+        {
+          type: "procedure",
+          name: "theFunction",
+          fields: {
+            type: "object",
+            fields: {
+              "str": {
+                type: "column",
+                column: "calledWithStr",
+              },
+              "callCount": {
+                type: "column",
+                column: "functionCallCount"
+              }
+            }
+          },
+          arguments: {
+            "param": "test"
+          }
+        }
+      ],
+      collection_relationships: {}
+    };
+
+    const result = await executeMutation(mutationRequest, functionSchema, runtimeFunctions);
+    assert.deepStrictEqual(result, {
+      operation_results: [
+        {
+          type: "procedure",
+          result: {
+            str: "Called with 'test'",
+            callCount: 1
+          }
         }
       ]
     });
@@ -112,7 +226,7 @@ describe("execute mutation", function() {
         {
           type: "procedure",
           name: "theFunction",
-          fields: {},
+          fields: null,
           arguments: {
             "param": "test"
           }
@@ -120,7 +234,7 @@ describe("execute mutation", function() {
         {
           type: "procedure",
           name: "theFunction",
-          fields: {},
+          fields: null,
           arguments: {
             "param": "test2"
           }
@@ -159,7 +273,7 @@ describe("execute mutation", function() {
         type: "procedure",
         name: "theFunction",
         arguments: {},
-        fields: {},
+        fields: null,
       }],
       collection_relationships: {}
     };

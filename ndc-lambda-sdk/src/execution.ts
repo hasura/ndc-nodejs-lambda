@@ -70,13 +70,11 @@ async function executeMutationOperation(mutationOperation: sdk.MutationOperation
 
   const preparedArgs = prepareArguments(mutationOperation.arguments, functionDefinition, functionsSchema.objectTypes);
   const result = await invokeFunction(runtimeFunction, preparedArgs, functionName);
-  const prunedResult = reshapeResultToNdcResponseValue(result, functionDefinition.resultType, mutationOperation.fields, functionsSchema.objectTypes);
+  const reshapedResult = reshapeResultUsingFieldSelection(result, functionDefinition.resultType, [], mutationOperation.fields ?? { type: "scalar" }, functionsSchema.objectTypes);
 
   return {
-    affected_rows: 1,
-    returning: [{
-      __value: prunedResult
-    }]
+    type: "procedure",
+    result: reshapedResult
   }
 }
 
@@ -204,11 +202,6 @@ function buildCausalStackTrace(error: Error): string {
   return stackTrace;
 }
 
-function reshapeResultToNdcResponseValue(value: unknown, type: schema.TypeDefinition, fields: Record<string, sdk.Field> | null | undefined, objectTypes: schema.ObjectTypeDefinitions): unknown {
-  const fieldSelection = prepareResultReshapingFieldSelection(fields, type)
-  return reshapeResultUsingFieldSelection(value, type, [], fieldSelection, objectTypes);
-}
-
 // Represents either selecting a scalar (ie. the whole value, opaquely), an object (selecting properties), or an array (select whole array)
 export type FieldSelection = sdk.NestedField | { type: "scalar" }
 
@@ -252,36 +245,6 @@ function reshapeResultUsingFunctionCallingConvention(functionResultValue: unknow
   return {
     aggregates: null,
     rows: [rowValue]
-  }
-}
-
-function prepareResultReshapingFieldSelection(fields: Record<string, sdk.Field> | null | undefined, functionResultType: schema.TypeDefinition): FieldSelection {
-  const underlyingResultType =
-    functionResultType.type === "nullable"
-      ? functionResultType.underlyingType
-      : functionResultType;
-
-  switch (underlyingResultType.type) {
-    case "array":
-      return fields
-         ? { type: "array", fields: { type: "object", fields } }
-         : { type: "scalar" }; // Select all array elements and everything in each element
-    case "named":
-      switch (underlyingResultType.kind) {
-        case "object":
-          return fields
-            ? { type: "object", fields }
-            : { type: "scalar" }; // Select all properties
-        case "scalar":
-          return { type: "scalar" }
-        default:
-          return unreachable(underlyingResultType["kind"]);
-      }
-    case "nullable":
-      throw new sdk.InternalServerError("Invalid function return type, double nested nullable found");
-
-    default:
-      return unreachable(underlyingResultType["type"]);
   }
 }
 
