@@ -40,7 +40,7 @@ describe("execute query", function() {
       },
       objectTypes: {},
       scalarTypes: {
-        "String": {}
+        "String": { type: "built-in" }
       }
     };
     const queryRequest: sdk.QueryRequest = {
@@ -112,7 +112,7 @@ describe("execute query", function() {
       },
       objectTypes: {},
       scalarTypes: {
-        "String": {}
+        "String": { type: "built-in" }
       }
     };
     const queryRequest: sdk.QueryRequest = {
@@ -203,7 +203,7 @@ describe("execute query", function() {
       },
       objectTypes: {},
       scalarTypes: {
-        "String": {}
+        "String": { type: "built-in" }
       }
     };
     const queryRequest: sdk.QueryRequest = {
@@ -289,7 +289,7 @@ describe("execute query", function() {
       },
       objectTypes: {},
       scalarTypes: {
-        "String": {}
+        "String": { type: "built-in" }
       }
     };
     const queryRequest: sdk.QueryRequest = {

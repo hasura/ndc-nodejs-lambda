@@ -1,4 +1,4 @@
-import ts, { FunctionDeclaration } from "typescript";
+import ts from "typescript";
 import * as tsutils from "ts-api-utils";
 import path from "node:path"
 import * as schema from "./schema";
@@ -110,6 +110,16 @@ type TypeDerivationContext = {
   ndcLambdaSdkModule: ts.ResolvedModuleFull,
 }
 
+function cloneTypeDerivationContext(context: TypeDerivationContext): TypeDerivationContext {
+  return {
+    objectTypeDefinitions: structuredClone(context.objectTypeDefinitions),
+    scalarTypeDefinitions: structuredClone(context.scalarTypeDefinitions),
+    typeChecker: context.typeChecker,
+    functionsFilePath: context.functionsFilePath,
+    ndcLambdaSdkModule: context.ndcLambdaSdkModule,
+  };
+}
+
 function deriveSchemaFromFunctions(sourceFile: ts.SourceFile, typeChecker: ts.TypeChecker, ndcLambdaSdkModule: ts.ResolvedModuleFull): [schema.FunctionsSchema, FunctionIssues] {
   const typeDerivationContext: TypeDerivationContext = {
     objectTypeDefinitions: {},
@@ -168,6 +178,7 @@ function deriveFunctionSchema(functionDeclaration: ts.FunctionDeclaration, expor
 
   const functionDescription = getDescriptionFromJsDoc(functionSymbol, context.typeChecker);
   const markedReadonlyInJsDoc = functionSymbol.getJsDocTags().find(e => e.name === "readonly") !== undefined;
+  const allowRelaxedTypes = functionSymbol.getJsDocTags().find(e => e.name === "allowrelaxedtypes") !== undefined;
   const parallelDegreeResult = getParallelDegreeFromJsDoc(functionSymbol, markedReadonlyInJsDoc);
 
   const functionCallSig = functionType.getCallSignatures()[0] ?? throwError(`Function '${exportedFunctionName}' didn't have a call signature`)
@@ -175,9 +186,9 @@ function deriveFunctionSchema(functionDeclaration: ts.FunctionDeclaration, expor
     const paramName = paramSymbol.getName();
     const paramDesc = ts.displayPartsToString(paramSymbol.getDocumentationComment(context.typeChecker)).trim();
     const paramType = context.typeChecker.getTypeOfSymbolAtLocation(paramSymbol, paramSymbol.valueDeclaration ?? throwError(`Function '${exportedFunctionName}' parameter '${paramName}' didn't have a value declaration`));
-    const paramTypePath: TypePathSegment[] = [{segmentType: "FunctionParameter", functionName: exportedFunctionName, parameterName: paramName}];
+    const paramTypePath: schema.TypePathSegment[] = [{segmentType: "FunctionParameter", functionName: exportedFunctionName, parameterName: paramName}];
 
-    return deriveSchemaTypeForTsType(paramType, paramTypePath, context)
+    return deriveSchemaTypeForTsType(paramType, paramTypePath, allowRelaxedTypes, context)
       .map(paramTypeResult => ({
         argumentName: paramName,
         description: paramDesc ? paramDesc : null,
@@ -186,7 +197,7 @@ function deriveFunctionSchema(functionDeclaration: ts.FunctionDeclaration, expor
   });
 
   const returnType = functionCallSig.getReturnType();
-  const returnTypeResult = deriveSchemaTypeForTsType(unwrapPromiseType(returnType, context.typeChecker) ?? returnType, [{segmentType: "FunctionReturn", functionName: exportedFunctionName}], context);
+  const returnTypeResult = deriveSchemaTypeForTsType(unwrapPromiseType(returnType, context.typeChecker) ?? returnType, [{segmentType: "FunctionReturn", functionName: exportedFunctionName}], allowRelaxedTypes, context);
 
   return Result.collectErrors3(functionSchemaArguments, returnTypeResult, parallelDegreeResult)
     .map(([functionSchemaArgs, returnType, parallelDegree]) => ({
@@ -226,154 +237,209 @@ function getParallelDegreeFromJsDoc(functionSymbol: ts.Symbol, functionIsReadonl
 
 const MAX_TYPE_DERIVATION_RECURSION = 20; // Better to abort than get into an infinite loop, this could be increased if required.
 
-type TypePathSegment =
-  { segmentType: "FunctionParameter", functionName: string, parameterName: string }
-  | { segmentType: "FunctionReturn", functionName: string }
-  | { segmentType: "ObjectProperty", typeName: string, propertyName: string }
-  | { segmentType: "Array" }
-
-function typePathToString(segments: TypePathSegment[]): string {
-  return segments.map(typePathSegmentToString).join(", ")
-}
-
-function typePathSegmentToString(segment: TypePathSegment): string {
-  switch (segment.segmentType) {
-    case "FunctionParameter": return `function '${segment.functionName}' parameter '${segment.parameterName}'`
-    case "FunctionReturn": return `function '${segment.functionName}' return value`
-    case "ObjectProperty": return `type '${segment.typeName}' property '${segment.propertyName}'`
-    case "Array": return `array type`
-    default: return unreachable(segment["segmentType"])
-  }
-}
-
-function deriveSchemaTypeForTsType(tsType: ts.Type, typePath: TypePathSegment[], context: TypeDerivationContext, recursionDepth: number = 0): Result<schema.TypeDefinition, string[]> {
+function deriveSchemaTypeForTsType(tsType: ts.Type, typePath: schema.TypePathSegment[], allowRelaxedTypes: boolean, context: TypeDerivationContext, recursionDepth: number = 0): Result<schema.TypeReference, string[]> {
   const typeRenderedName = context.typeChecker.typeToString(tsType);
 
   if (recursionDepth > MAX_TYPE_DERIVATION_RECURSION)
     throw new Error(`Schema inference validation exceeded depth ${MAX_TYPE_DERIVATION_RECURSION} for type ${typeRenderedName}`)
 
   if (unwrapPromiseType(tsType, context.typeChecker) !== undefined) {
-    return new Err([`Promise types are not supported, but one was encountered in ${typePathToString(typePath)}.`]);
+    return new Err([`Promise types are not supported, but one was encountered in ${schema.typePathToString(typePath)}.`]);
   }
 
   if (tsutils.isIntrinsicVoidType(tsType)) {
-    return new Err([`The void type is not supported, but one was encountered in ${typePathToString(typePath)}`]);
+    return new Err([`The void type is not supported, but one was encountered in ${schema.typePathToString(typePath)}`]);
   }
 
   if (tsutils.isIntrinsicNeverType(tsType)) {
-    return new Err([`The never type is not supported, but one was encountered in ${typePathToString(typePath)}`]);
+    return new Err([`The never type is not supported, but one was encountered in ${schema.typePathToString(typePath)}`]);
   }
 
   if (tsutils.isIntrinsicNonPrimitiveType(tsType)) {
-    return new Err([`The object type is not supported, but one was encountered in ${typePathToString(typePath)}`]);
-  }
-
-  if (tsutils.isIntrinsicUnknownType(tsType)) {
-    return new Err([`The unknown type is not supported, but one was encountered in ${typePathToString(typePath)}`]);
-  }
-
-  if (tsutils.isIntrinsicAnyType(tsType)) {
-    return new Err([`The any type is not supported, but one was encountered in ${typePathToString(typePath)}`]);
+    return new Err([`The object type is not supported, but one was encountered in ${schema.typePathToString(typePath)}`]);
   }
 
   if (tsutils.isIntrinsicNullType(tsType)) {
-    return new Err([`The null type is not supported as a type literal used on its own, but one was encountered in ${typePathToString(typePath)}`]);
+    return new Err([`The null type is not supported as a type literal used on its own, but one was encountered in ${schema.typePathToString(typePath)}`]);
   }
 
   if (tsutils.isIntrinsicUndefinedType(tsType)) {
-    return new Err([`The undefined type is not supported as a type literal used on its own, but one was encountered in ${typePathToString(typePath)}`]);
-  }
-
-  if (tsutils.isTupleTypeReference(tsType)) {
-    return new Err([`Tuple types are not supported, but one was encountered in ${typePathToString(typePath)} (type: ${context.typeChecker.typeToString(tsType)})`]);
+    return new Err([`The undefined type is not supported as a type literal used on its own, but one was encountered in ${schema.typePathToString(typePath)}`]);
   }
 
   if (isFunctionType(tsType)) {
-    return new Err([`Function types are not supported, but one was encountered in ${typePathToString(typePath)} (type: ${context.typeChecker.typeToString(tsType)})`]);
+    return new Err([`Function types are not supported, but one was encountered in ${schema.typePathToString(typePath)} (type: ${context.typeChecker.typeToString(tsType)})`]);
   }
 
   if (isMapType(tsType)) {
-    return new Err([`Map types are not supported, but one was encountered in ${typePathToString(typePath)} (type: ${context.typeChecker.typeToString(tsType)})`]);
+    return new Err([`Map types are not supported, but one was encountered in ${schema.typePathToString(typePath)} (type: ${context.typeChecker.typeToString(tsType)})`]);
   }
 
   const schemaTypeResult =
-    deriveSchemaTypeIfTsArrayType(tsType, typePath, context, recursionDepth)
+    deriveSchemaTypeIfTsUnknownOrAny(tsType, typePath, allowRelaxedTypes, context)
+    ?? deriveSchemaTypeIfTsTupleType(tsType, typePath, allowRelaxedTypes, context, recursionDepth)
+    ?? deriveSchemaTypeIfTsArrayType(tsType, typePath, allowRelaxedTypes, context, recursionDepth)
     ?? deriveSchemaTypeIfScalarType(tsType, context)
-    ?? deriveSchemaTypeIfNullableType(tsType, typePath, context, recursionDepth)
-    ?? deriveSchemaTypeIfObjectType(tsType, typePath, context, recursionDepth);
+    ?? deriveSchemaTypeIfNullableType(tsType, typePath, allowRelaxedTypes, context, recursionDepth)
+    ?? deriveSchemaTypeIfObjectType(tsType, typePath, allowRelaxedTypes, context, recursionDepth)
+    ?? rejectIfClassType(tsType, typePath, context) // This needs to be done after scalars, because JSONValue is a class
+    ?? deriveSchemaTypeIfTsIndexSignatureType(tsType, typePath, allowRelaxedTypes, context, recursionDepth) // This needs to be done after scalars and classes, etc because some of those types do have index signatures (eg. strings)
+    ?? deriveSchemaTypeIfTsUnionType(tsType, typePath, allowRelaxedTypes, context, recursionDepth); // This needs to be done after nullable types, since nullable types use unions, this catches everything else
 
   if (schemaTypeResult !== undefined)
     return schemaTypeResult;
 
-  // Types with index signatures: ie '[x: T]: Y'
-  if (context.typeChecker.getIndexInfosOfType(tsType).length > 0) {
-    return new Err([`Types with index signatures are not supported, but one was encountered in ${typePathToString(typePath)} (type: ${context.typeChecker.typeToString(tsType)})`]);
-  }
-
-  if (tsutils.isObjectType(tsType) && tsutils.isObjectFlagSet(tsType, ts.ObjectFlags.Class)) {
-    return new Err([`Class types are not supported, but one was encountered in ${typePathToString(typePath)} (type: ${context.typeChecker.typeToString(tsType)})`]);
-  }
-
-  if (tsType.isUnion()) {
-    return new Err([`Union types are not supported, but one was encountered in ${typePathToString(typePath)} (type: ${context.typeChecker.typeToString(tsType)})`]);
-  }
-
   // We don't know how to deal with this type, so reject it with a generic error
-  return new Err([`Unable to derive an NDC type for ${typePathToString(typePath)} (type: ${context.typeChecker.typeToString(tsType)}).`]);
+  return new Err([`Unable to derive an NDC type for ${schema.typePathToString(typePath)} (type: ${context.typeChecker.typeToString(tsType)}).`]);
 }
 
-function deriveSchemaTypeIfTsArrayType(tsType: ts.Type, typePath: TypePathSegment[], context: TypeDerivationContext, recursionDepth: number): Result<schema.TypeDefinition, string[]> | undefined {
+function deriveRelaxedTypeOrError(typeName: string, typePath: schema.TypePathSegment[], mkError: () => string, allowRelaxedTypes: boolean, context: TypeDerivationContext): Result<schema.TypeReference, string[]> {
+  if (allowRelaxedTypes === false) {
+    return new Err([mkError()]);
+  }
+
+  let scalarTypeDefinition = context.scalarTypeDefinitions[typeName];
+  if (scalarTypeDefinition === undefined) {
+    scalarTypeDefinition = { type: "relaxed-type", usedIn: [typePath] };
+    context.scalarTypeDefinitions[typeName] = scalarTypeDefinition;
+  } else if (scalarTypeDefinition.type === "relaxed-type") {
+    scalarTypeDefinition.usedIn.push(typePath);
+  } else {
+    throw new Error(`Scalar type name conflict. Trying to create relaxed type '${typeName}' but it already exists as a ${scalarTypeDefinition.type}`)
+  }
+
+  return new Ok({ type: "named", kind: "scalar", name: typeName });
+}
+
+function deriveSchemaTypeIfTsUnknownOrAny(tsType: ts.Type, typePath: schema.TypePathSegment[], allowRelaxedTypes: boolean, context: TypeDerivationContext): Result<schema.TypeReference, string[]> | undefined {
+  if (tsutils.isIntrinsicUnknownType(tsType)) {
+    return deriveRelaxedTypeOrError("unknown", typePath, () => `The unknown type is not supported, but one was encountered in ${schema.typePathToString(typePath)}`, allowRelaxedTypes, context);
+  }
+
+  if (tsutils.isIntrinsicAnyType(tsType)) {
+    return deriveRelaxedTypeOrError("any", typePath, () => `The any type is not supported, but one was encountered in ${schema.typePathToString(typePath)}`, allowRelaxedTypes, context);
+  }
+}
+
+function deriveSchemaTypeIfTsTupleType(tsType: ts.Type, typePath: schema.TypePathSegment[], allowRelaxedTypes: boolean, context: TypeDerivationContext, recursionDepth: number): Result<schema.TypeReference, string[]> | undefined {
+  if (tsutils.isTupleTypeReference(tsType)) {
+    const typeName = context.typeChecker.typeToString(tsType);
+
+    if (allowRelaxedTypes) {
+      // Verify types in tuple are valid types
+      const isolatedContext = cloneTypeDerivationContext(context); // Use an isolated context so we don't actually record any new scalar or object types while doing this, since this is going to end up as a relaxed type anyway
+      const result = Result.traverseAndCollectErrors(tsType.typeArguments ?? [], (typeParameterTsType: ts.Type, index: number) => {
+        return deriveSchemaTypeForTsType(typeParameterTsType, [...typePath, {segmentType: "TypeParameter", typeName, index}], allowRelaxedTypes, isolatedContext, recursionDepth + 1);
+      });
+
+      if (result instanceof Err) return new Err(result.error);
+    }
+
+    return deriveRelaxedTypeOrError(typeName, typePath, () => `Tuple types are not supported, but one was encountered in ${schema.typePathToString(typePath)} (type: ${typeName})`, allowRelaxedTypes, context);
+  }
+}
+
+function rejectIfClassType(tsType: ts.Type, typePath: schema.TypePathSegment[], context: TypeDerivationContext): Result<schema.TypeReference, string[]> | undefined {
+  if (tsutils.isObjectType(tsType) && tsutils.isObjectFlagSet(tsType, ts.ObjectFlags.Class)) {
+    return new Err([`Class types are not supported, but one was encountered in ${schema.typePathToString(typePath)} (type: ${context.typeChecker.typeToString(tsType)})`]);
+  }
+}
+
+// Types with index signatures: ie '[x: T]: Y'
+function deriveSchemaTypeIfTsIndexSignatureType(tsType: ts.Type, typePath: schema.TypePathSegment[], allowRelaxedTypes: boolean, context: TypeDerivationContext, recursionDepth: number): Result<schema.TypeReference, string[]> | undefined {
+  const indexInfos = context.typeChecker.getIndexInfosOfType(tsType);
+  if (indexInfos.length > 0) {
+    const typeName = context.typeChecker.typeToString(tsType);
+
+    if (allowRelaxedTypes) {
+      // Verify the types used in the index signatures are valid
+      const isolatedContext = cloneTypeDerivationContext(context); // Use an isolated context so we don't actually record any new scalar or object types while doing this, since this is going to end up as a relaxed type anyway
+      const indexSignatureTypes = indexInfos.flatMap<[ts.Type, schema.TypePathSegment]>((indexInfo: ts.IndexInfo, sigIndex: number) => [
+        [indexInfo.keyType, { segmentType: "IndexSignature", typeName, sigIndex, component: "key" }],
+        [indexInfo.type, { segmentType: "IndexSignature", typeName, sigIndex, component: "value" }],
+      ]);
+      const result = Result.traverseAndCollectErrors(indexSignatureTypes, ([sigType, typePathSegment]) => {
+        return deriveSchemaTypeForTsType(sigType, [...typePath, typePathSegment], allowRelaxedTypes, isolatedContext, recursionDepth + 1);
+      });
+
+      if (result instanceof Err) return new Err(result.error);
+    }
+
+    return deriveRelaxedTypeOrError(typeName, typePath, () => `Types with index signatures are not supported, but one was encountered in ${schema.typePathToString(typePath)} (type: ${typeName})`, allowRelaxedTypes, context);
+  }
+}
+
+function deriveSchemaTypeIfTsUnionType(tsType: ts.Type, typePath: schema.TypePathSegment[], allowRelaxedTypes: boolean, context: TypeDerivationContext, recursionDepth: number): Result<schema.TypeReference, string[]> | undefined {
+  if (tsType.isUnion()) {
+    const typeName = context.typeChecker.typeToString(tsType);
+
+    if (allowRelaxedTypes) {
+      // Verify union options are valid types
+      const isolatedContext = cloneTypeDerivationContext(context); // Use an isolated context so we don't actually record any new scalar or object types while doing this, since this is going to end up as a relaxed type anyway
+      const result = Result.traverseAndCollectErrors(tsType.types, (memberTsType: ts.Type, memberIndex: number) => {
+        return deriveSchemaTypeForTsType(memberTsType, [...typePath, {segmentType: "UnionMember", typeName, memberIndex}], allowRelaxedTypes, isolatedContext, recursionDepth + 1);
+      });
+
+      if (result instanceof Err) return new Err(result.error);
+    }
+
+
+    return deriveRelaxedTypeOrError(typeName, typePath, () => `Union types are not supported, but one was encountered in ${schema.typePathToString(typePath)} (type: ${typeName})`, allowRelaxedTypes, context);
+  }
+}
+
+function deriveSchemaTypeIfTsArrayType(tsType: ts.Type, typePath: schema.TypePathSegment[], allowRelaxedTypes: boolean, context: TypeDerivationContext, recursionDepth: number): Result<schema.TypeReference, string[]> | undefined {
   if (context.typeChecker.isArrayType(tsType) && tsutils.isTypeReference(tsType)) {
     const typeArgs = context.typeChecker.getTypeArguments(tsType)
     if (typeArgs.length === 1) {
       const innerType = typeArgs[0]!;
-      return deriveSchemaTypeForTsType(innerType, [...typePath, {segmentType: "Array"}], context, recursionDepth + 1)
+      return deriveSchemaTypeForTsType(innerType, [...typePath, {segmentType: "Array"}], allowRelaxedTypes, context, recursionDepth + 1)
         .map(innerType => ({ type: "array", elementType: innerType }));
     }
   }
 }
 
-function deriveSchemaTypeIfScalarType(tsType: ts.Type, context: TypeDerivationContext): Result<schema.TypeDefinition, string[]> | undefined {
+function deriveSchemaTypeIfScalarType(tsType: ts.Type, context: TypeDerivationContext): Result<schema.TypeReference, string[]> | undefined {
   if (tsutils.isIntrinsicBooleanType(tsType) || isBooleanUnionType(tsType)) {
-    context.scalarTypeDefinitions[schema.BuiltInScalarTypeName.Boolean] = {};
+    context.scalarTypeDefinitions[schema.BuiltInScalarTypeName.Boolean] = { type: "built-in" };
     return new Ok({ type: "named", kind: "scalar", name: schema.BuiltInScalarTypeName.Boolean });
   }
   if (tsutils.isBooleanLiteralType(tsType)) {
-    context.scalarTypeDefinitions[schema.BuiltInScalarTypeName.Boolean] = {};
+    context.scalarTypeDefinitions[schema.BuiltInScalarTypeName.Boolean] = { type: "built-in" };
     const literalValue = tsType.intrinsicName === "true" ? true : false; // Unfortunately the types lie, tsType.value is undefined here :(
     return new Ok({ type: "named", kind: "scalar", name: schema.BuiltInScalarTypeName.Boolean, literalValue: literalValue });
   }
   if (tsutils.isIntrinsicStringType(tsType)) {
-    context.scalarTypeDefinitions[schema.BuiltInScalarTypeName.String] = {};
+    context.scalarTypeDefinitions[schema.BuiltInScalarTypeName.String] = { type: "built-in" };
     return new Ok({ type: "named", kind: "scalar", name: schema.BuiltInScalarTypeName.String });
   }
   if (tsutils.isStringLiteralType(tsType)) {
-    context.scalarTypeDefinitions[schema.BuiltInScalarTypeName.String] = {};
+    context.scalarTypeDefinitions[schema.BuiltInScalarTypeName.String] = { type: "built-in" };
     return new Ok({ type: "named", kind: "scalar", name: schema.BuiltInScalarTypeName.String, literalValue: tsType.value });
   }
   if (tsutils.isIntrinsicNumberType(tsType)) {
-    context.scalarTypeDefinitions[schema.BuiltInScalarTypeName.Float] = {};
+    context.scalarTypeDefinitions[schema.BuiltInScalarTypeName.Float] = { type: "built-in" };
     return new Ok({ type: "named", kind: "scalar", name: schema.BuiltInScalarTypeName.Float });
   }
   if (tsutils.isNumberLiteralType(tsType)) {
-    context.scalarTypeDefinitions[schema.BuiltInScalarTypeName.Float] = {};
+    context.scalarTypeDefinitions[schema.BuiltInScalarTypeName.Float] = { type: "built-in" };
     return new Ok({ type: "named", kind: "scalar", name: schema.BuiltInScalarTypeName.Float, literalValue: tsType.value });
   }
   if (tsutils.isIntrinsicBigIntType(tsType)) {
-    context.scalarTypeDefinitions[schema.BuiltInScalarTypeName.BigInt] = {};
+    context.scalarTypeDefinitions[schema.BuiltInScalarTypeName.BigInt] = { type: "built-in" };
     return new Ok({ type: "named", kind: "scalar", name: schema.BuiltInScalarTypeName.BigInt });
   }
   if (tsutils.isBigIntLiteralType(tsType)) {
-    context.scalarTypeDefinitions[schema.BuiltInScalarTypeName.BigInt] = {};
+    context.scalarTypeDefinitions[schema.BuiltInScalarTypeName.BigInt] = { type: "built-in" };
     const literalValue = BigInt(`${tsType.value.negative ? "-" : ""}${tsType.value.base10Value}`);
     return new Ok({ type: "named", kind: "scalar", name: schema.BuiltInScalarTypeName.BigInt, literalValue: literalValue });
   }
   if (isDateType(tsType)) {
-    context.scalarTypeDefinitions[schema.BuiltInScalarTypeName.DateTime] = {};
+    context.scalarTypeDefinitions[schema.BuiltInScalarTypeName.DateTime] = { type: "built-in" };
     return new Ok({ type: "named", kind: "scalar", name: schema.BuiltInScalarTypeName.DateTime });
   }
   if (isJSONValueType(tsType, context.ndcLambdaSdkModule)) {
-    context.scalarTypeDefinitions[schema.BuiltInScalarTypeName.JSON] = {};
+    context.scalarTypeDefinitions[schema.BuiltInScalarTypeName.JSON] = { type: "built-in" };
     return new Ok({ type: "named", kind: "scalar", name: schema.BuiltInScalarTypeName.JSON });
   }
 }
@@ -388,7 +454,7 @@ function isFunctionType(tsType: ts.Type): boolean {
   return tsType.getCallSignatures().length > 0 || tsType.getConstructSignatures().length > 0;
 }
 
-function isMapType(tsType: ts.Type): boolean {
+function isMapType(tsType: ts.Type): tsType is ts.TypeReference {
   const symbol = tsType.getSymbol()
   if (symbol === undefined) return false;
   return symbol.escapedName === "Map" && symbol.members?.has(ts.escapeLeadingUnderscores("keys")) === true && symbol.members?.has(ts.escapeLeadingUnderscores("values")) === true && symbol.members?.has(ts.escapeLeadingUnderscores("entries")) === true;
@@ -422,38 +488,69 @@ function isJSONValueType(tsType: ts.Type, ndcLambdaSdkModule: ts.ResolvedModuleF
   return sourceFile.fileName.startsWith(sdkDirectory);
 }
 
-function deriveSchemaTypeIfNullableType(tsType: ts.Type, typePath: TypePathSegment[], context: TypeDerivationContext, recursionDepth: number): Result<schema.TypeDefinition, string[]> | undefined {
+function deriveSchemaTypeIfNullableType(tsType: ts.Type, typePath: schema.TypePathSegment[], allowRelaxedTypes: boolean, context: TypeDerivationContext, recursionDepth: number): Result<schema.TypeReference, string[]> | undefined {
   const notNullableResult = unwrapNullableType(tsType, context.typeChecker);
   if (notNullableResult !== null) {
     const [notNullableType, nullOrUndefinability] = notNullableResult;
-    return deriveSchemaTypeForTsType(notNullableType, typePath, context, recursionDepth + 1)
+    return deriveSchemaTypeForTsType(notNullableType, typePath, allowRelaxedTypes, context, recursionDepth + 1)
       .map(notNullableType => ({ type: "nullable", underlyingType: notNullableType, nullOrUndefinability }))
   }
 }
 
-function deriveSchemaTypeIfObjectType(tsType: ts.Type, typePath: TypePathSegment[], context: TypeDerivationContext, recursionDepth: number): Result<schema.TypeDefinition, string[]> | undefined {
+function deriveSchemaTypeIfObjectType(tsType: ts.Type, typePath: schema.TypePathSegment[], allowRelaxedTypes: boolean, context: TypeDerivationContext, recursionDepth: number): Result<schema.TypeReference, string[]> | undefined {
   const info = getObjectTypeInfo(tsType, typePath, context.typeChecker, context.functionsFilePath);
   if (info) {
+    const makeRelaxedTypesError : () => Result<schema.TypeReference, string[]> = () => new Err<schema.TypeReference, string[]>([`The object type '${info.generatedTypeName}' uses relaxed types and can only be used by a function marked with @allowrelaxedtypes. It was encountered in ${schema.typePathToString(typePath)}`]);
+
     // Short-circuit recursion if the type has already been named
-    if (context.objectTypeDefinitions[info.generatedTypeName]) {
+    const existingType = context.objectTypeDefinitions[info.generatedTypeName];
+    if (existingType) {
+      if (allowRelaxedTypes === false && existingType.isRelaxedType)
+        return makeRelaxedTypesError();
+
       return new Ok({ type: 'named', name: info.generatedTypeName, kind: "object" });
     }
 
-    context.objectTypeDefinitions[info.generatedTypeName] = { properties: [], description: null }; // Break infinite recursion
+    context.objectTypeDefinitions[info.generatedTypeName] = { properties: [], description: null, isRelaxedType: false }; // Break infinite recursion
 
-    const propertyResults = Result.traverseAndCollectErrors(Array.from(info.properties), ([propertyName, propertyInfo]) => {
-      return deriveSchemaTypeForTsType(propertyInfo.tsType, [...typePath, { segmentType: "ObjectProperty", typeName: info.generatedTypeName, propertyName }], context, recursionDepth + 1)
+    return Result.traverseAndCollectErrors(Array.from(info.properties), ([propertyName, propertyInfo]) => {
+      return deriveSchemaTypeForTsType(propertyInfo.tsType, [...typePath, { segmentType: "ObjectProperty", typeName: info.generatedTypeName, propertyName }], allowRelaxedTypes, context, recursionDepth + 1)
         .map(propertyType => ({ propertyName: propertyName, type: propertyType, description: propertyInfo.description }));
-    });
+    })
+    .bind(propertyResults => {
+      const isRelaxedType = propertyResults.some(propDef => isTypeReferenceARelaxedType(propDef.type, context));
+      if (allowRelaxedTypes === false && isRelaxedType) {
+        return makeRelaxedTypesError();
+      }
 
-    if (propertyResults instanceof Ok) {
-      context.objectTypeDefinitions[info.generatedTypeName] = { properties: propertyResults.data, description: info.description }
-      return new Ok({ type: 'named', name: info.generatedTypeName, kind: "object" })
-    } else {
-      // Remove the recursion short-circuit to ensure errors are raised if this type is encountered again
-      delete context.objectTypeDefinitions[info.generatedTypeName];
-      return new Err(propertyResults.error);
-    }
+      context.objectTypeDefinitions[info.generatedTypeName] = { properties: propertyResults, description: info.description, isRelaxedType }
+      return new Ok({ type: 'named', name: info.generatedTypeName, kind: "object" } as const)
+    })
+    .onErr(_err => {
+      delete context.objectTypeDefinitions[info.generatedTypeName]; // Remove the recursion short-circuit to allow other functions to try making this type again
+    });
+  }
+}
+
+function isTypeReferenceARelaxedType(typeReference: schema.TypeReference, context: TypeDerivationContext): boolean {
+  switch (typeReference.type) {
+    case "array":
+      return isTypeReferenceARelaxedType(typeReference.elementType, context);
+    case "nullable":
+      return isTypeReferenceARelaxedType(typeReference.underlyingType, context);
+    case "named":
+      switch (typeReference.kind) {
+        case "object":
+          const objTypeDef = context.objectTypeDefinitions[typeReference.name] ?? throwError(`Unable to find object type '${typeReference.name}', which should have already been generated`);
+          return objTypeDef.isRelaxedType;
+        case "scalar":
+          const scalarTypeDef = context.scalarTypeDefinitions[typeReference.name] ?? throwError(`Unable to find object type '${typeReference.name}', which should have already been generated`);
+          return scalarTypeDef.type === "relaxed-type";
+        default:
+          return unreachable(typeReference["kind"]);
+      }
+    default:
+      return unreachable(typeReference["type"]);
   }
 }
 
@@ -517,7 +614,7 @@ type ObjectTypeInfo = {
 }
 
 // TODO: This can be vastly simplified when I yeet the name qualification stuff
-function getObjectTypeInfo(tsType: ts.Type, typePath: TypePathSegment[], typeChecker: ts.TypeChecker, functionsFilePath: string): ObjectTypeInfo | null {
+function getObjectTypeInfo(tsType: ts.Type, typePath: schema.TypePathSegment[], typeChecker: ts.TypeChecker, functionsFilePath: string): ObjectTypeInfo | null {
   // If the type has an index signature (ie '[x: T]: Y'), we don't support that (yet) so exclude it
   if (typeChecker.getIndexInfosOfType(tsType).length > 0) {
     return null;
@@ -583,13 +680,13 @@ function getMembers(propertySymbols: ts.Symbol[], typeChecker: ts.TypeChecker): 
   )
 }
 
-function qualifyTypeName(tsType: ts.Type, typePath: TypePathSegment[], name: string | null, functionsFilePath: string): string {
+function qualifyTypeName(tsType: ts.Type, typePath: schema.TypePathSegment[], name: string | null, functionsFilePath: string): string {
   let symbol = tsType.getSymbol();
   if (!symbol && tsutils.isUnionOrIntersectionType(tsType)) {
     symbol = tsType.types[0]!.getSymbol();
   }
   if (!symbol) {
-    throw new Error(`Couldn't find symbol for type at ${typePathToString(typePath)}`);
+    throw new Error(`Couldn't find symbol for type at ${schema.typePathToString(typePath)}`);
   }
 
   const locations = (symbol.declarations ?? []).map((d: ts.Declaration) => d.getSourceFile());
@@ -614,13 +711,16 @@ function qualifyTypeName(tsType: ts.Type, typePath: TypePathSegment[], name: str
   throw new Error(`Couldn't find any declarations for type ${name}`);
 }
 
-function generateTypeNameFromTypePath(typePath: TypePathSegment[]): string {
+function generateTypeNameFromTypePath(typePath: schema.TypePathSegment[]): string {
   return typePath.map(segment => {
     switch (segment.segmentType) {
       case "FunctionParameter": return `${segment.functionName}_arguments_${segment.parameterName}`
       case "FunctionReturn": return `${segment.functionName}_output`
       case "ObjectProperty": return `field_${segment.propertyName}`
       case "Array": return `array`
+      case "TypeParameter": return `typeparam_${segment.index}`
+      case "IndexSignature": return `indexsig_${segment.sigIndex}_${segment.segmentType}`
+      case "UnionMember": return `union_${segment.memberIndex}`
       default: return unreachable(segment["segmentType"])
     }
   }).join("_");

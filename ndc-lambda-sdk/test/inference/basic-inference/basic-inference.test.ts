@@ -12,12 +12,12 @@ describe("basic inference", function() {
       functionIssues: {},
       functionsSchema: {
         scalarTypes: {
-          BigInt: {},
-          Boolean: {},
-          Float: {},
-          String: {},
-          DateTime: {},
-          JSON: {},
+          BigInt: { type: "built-in" },
+          Boolean: { type: "built-in" },
+          Float: { type: "built-in" },
+          String: { type: "built-in" },
+          DateTime: { type: "built-in" },
+          JSON: { type: "built-in" },
         },
         objectTypes: {},
         functions: {
@@ -203,12 +203,13 @@ describe("basic inference", function() {
                   type: "named",
                 },
               },
-            ]
+            ],
+            isRelaxedType: false,
           },
         },
         scalarTypes: {
-          Float: {},
-          String: {},
+          Float: { type: "built-in" },
+          String: { type: "built-in" },
         }
       }
     })
@@ -404,7 +405,8 @@ describe("basic inference", function() {
                   type: "named",
                 },
               },
-            ]
+            ],
+            isRelaxedType: false,
           },
           "GenericBar<string>": {
             description: null,
@@ -419,6 +421,7 @@ describe("basic inference", function() {
                 },
               },
             ],
+            isRelaxedType: false,
           },
           "GenericIntersectionObject<string>": {
             description: null,
@@ -442,6 +445,7 @@ describe("basic inference", function() {
                 },
               },
             ],
+            isRelaxedType: false,
           },
           "Bar": {
             description: null,
@@ -456,6 +460,7 @@ describe("basic inference", function() {
                 },
               },
             ],
+            isRelaxedType: false,
           },
           "IGenericThing<string>": {
             description: null,
@@ -470,6 +475,7 @@ describe("basic inference", function() {
                 },
               },
             ],
+            isRelaxedType: false,
           },
           "AliasedIGenericThing<number>": {
             description: null,
@@ -484,6 +490,7 @@ describe("basic inference", function() {
                 },
               },
             ],
+            isRelaxedType: false,
           },
           "AliasedClosedIGenericThing": {
             description: null,
@@ -498,6 +505,7 @@ describe("basic inference", function() {
                 },
               },
             ],
+            isRelaxedType: false,
           },
           "IThing": {
             description: null,
@@ -512,6 +520,7 @@ describe("basic inference", function() {
                 },
               },
             ],
+            isRelaxedType: false,
           },
           "IntersectionObject": {
             description: null,
@@ -535,6 +544,7 @@ describe("basic inference", function() {
                 },
               },
             ],
+            isRelaxedType: false,
           },
           "bar_arguments_anonIntersectionObj": {
             description: null,
@@ -558,6 +568,7 @@ describe("basic inference", function() {
                 },
               },
             ],
+            isRelaxedType: false,
           },
           "bar_arguments_anonObj": {
             description: null,
@@ -581,12 +592,13 @@ describe("basic inference", function() {
                 },
               },
             ],
+            isRelaxedType: false,
           },
         },
         scalarTypes: {
-          Boolean: {},
-          Float: {},
-          String: {},
+          Boolean: { type: "built-in" },
+          Float: { type: "built-in" },
+          String: { type: "built-in" },
         }
       }
     })
@@ -757,11 +769,12 @@ describe("basic inference", function() {
                 },
               },
             ],
+            isRelaxedType: false,
           },
         },
         scalarTypes: {
-          Boolean: {},
-          String: {},
+          Boolean: { type: "built-in" },
+          String: { type: "built-in" },
         },
       }
     })
@@ -812,11 +825,12 @@ describe("basic inference", function() {
                   }
                 }
               }
-            ]
+            ],
+            isRelaxedType: false,
           },
         },
         scalarTypes: {
-          Float: {},
+          Float: { type: "built-in" },
         },
       }
     })
@@ -830,10 +844,10 @@ describe("basic inference", function() {
       functionIssues: {},
       functionsSchema: {
         scalarTypes: {
-          BigInt: {},
-          Boolean: {},
-          Float: {},
-          String: {},
+          BigInt: { type: "built-in" },
+          Boolean: { type: "built-in" },
+          Float: { type: "built-in" },
+          String: { type: "built-in" },
         },
         functions: {
           "literalTypes": {
@@ -912,7 +926,8 @@ describe("basic inference", function() {
                   literalValue: 0,
                 }
               }
-            ]
+            ],
+            isRelaxedType: false,
           }
         },
       }

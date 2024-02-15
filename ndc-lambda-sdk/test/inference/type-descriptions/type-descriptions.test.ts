@@ -35,7 +35,7 @@ describe("type descriptions", function() {
           },
         },
         scalarTypes: {
-          String: {},
+          String: { type: "built-in" },
         },
         objectTypes: {},
       }
@@ -100,7 +100,7 @@ describe("type descriptions", function() {
           },
         },
         scalarTypes: {
-          String: {},
+          String: { type: "built-in" },
         },
         objectTypes: {
           "MyObjType": {
@@ -115,7 +115,8 @@ describe("type descriptions", function() {
                   name: "String"
                 }
               }
-            ]
+            ],
+            isRelaxedType: false,
           },
           "IInterface": {
             description: "What a great interface",
@@ -129,7 +130,8 @@ describe("type descriptions", function() {
                   name: "String"
                 }
               }
-            ]
+            ],
+            isRelaxedType: false,
           },
           "IGenericInterface<string>": {
             description: "The most generic of interfaces",
@@ -143,7 +145,8 @@ describe("type descriptions", function() {
                   name: "String"
                 }
               }
-            ]
+            ],
+            isRelaxedType: false,
           },
           "IntersectionType": {
             description: "Just smashing things together over here",
@@ -166,7 +169,8 @@ describe("type descriptions", function() {
                   name: "String"
                 }
               }
-            ]
+            ],
+            isRelaxedType: false,
           }
         },
       }
