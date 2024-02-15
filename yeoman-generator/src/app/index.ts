@@ -9,6 +9,7 @@ import * as path from 'path';
 export default class extends Generator {
   constructor(args: string | string[], opts: Generator.GeneratorOptions) {
     super(args, opts);
+    console.log('*************** Running updated yeoman gen ****************');
     this.env.options.nodePackageManager = "npm";
     this.option("openapi", { type: String, default: '' });
   }
@@ -31,6 +32,8 @@ export default class extends Generator {
       }
     }
 
+    const templateDir = path.resolve('/Users/bilal/projects/hasura/ndc-nodejs-lambda/yeoman-generator/templates/base');
+    console.log('yeoman-generator: index.ts: templateDir: ', templateDir);
     const openapi = this.options['openapi'];
     if(openapi !== ''){
       const isUrl = /^https?:/.test(openapi)
@@ -39,7 +42,8 @@ export default class extends Generator {
         name: "Api.ts",
         url: isUrl ? openapi : null,
         input: !isUrl ? openapi : null,
-        output: path.resolve(process.cwd())
+        output: path.resolve(process.cwd()),
+        templates: templateDir,
       })
     }
   }
