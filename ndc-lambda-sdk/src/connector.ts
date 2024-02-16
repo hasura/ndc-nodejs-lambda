@@ -15,7 +15,7 @@ export type State = {
 }
 
 export const RAW_CONFIGURATION_SCHEMA: JSONSchemaObject = {
-  description: 'NodeJS Functions SDK Connector Configuration',
+  description: 'NodeJS Lambda SDK Connector Configuration',
   type: 'object',
   required: [],
   properties: {}
@@ -29,19 +29,19 @@ export function createConnector(options: ConnectorOptions): sdk.Connector<RawCon
   const functionsFilePath = path.resolve(options.functionsFilePath);
 
   const connector: sdk.Connector<RawConfiguration, Configuration, State> = {
-    get_raw_configuration_schema: function (): JSONSchemaObject {
+    getRawConfigurationSchema: function (): JSONSchemaObject {
       return RAW_CONFIGURATION_SCHEMA;
     },
 
-    make_empty_configuration: function (): RawConfiguration {
+    makeEmptyConfiguration: function (): RawConfiguration {
       return {};
     },
 
-    update_configuration: async function (rawConfiguration: RawConfiguration): Promise<RawConfiguration> {
+    updateConfiguration: async function (rawConfiguration: RawConfiguration): Promise<RawConfiguration> {
       return {};
     },
 
-    validate_raw_configuration: async function (rawConfiguration: RawConfiguration): Promise<Configuration> {
+    validateRawConfiguration: async function (rawConfiguration: RawConfiguration): Promise<Configuration> {
       const schemaResults = deriveSchema(functionsFilePath);
       printCompilerDiagnostics(schemaResults.compilerDiagnostics);
       printFunctionIssues(schemaResults.functionIssues);
@@ -51,7 +51,7 @@ export function createConnector(options: ConnectorOptions): sdk.Connector<RawCon
       }
     },
 
-    try_init_state: async function (configuration: Configuration, metrics: unknown): Promise<State> {
+    tryInitState: async function (configuration: Configuration, metrics: unknown): Promise<State> {
       if (Object.keys(configuration.functionsSchema.functions).length === 0) {
         // If there are no declared functions, don't bother trying to load the code.
         // There's very likely to be compiler errors during schema inference that will
@@ -61,18 +61,19 @@ export function createConnector(options: ConnectorOptions): sdk.Connector<RawCon
       return { runtimeFunctions: require(functionsFilePath) }
     },
 
-    get_capabilities: function (configuration: Configuration): sdk.CapabilitiesResponse {
+    getCapabilities: function (configuration: Configuration): sdk.CapabilitiesResponse {
       return {
-        versions: "^0.1.0",
+        version: "0.1.0",
         capabilities: {
           query: {
             variables: {}
           },
+          mutation: {},
         }
       };
     },
 
-    get_schema: async function (configuration: Configuration): Promise<sdk.SchemaResponse> {
+    getSchema: async function (configuration: Configuration): Promise<sdk.SchemaResponse> {
       return getNdcSchema(configuration.functionsSchema);
     },
 
@@ -84,15 +85,19 @@ export function createConnector(options: ConnectorOptions): sdk.Connector<RawCon
       return await executeMutation(request, configuration.functionsSchema, state.runtimeFunctions);
     },
 
-    explain: function (configuration: Configuration, state: State, request: sdk.QueryRequest): Promise<sdk.ExplainResponse> {
+    queryExplain: function (configuration: Configuration, state: State, request: sdk.QueryRequest): Promise<sdk.ExplainResponse> {
       throw new Error("Function not implemented.");
     },
 
-    health_check: async function (configuration: Configuration, state: State): Promise<undefined> {
+    mutationExplain: function (configuration: Configuration, state: State, request: sdk.MutationRequest): Promise<sdk.ExplainResponse> {
+      throw new Error("Function not implemented.");
+    },
+
+    healthCheck: async function (configuration: Configuration, state: State): Promise<undefined> {
       return undefined;
     },
 
-    fetch_metrics: async function (configuration: Configuration, state: State): Promise<undefined> {
+    fetchMetrics: async function (configuration: Configuration, state: State): Promise<undefined> {
       return undefined;
     },
   }

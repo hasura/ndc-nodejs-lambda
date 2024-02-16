@@ -17,13 +17,13 @@ export function makeCommand(commandActions: CommandActions): Command {
     .name("ndc-lambda-sdk")
     .version(version);
 
-  const serveCommand = sdk.get_serve_command();
+  const serveCommand = sdk.getServeCommand();
   serveCommand.action((serverOptions: sdk.ServerOptions, command: Command) => {
     const hostOpts: HostOptions = hostCommand.opts();
     return commandActions.serveAction(hostOpts, serverOptions);
   })
 
-  const configurationServeCommand = sdk.get_serve_configuration_command();
+  const configurationServeCommand = sdk.getServeConfigurationCommand();
   configurationServeCommand.commands.find(c => c.name() === "serve")?.action((serverOptions: sdk.ConfigurationServerOptions, command: Command) => {
     const hostOpts: HostOptions = hostCommand.opts();
     return commandActions.configurationServeAction(hostOpts, serverOptions);

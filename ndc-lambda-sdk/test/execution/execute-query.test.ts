@@ -46,7 +46,12 @@ describe("execute query", function() {
     const queryRequest: sdk.QueryRequest = {
       collection: "theFunction",
       query: {
-        fields: {},
+        fields: {
+          __value: {
+            type: "column",
+            column: "__value",
+          }
+        },
       },
       arguments: {
         "param": {
@@ -60,7 +65,7 @@ describe("execute query", function() {
     const result = await executeQuery(queryRequest, functionSchema, runtimeFunctions);
     assert.deepStrictEqual(result, [
       {
-        aggregates: {},
+        aggregates: null,
         rows: [
           { __value: "Called with 'test'" }
         ]
@@ -118,7 +123,12 @@ describe("execute query", function() {
     const queryRequest: sdk.QueryRequest = {
       collection: "theFunction",
       query: {
-        fields: {},
+        fields: {
+          __value: {
+            type: "column",
+            column: "__value",
+          }
+        },
       },
       arguments: {
         "param": {
@@ -144,13 +154,13 @@ describe("execute query", function() {
     const result = await executeQuery(queryRequest, functionSchema, runtimeFunctions);
     assert.deepStrictEqual(result, [
       {
-        aggregates: {},
+        aggregates: null,
         rows: [
           { __value: "Called with 'test' and 'first'" }
         ]
       },
       {
-        aggregates: {},
+        aggregates: null,
         rows: [
           { __value: "Called with 'test' and 'second'" }
         ]
@@ -209,7 +219,12 @@ describe("execute query", function() {
     const queryRequest: sdk.QueryRequest = {
       collection: "theFunction",
       query: {
-        fields: {},
+        fields: {
+          __value: {
+            type: "column",
+            column: "__value",
+          }
+        },
       },
       arguments: {
         "invocationName": {
@@ -245,25 +260,25 @@ describe("execute query", function() {
     const result = await executeQuery(queryRequest, functionSchema, runtimeFunctions);
     assert.deepStrictEqual(result, [
       {
-        aggregates: {},
+        aggregates: null,
         rows: [
           { __value: "first" }
         ]
       },
       {
-        aggregates: {},
+        aggregates: null,
         rows: [
           { __value: "second" }
         ]
       },
       {
-        aggregates: {},
+        aggregates: null,
         rows: [
           { __value: "third" }
         ]
       },
       {
-        aggregates: {},
+        aggregates: null,
         rows: [
           { __value: "fourth" }
         ]
@@ -295,14 +310,14 @@ describe("execute query", function() {
     const queryRequest: sdk.QueryRequest = {
       collection: "theFunction",
       query: {
-        fields: {},
+        fields: {
+          __value: {
+            type: "column",
+            column: "__value",
+          }
+        },
       },
-      arguments: {
-        "param": {
-          type: "literal",
-          value: "test"
-        }
-      },
+      arguments: {},
       collection_relationships: {}
     };
 
@@ -364,4 +379,119 @@ describe("execute query", function() {
       }
     });
   })
+
+  describe("function calling convention", function() {
+    const functionSchema: FunctionsSchema = {
+      functions: {
+        "theFunction": {
+          ndcKind: FunctionNdcKind.Function,
+          description: null,
+          parallelDegree: null,
+          arguments: [],
+          resultType: {
+            type: "named",
+            kind: "scalar",
+            name: "String"
+          }
+        }
+      },
+      objectTypes: {},
+      scalarTypes: {
+        "String": { type: "built-in" },
+      }
+    };
+
+    it("null fields produces null rows", async function() {
+      let functionCallCount = 0;
+      const runtimeFunctions = {
+        "theFunction": () => {
+          functionCallCount++;
+          return `Called ${functionCallCount} times total`;
+        }
+      };
+      const queryRequest: sdk.QueryRequest = {
+        collection: "theFunction",
+        query: {
+          fields: null
+        },
+        arguments: {},
+        collection_relationships: {}
+      };
+
+      const result = await executeQuery(queryRequest, functionSchema, runtimeFunctions);
+      assert.deepStrictEqual(result, [
+        {
+          aggregates: null,
+          rows: null
+        }
+      ]);
+      assert.equal(functionCallCount, 1);
+    });
+
+    it("empty fields produces one row with an empty result object", async function() {
+      let functionCallCount = 0;
+      const runtimeFunctions = {
+        "theFunction": () => {
+          functionCallCount++;
+          return `Called ${functionCallCount} times total`;
+        }
+      };
+      const queryRequest: sdk.QueryRequest = {
+        collection: "theFunction",
+        query: {
+          fields: {}
+        },
+        arguments: {},
+        collection_relationships: {}
+      };
+
+      const result = await executeQuery(queryRequest, functionSchema, runtimeFunctions);
+      assert.deepStrictEqual(result, [
+        {
+          aggregates: null,
+          rows: [{}]
+        }
+      ]);
+      assert.equal(functionCallCount, 1);
+    });
+
+    it("can duplicate virtual __value column", async function() {
+      let functionCallCount = 0;
+      const runtimeFunctions = {
+        "theFunction": () => {
+          functionCallCount++;
+          return `Called ${functionCallCount} times total`;
+        }
+      };
+      const queryRequest: sdk.QueryRequest = {
+        collection: "theFunction",
+        query: {
+          fields: {
+            value1: {
+              type: "column",
+              column: "__value"
+            },
+            value2: {
+              type: "column",
+              column: "__value"
+            }
+          }
+        },
+        arguments: {},
+        collection_relationships: {}
+      };
+
+      const result = await executeQuery(queryRequest, functionSchema, runtimeFunctions);
+      assert.deepStrictEqual(result, [
+        {
+          aggregates: null,
+          rows: [{
+            value1: "Called 1 times total",
+            value2: "Called 1 times total"
+          }]
+        }
+      ]);
+      assert.equal(functionCallCount, 1);
+    });
+  });
 });

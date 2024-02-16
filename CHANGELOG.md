@@ -4,6 +4,11 @@ This changelog documents the changes between release versions.
 ## main
 Changes to be included in the next upcoming release
 
+- Support for NDC Spec v0.1.0-rc.15 via the NDC TypeScript SDK v3.0.0. This is a breaking change and must be used with the latest Hasura engine.
+  - Support for nested object/array selection
+  - New function calling convention that relies on nested object queries
+  - New mutation request/response format
+
 ## v0.14.0
 - Support for "relaxed types" ([#10](https://github.com/hasura/ndc-nodejs-lambda/pull/10))
 
