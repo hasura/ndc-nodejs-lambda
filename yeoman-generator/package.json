@@ -1,6 +1,6 @@
 {
   "name": "generator-hasura-ndc-nodejs-lambda",
-  "version": "0.13.0",
+  "version": "0.14.0",
   "description": "Yeoman generator for Hasura DDN ndc-nodejs-lambda connectors",
   "files": [
     "generators"

@@ -4,7 +4,8 @@ This changelog documents the changes between release versions.
 ## main
 Changes to be included in the next upcoming release
 
-* Support for "relaxed types" ([#10](https://github.com/hasura/ndc-nodejs-lambda/pull/10))
+## v0.14.0
+- Support for "relaxed types" ([#10](https://github.com/hasura/ndc-nodejs-lambda/pull/10))
 
 ## v0.13.0
 - Add support for treating 'true | false' as a Boolean type ([#7](https://github.com/hasura/ndc-nodejs-lambda/pull/7))
