@@ -107,7 +107,7 @@ export function prepareArguments(args: Record<string, unknown>, functionDefiniti
   return functionDefinition.arguments.map(argDef => coerceArgumentValue(args[argDef.argumentName], argDef.type, [argDef.argumentName], objectTypes));
 }
 
-function coerceArgumentValue(value: unknown, type: schema.TypeDefinition, valuePath: string[], objectTypeDefinitions: schema.ObjectTypeDefinitions): unknown {
+function coerceArgumentValue(value: unknown, type: schema.TypeReference, valuePath: string[], objectTypeDefinitions: schema.ObjectTypeDefinitions): unknown {
   switch (type.type) {
     case "array":
       if (!isArray(value))
@@ -128,7 +128,7 @@ function coerceArgumentValue(value: unknown, type: schema.TypeDefinition, valueP
       }
     case "named":
       if (type.kind === "scalar") {
-        if (schema.isBuiltInScalarTypeDefinition(type))
+        if (schema.isBuiltInScalarTypeReference(type))
           return convertBuiltInNdcJsonScalarToJsScalar(value, valuePath, type);
         // Scalars are currently treated as opaque values, which is a bit dodgy
         return value;
@@ -211,7 +211,7 @@ function buildCausalStackTrace(error: Error): string {
   return stackTrace;
 }
 
-export function reshapeResultToNdcResponseValue(value: unknown, type: schema.TypeDefinition, valuePath: string[], fields: Record<string, sdk.Field> | "AllColumns", objectTypes: schema.ObjectTypeDefinitions): unknown {
+export function reshapeResultToNdcResponseValue(value: unknown, type: schema.TypeReference, valuePath: string[], fields: Record<string, sdk.Field> | "AllColumns", objectTypes: schema.ObjectTypeDefinitions): unknown {
   switch (type.type) {
     case "array":
       if (isArray(value)) {
@@ -268,7 +268,7 @@ export function reshapeResultToNdcResponseValue(value: unknown, type: schema.Typ
   }
 }
 
-function convertBuiltInNdcJsonScalarToJsScalar(value: unknown, valuePath: string[], scalarType: schema.BuiltInScalarTypeDefinition): string | number | boolean | BigInt | Date | schema.JSONValue {
+function convertBuiltInNdcJsonScalarToJsScalar(value: unknown, valuePath: string[], scalarType: schema.BuiltInScalarTypeReference): string | number | boolean | BigInt | Date | schema.JSONValue {
   switch (scalarType.name) {
     case schema.BuiltInScalarTypeName.String:
       if (typeof value === "string") {

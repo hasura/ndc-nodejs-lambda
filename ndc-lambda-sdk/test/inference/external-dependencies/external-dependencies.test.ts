@@ -12,7 +12,7 @@ describe("external dependencies", function() {
       functionIssues: {},
       functionsSchema: {
         scalarTypes: {
-          String: {},
+          String: { type: "built-in" },
         },
         objectTypes: {},
         functions: {
@@ -124,8 +124,8 @@ describe("external dependencies", function() {
           },
         },
         scalarTypes: {
-          String: {},
-          JSON: {}
+          String: { type: "built-in" },
+          JSON: { type: "built-in" },
         },
         objectTypes: {
           "delete_todos_output": {
@@ -157,7 +157,8 @@ describe("external dependencies", function() {
                   }
                 }
               }
-            ]
+            ],
+            isRelaxedType: false,
           }
         },
       }

@@ -1,7 +1,7 @@
 import * as sdk from "@hasura/ndc-sdk-typescript";
 import { JSONSchemaObject } from "@json-schema-tools/meta-schema";
 import path from "node:path"
-import { FunctionsSchema, getNdcSchema } from "./schema";
+import { FunctionsSchema, getNdcSchema, printRelaxedTypesWarning } from "./schema";
 import { deriveSchema, printCompilerDiagnostics, printFunctionIssues } from "./inference";
 import { RuntimeFunctions, executeMutation, executeQuery } from "./execution";
 
@@ -45,6 +45,7 @@ export function createConnector(options: ConnectorOptions): sdk.Connector<RawCon
       const schemaResults = deriveSchema(functionsFilePath);
       printCompilerDiagnostics(schemaResults.compilerDiagnostics);
       printFunctionIssues(schemaResults.functionIssues);
+      printRelaxedTypesWarning(schemaResults.functionsSchema);
       return {
         functionsSchema: schemaResults.functionsSchema
       }

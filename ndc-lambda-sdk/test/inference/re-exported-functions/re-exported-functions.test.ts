@@ -78,9 +78,9 @@ describe("re-exported functions", function() {
           },
         },
         scalarTypes: {
-          Boolean: {},
-          Float: {},
-          String: {},
+          Boolean: { type: "built-in" },
+          Float: { type: "built-in" },
+          String: { type: "built-in" },
         },
         objectTypes: {},
       }
@@ -150,8 +150,8 @@ describe("re-exported functions", function() {
           },
         },
         scalarTypes: {
-          Float: {},
-          String: {},
+          Float: { type: "built-in" },
+          String: { type: "built-in" },
         },
         objectTypes: {},
       }
@@ -200,7 +200,7 @@ describe("re-exported functions", function() {
           },
         },
         scalarTypes: {
-          String: {},
+          String: { type: "built-in" },
         },
         objectTypes: {},
       }
