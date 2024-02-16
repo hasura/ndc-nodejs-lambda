@@ -98,7 +98,7 @@ export function prepareArguments(args: Record<string, unknown>, functionDefiniti
   return functionDefinition.arguments.map(argDef => coerceArgumentValue(args[argDef.argumentName], argDef.type, [argDef.argumentName], objectTypes));
 }
 
-function coerceArgumentValue(value: unknown, type: schema.TypeDefinition, valuePath: string[], objectTypeDefinitions: schema.ObjectTypeDefinitions): unknown {
+function coerceArgumentValue(value: unknown, type: schema.TypeReference, valuePath: string[], objectTypeDefinitions: schema.ObjectTypeDefinitions): unknown {
   switch (type.type) {
     case "array":
       if (!isArray(value))
@@ -119,7 +119,7 @@ function coerceArgumentValue(value: unknown, type: schema.TypeDefinition, valueP
       }
     case "named":
       if (type.kind === "scalar") {
-        if (schema.isBuiltInScalarTypeDefinition(type))
+        if (schema.isBuiltInScalarTypeReference(type))
           return convertBuiltInNdcJsonScalarToJsScalar(value, valuePath, type);
         // Scalars are currently treated as opaque values, which is a bit dodgy
         return value;
@@ -205,7 +205,7 @@ function buildCausalStackTrace(error: Error): string {
 // Represents either selecting a scalar (ie. the whole value, opaquely), an object (selecting properties), or an array (select whole array)
 export type FieldSelection = sdk.NestedField | { type: "scalar" }
 
-function reshapeResultUsingFunctionCallingConvention(functionResultValue: unknown, functionResultType: schema.TypeDefinition, query: sdk.Query, objectTypes: schema.ObjectTypeDefinitions): sdk.RowSet {
+function reshapeResultUsingFunctionCallingConvention(functionResultValue: unknown, functionResultType: schema.TypeReference, query: sdk.Query, objectTypes: schema.ObjectTypeDefinitions): sdk.RowSet {
   if (query.aggregates) throw new sdk.NotSupported("Query aggregates are not supported");
   if (query.order_by) throw new sdk.NotSupported("Query order_by is not supported");
   if (query.predicate) throw new sdk.NotSupported("Query predicate is not supported");
@@ -248,7 +248,7 @@ function reshapeResultUsingFunctionCallingConvention(functionResultValue: unknow
   }
 }
 
-export function reshapeResultUsingFieldSelection(value: unknown, type: schema.TypeDefinition, valuePath: string[], fieldSelection: FieldSelection, objectTypes: schema.ObjectTypeDefinitions): unknown {
+export function reshapeResultUsingFieldSelection(value: unknown, type: schema.TypeReference, valuePath: string[], fieldSelection: FieldSelection, objectTypes: schema.ObjectTypeDefinitions): unknown {
   switch (type.type) {
     case "array":
       if (!isArray(value))
@@ -322,7 +322,7 @@ export function reshapeResultUsingFieldSelection(value: unknown, type: schema.Ty
   }
 }
 
-function convertBuiltInNdcJsonScalarToJsScalar(value: unknown, valuePath: string[], scalarType: schema.BuiltInScalarTypeDefinition): string | number | boolean | BigInt | Date | schema.JSONValue {
+function convertBuiltInNdcJsonScalarToJsScalar(value: unknown, valuePath: string[], scalarType: schema.BuiltInScalarTypeReference): string | number | boolean | BigInt | Date | schema.JSONValue {
   switch (scalarType.name) {
     case schema.BuiltInScalarTypeName.String:
       if (typeof value === "string") {

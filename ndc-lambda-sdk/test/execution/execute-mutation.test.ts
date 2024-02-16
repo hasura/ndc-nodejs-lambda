@@ -39,7 +39,7 @@ describe("execute mutation", function() {
       },
       objectTypes: {},
       scalarTypes: {
-        "String": {}
+        "String": { type: "built-in" },
       }
     };
     const mutationRequest: sdk.MutationRequest = {
@@ -135,12 +135,13 @@ describe("execute mutation", function() {
                 name: "Float"
               }
             }
-          ]
+          ],
+          isRelaxedType: false,
         }
       },
       scalarTypes: {
-        "Float": {},
-        "String": {},
+        "Float": { type: "built-in" },
+        "String": { type: "built-in" },
       }
     };
     const mutationRequest: sdk.MutationRequest = {
@@ -218,7 +219,7 @@ describe("execute mutation", function() {
       },
       objectTypes: {},
       scalarTypes: {
-        "String": {}
+        "String": { type: "built-in" },
       }
     };
     const mutationRequest: sdk.MutationRequest = {
@@ -265,7 +266,7 @@ describe("execute mutation", function() {
       },
       objectTypes: {},
       scalarTypes: {
-        "String": {}
+        "String": { type: "built-in" },
       }
     };
     const mutationRequest: sdk.MutationRequest = {

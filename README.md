@@ -147,6 +147,41 @@ These types are unsupported as function parameter types or return types for func
 * [`void`](https://www.typescriptlang.org/docs/handbook/2/functions.html#void), [`object`](https://www.typescriptlang.org/docs/handbook/2/functions.html#object), [`unknown`](https://www.typescriptlang.org/docs/handbook/2/functions.html#unknown), [`never`](https://www.typescriptlang.org/docs/handbook/2/functions.html#never), [`any`](https://www.typescriptlang.org/docs/handbook/2/everyday-types.html#any) types - to accept and return arbitrary JSON, use `sdk.JSONValue` instead
 * `null` and `undefined` - unless used in a union with a single other type
 
+### Relaxed Types
+"Relaxed types" are types that are otherwise unsupported, but instead of being rejected are instead converted into opaque custom scalar types. These scalar types are entirely unvalidated when used as input (ie. the caller of the function can send arbitrary JSON values), making it incumbent on the function itself to ensure the incoming value for that relaxed type actually matches its type. Because relaxed types are represented as custom scalar types, in GraphQL you will be unable to select into the type, if it is an object, and will only be able to select the whole thing.
+
+Relaxed types are designed to be an escape hatch to help people get up and running using existing code quickly, where their existing code uses types that are unsupported. They are **not intended to be used long term**. You should prefer to modify your code to use only supported types. To opt into using relaxed types, one must apply the `@allowrelaxedtypes` JSDoc tag to the function that will be using the unsupported types.
+
+The following unsupported types are allowed when using relaxed types, and will be converted into opaque unvalidated scalar types:
+
+* Union types
+* Tuple types
+* Types with index signatures
+* The `any` and `unknown` types
+
+Here's an example of a function that uses some relaxed types:
+
+```typescript
+/**
+ * @allowrelaxedtypes
+ * @readonly
+ */
+export function findEmptyRecords(record: Record<string, string>): { emptyKeys: string[] } | string {
+  const emptyKeys: string[] = [];
+  const entries = Object.entries(record);
+
+  if (entries.length === 0)
+    return "Error: record was empty";
+
+  for (const [key, value] of entries) {
+    if (value === "")
+      emptyKeys.push(key);
+  }
+
+  return { emptyKeys };
+}
+```
+
 ### Error handling
 By default, unhandled errors thrown from functions are caught by the Lambda SDK host, and an `InternalServerError` is returned to Hasura. The details of the uncaught error (the message and stack trace) is captured and will be logged in the OpenTelemetry trace associated with the GraphQL request. However, the GraphQL API caller will receive a generic "internal error" response to their query. This is to ensure internal error details are not leaked to GraphQL API clients.
 

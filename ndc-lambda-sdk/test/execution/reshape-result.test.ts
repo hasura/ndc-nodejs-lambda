@@ -2,7 +2,7 @@ import { describe, it } from "mocha";
 import { assert } from "chai";
 import * as sdk from "@hasura/ndc-sdk-typescript"
 import { FieldSelection, reshapeResultUsingFieldSelection } from "../../src/execution";
-import { ArrayTypeDefinition, BuiltInScalarTypeName, JSONValue, NamedTypeDefinition, NullOrUndefinability, NullableTypeDefinition, ObjectTypeDefinitions } from "../../src/schema";
+import { ArrayTypeReference, BuiltInScalarTypeName, JSONValue, NamedTypeReference, NullOrUndefinability, NullableTypeReference, ObjectTypeDefinitions } from "../../src/schema";
 
 describe("reshape result", function() {
 
@@ -48,7 +48,7 @@ describe("reshape result", function() {
 
     for (const testCase of testCases) {
       it(testCase.testName, function () {
-        const scalarType: NamedTypeDefinition = { type: "named", kind: "scalar", name: testCase.type };
+        const scalarType: NamedTypeReference = { type: "named", kind: "scalar", name: testCase.type };
         const result = reshapeResultUsingFieldSelection(testCase.value, scalarType, [], { type: "scalar" }, {});
         assert.deepStrictEqual(result, testCase.reshapedValue);
       })
@@ -79,7 +79,7 @@ describe("reshape result", function() {
 
     for (const testCase of testCases) {
       it(testCase.testName, function () {
-        const nullableType: NullableTypeDefinition = { type: "nullable", nullOrUndefinability: NullOrUndefinability.AcceptsEither, underlyingType: { type: "named", kind: "scalar", name: testCase.scalarType } };
+        const nullableType: NullableTypeReference = { type: "nullable", nullOrUndefinability: NullOrUndefinability.AcceptsEither, underlyingType: { type: "named", kind: "scalar", name: testCase.scalarType } };
         const result = reshapeResultUsingFieldSelection(testCase.value, nullableType, [], { type: "scalar" }, {});
         assert.strictEqual(result, testCase.reshapedValue);
       })
@@ -106,7 +106,8 @@ describe("reshape result", function() {
             description: null,
             type: { type: "nullable", nullOrUndefinability: NullOrUndefinability.AcceptsEither, underlyingType: { type: "named", kind: "object", name: "TestObjectType" } }
           }
-        ]
+        ],
+        isRelaxedType: false,
       }
     }
     const testCases = [
@@ -150,7 +151,7 @@ describe("reshape result", function() {
 
     for (const testCase of testCases) {
       it(testCase.testName, function () {
-        const objectType: NamedTypeDefinition = { type: "named", kind: "object", name: "TestObjectType" };
+        const objectType: NamedTypeReference = { type: "named", kind: "object", name: "TestObjectType" };
         const result = reshapeResultUsingFieldSelection(testCase.value, objectType, [], testCase.fieldSelection, objectTypes);
         assert.deepStrictEqual(result, testCase.reshapedValue);
       })
@@ -158,7 +159,7 @@ describe("reshape result", function() {
   });
 
   it("serializes scalar array type", function() {
-    const arrayType: ArrayTypeDefinition = { type: "array", elementType: { type: "named", kind: "scalar", name: BuiltInScalarTypeName.Float } };
+    const arrayType: ArrayTypeReference = { type: "array", elementType: { type: "named", kind: "scalar", name: BuiltInScalarTypeName.Float } };
     const result = reshapeResultUsingFieldSelection([1,2,3], arrayType, [], { type: "scalar" }, {});
     assert.deepStrictEqual(result, [1,2,3]);
   });
@@ -178,7 +179,8 @@ describe("reshape result", function() {
             description: null,
             type: { type: "nullable", nullOrUndefinability: NullOrUndefinability.AcceptsEither, underlyingType: { type: "named", kind: "scalar", name: BuiltInScalarTypeName.String } }
           }
-        ]
+        ],
+        isRelaxedType: false,
       }
     }
     const testCases = [
@@ -258,7 +260,7 @@ describe("reshape result", function() {
 
     for (const testCase of testCases) {
       it(testCase.testName, function () {
-        const arrayType: ArrayTypeDefinition = { type: "array", elementType: { type: "named", kind: "object", name: "TestObjectType" } };
+        const arrayType: ArrayTypeReference = { type: "array", elementType: { type: "named", kind: "object", name: "TestObjectType" } };
         const result = reshapeResultUsingFieldSelection(testCase.value, arrayType, [], testCase.fieldSelection, objectTypes);
         assert.deepStrictEqual(result, testCase.reshapedValue);
       })
@@ -285,7 +287,8 @@ describe("reshape result", function() {
             description: null,
             type: { type: "nullable", nullOrUndefinability: NullOrUndefinability.AcceptsEither, underlyingType: { type: "named", kind: "object", name: "TestObjectType" } }
           }
-        ]
+        ],
+        isRelaxedType: false,
       }
     }
     const testCases = [
@@ -378,7 +381,7 @@ describe("reshape result", function() {
 
     for (const testCase of testCases) {
       it(testCase.testName, function () {
-        const objectType: NamedTypeDefinition = { type: "named", kind: "object", name: "TestObjectType" };
+        const objectType: NamedTypeReference = { type: "named", kind: "object", name: "TestObjectType" };
         const result = reshapeResultUsingFieldSelection(testCase.value, objectType, [], testCase.fieldSelection, objectTypes);
         assert.deepStrictEqual(result, testCase.reshapedValue);
       })
@@ -405,7 +408,8 @@ describe("reshape result", function() {
             description: null,
             type: { type: "nullable", nullOrUndefinability: NullOrUndefinability.AcceptsEither, underlyingType: { type: "array", elementType: { type: "named", kind: "object", name: "TestObjectType" } } }
           }
-        ]
+        ],
+        isRelaxedType: false,
       }
     }
     const testCases = [
@@ -522,7 +526,7 @@ describe("reshape result", function() {
 
     for (const testCase of testCases) {
       it(testCase.testName, function () {
-        const objectType: NamedTypeDefinition = { type: "named", kind: "object", name: "TestObjectType" };
+        const objectType: NamedTypeReference = { type: "named", kind: "object", name: "TestObjectType" };
         const result = reshapeResultUsingFieldSelection(testCase.value, objectType, [], testCase.fieldSelection, objectTypes);
         assert.deepStrictEqual(result, testCase.reshapedValue);
       })

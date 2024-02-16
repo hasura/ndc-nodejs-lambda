@@ -46,7 +46,8 @@ describe("naming conflicts", function() {
                   type: "named",
                 },
               },
-            ]
+            ],
+            isRelaxedType: false,
           },
           "conflict_from_import_dep_Foo": {
             description: null,
@@ -69,13 +70,14 @@ describe("naming conflicts", function() {
                   type: "named",
                 },
               },
-            ]
+            ],
+            isRelaxedType: false,
           },
         },
         scalarTypes: {
-          Boolean: {},
-          Float: {},
-          String: {},
+          Boolean: { type: "built-in" },
+          Float: { type: "built-in" },
+          String: { type: "built-in" },
         }
       }
     })

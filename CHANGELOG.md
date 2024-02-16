@@ -9,6 +9,9 @@ Changes to be included in the next upcoming release
   - New function calling convention that relies on nested object queries
   - New mutation request/response format
 
+## v0.14.0
+- Support for "relaxed types" ([#10](https://github.com/hasura/ndc-nodejs-lambda/pull/10))
+
 ## v0.13.0
 - Add support for treating 'true | false' as a Boolean type ([#7](https://github.com/hasura/ndc-nodejs-lambda/pull/7))
 
