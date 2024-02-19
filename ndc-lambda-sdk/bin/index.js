@@ -12,8 +12,7 @@ const { makeCommand } = require("../dist/src/cmdline")
 // We need to get at the user's specified typescript functions file path early here in this shim
 // so that we can search for their tsconfig in order to configure ts-node/ts-node-dev properly
 const program = makeCommand({
-  serveAction: () => {},
-  configurationServeAction: () => {}
+  serveAction: () => {}
 })
 program.parse();
 

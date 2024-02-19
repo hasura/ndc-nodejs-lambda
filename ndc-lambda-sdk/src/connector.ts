@@ -1,11 +1,9 @@
 import * as sdk from "@hasura/ndc-sdk-typescript";
-import { JSONSchemaObject } from "@json-schema-tools/meta-schema";
 import path from "node:path"
 import { FunctionsSchema, getNdcSchema, printRelaxedTypesWarning } from "./schema";
 import { deriveSchema, printCompilerDiagnostics, printFunctionIssues } from "./inference";
 import { RuntimeFunctions, executeMutation, executeQuery } from "./execution";
 
-export type RawConfiguration = {};
 export type Configuration = {
   functionsSchema: FunctionsSchema
 };
@@ -14,34 +12,16 @@ export type State = {
   runtimeFunctions: RuntimeFunctions
 }
 
-export const RAW_CONFIGURATION_SCHEMA: JSONSchemaObject = {
-  description: 'NodeJS Lambda SDK Connector Configuration',
-  type: 'object',
-  required: [],
-  properties: {}
-};
-
 export type ConnectorOptions = {
   functionsFilePath: string
 }
 
-export function createConnector(options: ConnectorOptions): sdk.Connector<RawConfiguration, Configuration, State> {
+export function createConnector(options: ConnectorOptions): sdk.Connector<Configuration, State> {
   const functionsFilePath = path.resolve(options.functionsFilePath);
 
-  const connector: sdk.Connector<RawConfiguration, Configuration, State> = {
-    getRawConfigurationSchema: function (): JSONSchemaObject {
-      return RAW_CONFIGURATION_SCHEMA;
-    },
+  const connector: sdk.Connector<Configuration, State> = {
 
-    makeEmptyConfiguration: function (): RawConfiguration {
-      return {};
-    },
-
-    updateConfiguration: async function (rawConfiguration: RawConfiguration): Promise<RawConfiguration> {
-      return {};
-    },
-
-    validateRawConfiguration: async function (rawConfiguration: RawConfiguration): Promise<Configuration> {
+    parseConfiguration: async function (configurationDir: string): Promise<Configuration> {
       const schemaResults = deriveSchema(functionsFilePath);
       printCompilerDiagnostics(schemaResults.compilerDiagnostics);
       printFunctionIssues(schemaResults.functionIssues);
