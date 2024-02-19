@@ -9,7 +9,6 @@ export type HostOptions = {
 
 export interface CommandActions {
   serveAction(hostOpts: HostOptions, serverOpts: sdk.ServerOptions): Promise<void> | void
-  configurationServeAction(hostOpts: HostOptions, serverOpts: sdk.ConfigurationServerOptions): Promise<void> | void
 }
 
 export function makeCommand(commandActions: CommandActions): Command {
@@ -23,12 +22,6 @@ export function makeCommand(commandActions: CommandActions): Command {
     return commandActions.serveAction(hostOpts, serverOptions);
   })
 
-  const configurationServeCommand = sdk.getServeConfigurationCommand();
-  configurationServeCommand.commands.find(c => c.name() === "serve")?.action((serverOptions: sdk.ConfigurationServerOptions, command: Command) => {
-    const hostOpts: HostOptions = hostCommand.opts();
-    return commandActions.configurationServeAction(hostOpts, serverOptions);
-  });
-
   const hostCommand = program
     .command("host")
     .addOption(
@@ -37,8 +30,7 @@ export function makeCommand(commandActions: CommandActions): Command {
         .env("WATCH")
     )
     .requiredOption("-f, --functions <filepath>", "path to your TypeScript functions file")
-    .addCommand(serveCommand)
-    .addCommand(configurationServeCommand);
+    .addCommand(serveCommand);
 
   return program;
 }

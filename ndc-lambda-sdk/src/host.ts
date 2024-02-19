@@ -4,7 +4,6 @@ import { makeCommand } from "./cmdline";
 
 const program = makeCommand({
   serveAction: (hostOpts, serveOpts) => sdk.startServer(createConnector({functionsFilePath: hostOpts.functions}), serveOpts),
-  configurationServeAction: (hostOpts, serveOpts) => sdk.startConfigurationServer(createConnector({functionsFilePath: hostOpts.functions}), serveOpts),
 });
 
 program.parseAsync().catch(err => {
