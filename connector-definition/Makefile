@@ -1,4 +1,5 @@
 .DEFAULT_GOAL := build
+SHELL = /usr/bin/env bash
 
 RELEASE_VERSION_DEP := ../ndc-lambda-sdk/package.json
 RELEASE_VERSION := $(shell jq -r '.version' $(RELEASE_VERSION_DEP))
@@ -11,38 +12,34 @@ clean:
 	rm -rf dist
 	rm -f connector-definition.tgz
 
-dist dist/docker dist/build-files:
+dist dist/.hasura-connector:
 	mkdir dist
-	mkdir dist/docker
-	mkdir dist/build-files
+	mkdir dist/.hasura-connector
 
-dist/docker-compose.yaml: docker-compose.yaml dist
-	cp -f docker-compose.yaml dist/
+dist/.hasura-connector/connector-metadata.yaml: connector-metadata.yaml dist
+	cp -f connector-metadata.yaml dist/.hasura-connector
 
-dist/connector-metadata.json: connector-metadata.json dist
-	cp -f connector-metadata.json dist/
+dist/.hasura-connector/Dockerfile: Dockerfile dist/.hasura-connector $(RELEASE_VERSION_DEP)
+	cp -f Dockerfile dist/.hasura-connector/
+	sed -i -E 's/\{\{VERSION\}\}/$(RELEASE_VERSION)/g' dist/.hasura-connector/Dockerfile
 
-dist/docker/Dockerfile: docker/Dockerfile dist/docker $(RELEASE_VERSION_DEP)
-	cp -f docker/Dockerfile dist/docker/
-	sed -i -E 's/\{\{VERSION\}\}/$(RELEASE_VERSION)/g' dist/docker/Dockerfile
+dist/.hasura-connector/.dockerignore: .dockerignore dist/.hasura-connector
+	cp -f .dockerignore dist/.hasura-connector/
 
-dist/docker/.dockerignore: docker/.dockerignore dist/docker
-	cp -f docker/.dockerignore dist/docker/
+template_files := $(filter-out %/package.json,$(wildcard template/*))
+dist_template_files := $(patsubst template/%,dist/%,$(template_files))
 
-build_files := $(filter-out %/package.json,$(wildcard build-files/*))
-dist_build_files := $(patsubst build-files/%,dist/build-files/%,$(build_files))
+$(dist_template_files): $(template_files)
+	cp -f $(template_files) dist/
 
-$(dist_build_files): $(build_files)
-	cp -f $(build_files) dist/build-files/
+dist/package.json: template/package.json $(RELEASE_VERSION_DEP)
+	cp -f template/package.json dist/
+	jq '.dependencies["@hasura/ndc-lambda-sdk"] = "$(RELEASE_VERSION)"' dist/package.json > dist/package.json.tmp
+	mv -f dist/package.json.tmp dist/package.json
 
-dist/build-files/package.json: build-files/package.json $(RELEASE_VERSION_DEP)
-	cp -f build-files/package.json dist/build-files/
-	jq '.dependencies["@hasura/ndc-lambda-sdk"] = "$(RELEASE_VERSION)"' dist/build-files/package.json > dist/build-files/package.json.tmp
-	mv -f dist/build-files/package.json.tmp dist/build-files/package.json
+dist/package-lock.json: dist/package.json
+	cd dist && npm install
+	rm -rf dist/node_modules
 
-dist/build-files/package-lock.json: dist/build-files/package.json
-	cd dist/build-files && npm install
-	rm -rf dist/build-files/node_modules
-
-dist/connector-definition.tgz: dist/connector-metadata.json dist/docker-compose.yaml dist/docker/Dockerfile dist/docker/.dockerignore $(dist_build_files) dist/build-files/package-lock.json
-	cd dist && tar -czvf connector-definition.tgz *
+dist/connector-definition.tgz: dist/.hasura-connector/connector-metadata.yaml dist/.hasura-connector/Dockerfile dist/.hasura-connector/.dockerignore $(dist_template_files) dist/package-lock.json
+	shopt -s dotglob && cd dist && tar -czvf connector-definition.tgz *

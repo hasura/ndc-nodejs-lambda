@@ -1,6 +1,0 @@
-{
-  "packagingDefinition": {
-    "type": "ManagedDockerBuild"
-  },
-  "supportedEnvironmentVariables": []
-}
