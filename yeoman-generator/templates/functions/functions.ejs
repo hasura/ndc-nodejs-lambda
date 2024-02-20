@@ -1,0 +1,20 @@
+import { Api } from './Api';
+import * as sdk from "@hasura/ndc-lambda-sdk"
+
+<% const { getRequests } = it; %>
+
+<% const capitalizeFirstLetter = (str) => {
+  return str.charAt(0).toUpperCase() + str.slice(1);
+}
+%>
+
+<% for (let req of getRequests) {
+  const functionName = `get${capitalizeFirstLetter(req.namespace)}${capitalizeFirstLetter(req.routeName.original)}`;
+%>
+/**
+ * @readonly
+ */
+export async function <%= functionName%>() {
+
+}
+<% } %>
