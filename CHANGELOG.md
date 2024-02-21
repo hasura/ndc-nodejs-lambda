@@ -1,10 +1,11 @@
 # NodeJS Lambda Connector Changelog
 This changelog documents the changes between release versions.
 
-## main
-Changes to be included in the next upcoming release
+## Unreleased
+Changes to be included in the next upcoming v0 release
 
-- OpenTelemetry support added via support for NDC TypeScript SDK v1.3.0
+## v0.15.0
+- OpenTelemetry support added via support for NDC TypeScript SDK v1.3.0 ([#12](https://github.com/hasura/ndc-nodejs-lambda/pull/12))
 
 ## v0.14.0
 - Support for "relaxed types" ([#10](https://github.com/hasura/ndc-nodejs-lambda/pull/10))
