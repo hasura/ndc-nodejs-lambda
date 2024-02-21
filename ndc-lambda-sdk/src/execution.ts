@@ -1,8 +1,11 @@
 import { EOL } from "os";
 import * as sdk from "@hasura/ndc-sdk-typescript"
+import opentelemetry, { SpanStatusCode } from '@opentelemetry/api';
 import pLimit from "p-limit";
 import * as schema from "./schema"
 import { isArray, mapObjectValues, unreachable } from "./util"
+
+const tracer = opentelemetry.trace.getTracer("nodejs-lambda-sdk.execution");
 
 export type RuntimeFunctions = {
   [functionName: string]: Function
@@ -150,24 +153,36 @@ function coerceArgumentValue(value: unknown, type: schema.TypeReference, valuePa
 }
 
 async function invokeFunction(func: Function, preparedArgs: unknown[], functionName: string): Promise<unknown> {
-  try {
-    const result = func.apply(undefined, preparedArgs);
-    // Await the result if it is a promise
-    if (typeof result === "object" && 'then' in result && typeof result.then === "function") {
-      return await result;
+  return tracer.startActiveSpan(`Function: ${functionName}`, async (span) => {
+    span.setAttribute("ndc-lambda-sdk.function_name", functionName);
+    try {
+      const result = func.apply(undefined, preparedArgs);
+      // Await the result if it is a promise
+      if (typeof result === "object" && 'then' in result && typeof result.then === "function") {
+        return await result;
+      }
+      return result;
+    } catch (e) {
+      if (e instanceof sdk.ConnectorError) {
+        span.recordException(e);
+        span.setStatus({ code: SpanStatusCode.ERROR });
+        throw e;
+      } else if (e instanceof Error) {
+        span.recordException(e);
+        span.setStatus({ code: SpanStatusCode.ERROR });
+        throw new sdk.InternalServerError(`Error encountered when invoking function '${functionName}'`, getErrorDetails(e));
+      } else if (typeof e === "string") {
+        span.recordException(e);
+        span.setStatus({ code: SpanStatusCode.ERROR });
+        throw new sdk.InternalServerError(`Error encountered when invoking function '${functionName}'`, { message: e });
+      } else {
+        throw new sdk.InternalServerError(`Error encountered when invoking function '${functionName}'`);
+      }
     }
-    return result;
-  } catch (e) {
-    if (e instanceof sdk.ConnectorError) {
-      throw e;
-    } else if (e instanceof Error) {
-      throw new sdk.InternalServerError(`Error encountered when invoking function '${functionName}'`, getErrorDetails(e));
-    } else if (typeof e === "string") {
-      throw new sdk.InternalServerError(`Error encountered when invoking function '${functionName}'`, { message: e });
-    } else {
-      throw new sdk.InternalServerError(`Error encountered when invoking function '${functionName}'`);
+    finally {
+      span.end();
     }
-  }
+  })
 }
 
 export type ErrorDetails = {
