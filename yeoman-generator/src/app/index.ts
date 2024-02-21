@@ -6,6 +6,7 @@ import { ParsedRoute, generateApi } from "swagger-typescript-api";
 import * as path from 'path';
 import { inspect } from 'util'
 import { Eta } from 'eta';
+import { ParsedApiRoutes } from "./parsedApiRoutes";
 
 const CircularJSON = require('circular-json');
 
@@ -51,22 +52,45 @@ export default class extends Generator {
         templates: templateDir,
         hooks: {
           onCreateComponent: (component) => {
-            // console.log('onCreateComponent: component', component);
+            // console.log('\n\n\n\nonCreateComponent: component', component);
+
           },
           onCreateRequestParams: (rawType) => {
-            // console.log('onCreateRequestParams: rawType: ', rawType);
+            // console.log('\n\n\n\nonCreateRequestParams: rawType: ', rawType);
+            // console.log('onCreateRequestParams: rawType (JSON): ', CircularJSON.stringify(rawType));
           },
           onCreateRoute: (routeData) => {
             this.oasRouteData.push(routeData);
-            console.log('onCreateRoute: routeData: ', routeData);
-            console.log('onCreateRoute: routeData (JSON): ', CircularJSON.stringify(routeData));
+            // console.log('onCreateRoute: routeData: ', routeData);
+            // console.log('onCreateRoute: routeData (JSON): ', CircularJSON.stringify(routeData));
+            // console.log('\nonCreateRoute: routeData Type: ', (typeof routeData));
           },
-          onCreateRouteName: (routeNameInfo, rawRouteInfo) => {},
-          onFormatRouteName: (routeInfo, templateRouteName) => {},
-          onFormatTypeName: (typeName, rawTypeName, schemaType) => {},
-          onInit: (configuration) => {},
-          onPreParseSchema: (originalSchema, typeName, schemaType) => {},
-          onParseSchema: (originalSchema, parsedSchema) => {},
+          onCreateRouteName: (routeNameInfo, rawRouteInfo) => {
+          },
+          onFormatRouteName: (routeInfo, templateRouteName) => {
+
+          },
+          onFormatTypeName: (typeName, rawTypeName, schemaType) => {
+            // console.log('\n\n\n\onFormatTypeName: typeName: ', typeName);
+            // console.log('onFormatTypeName: typeName (JSON): ', CircularJSON.stringify(typeName));
+            // console.log('\nnFormatTypeName: rawTypeName: ', rawTypeName);
+            // console.log('onFormatTypeName: rawTypeName (JSON): ', CircularJSON.stringify(rawTypeName));
+            // console.log('\nnFormatTypeName: schemaType: ', schemaType);
+            // console.log('onFormatTypeName: schemaType (JSON): ', CircularJSON.stringify(schemaType));
+          },
+          onInit: (configuration) => {
+            // console.log('\n\n\n\n\n onInit: configuration: ', configuration);
+            // console.log('onInit: configuration (JSON): ', CircularJSON.stringify(configuration));
+          },
+          onPreParseSchema: (originalSchema, typeName, schemaType) => {
+
+          },
+          onParseSchema: (originalSchema, parsedSchema) => {
+            // console.log('\n\n\n\n\n onParseSchema: originalSchema: ', originalSchema);
+            // console.log('onParseSchema: originalSchema (JSON): ', CircularJSON.stringify(originalSchema));
+            // console.log('\n onParseSchema: parsedSchema: ', parsedSchema);
+            // console.log('ononParseSchemaInit: parsedSchema (JSON): ', CircularJSON.stringify(parsedSchema));
+          },
           onPrepareConfig: (currentConfiguration) => {},
         }
       })
@@ -112,10 +136,14 @@ export default class extends Generator {
 
     const functionTsFilePath = path.resolve(process.cwd(), "functions.ts");
 
+
+    const parsedApiRoutesObj = new ParsedApiRoutes();
+
     const getRequests: ParsedRoute[] = [];
     for (let parsedRoute of this.oasRouteData) {
       if (parsedRoute.raw.method === 'get') {
         getRequests.push(parsedRoute);
+        parsedApiRoutesObj.parse(parsedRoute);
       }
     };
 
@@ -125,7 +153,7 @@ export default class extends Generator {
 
 
     const eta = new Eta({ views: path.join(__dirname, '../../templates/functions') })
-    const res = eta.render("functions.ejs", { getRequests: getRequests });
+    const res = eta.render("functions.ejs", { apiRoutes: parsedApiRoutesObj.getApiRoutes(), importList: parsedApiRoutesObj.getImportList() });
 
     this.fs.write(functionTsFilePath, res);
   }

@@ -1,20 +1,32 @@
-import { Api } from './Api';
+<% const { apiRoutes, importList } = it; %>
+
+import { <%= it.importList.join(', ') %> } from './Api';
 import * as sdk from "@hasura/ndc-lambda-sdk"
 
-<% const { getRequests } = it; %>
+const api = new Api({
+
+});
 
 <% const capitalizeFirstLetter = (str) => {
   return str.charAt(0).toUpperCase() + str.slice(1);
 }
 %>
 
-<% for (let req of getRequests) {
-  const functionName = `get${capitalizeFirstLetter(req.namespace)}${capitalizeFirstLetter(req.routeName.original)}`;
+<% for (let req of apiRoutes) {
+  // const functionName = `get${capitalizeFirstLetter(req.namespace)}${capitalizeFirstLetter(req.routeName.original)}`;
 %>
 /**
  * @readonly
+ * <%= req.description %>
  */
-export async function <%= functionName%>() {
-
+export async function <%= req.functionName %>(
+  <%= req.queryVariableName %>: <%= req.queryVariablesContent %>
+): Promise<<%= req.successType%>> {
+  const result = await api.<%= req.namespace %>.<%= req.apiFunction %>(<%= req.queryVariableName %>);
+  if (result.data) {
+    return result.data
+  } else {
+    throw (result.error)
+  }
 }
 <% } %>
