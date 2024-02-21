@@ -3,9 +3,11 @@ on:
   pull_request:
     branches:
       - main
+      - v0
   push:
     branches:
       - 'main'
+      - v0
     tags:
       - v**
 
