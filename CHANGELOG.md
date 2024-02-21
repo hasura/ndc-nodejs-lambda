@@ -4,6 +4,16 @@ This changelog documents the changes between release versions.
 ## main
 Changes to be included in the next upcoming release
 
+- Support for NDC Spec v0.1.0-rc.15 via the NDC TypeScript SDK v4.0.0 ([#8](https://github.com/hasura/ndc-nodejs-lambda/pull/8), [#10](https://github.com/hasura/ndc-nodejs-lambda/pull/11)). This is a breaking change and must be used with the latest Hasura engine.
+  - Support for nested object/array selection
+  - New function calling convention that relies on nested object queries
+  - New mutation request/response format
+  - [New names](https://github.com/hasura/ndc-sdk-typescript/releases/tag/v4.0.0) for configuration environment variables
+  - The default port is now 8080 instead of 8100
+
+## v0.14.0
+- Support for "relaxed types" ([#10](https://github.com/hasura/ndc-nodejs-lambda/pull/10))
+
 ## v0.13.0
 - Add support for treating 'true | false' as a Boolean type ([#7](https://github.com/hasura/ndc-nodejs-lambda/pull/7))
 

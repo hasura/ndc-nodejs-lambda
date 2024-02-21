@@ -87,11 +87,12 @@ describe("ndc schema", function() {
               },
             },
           ],
+          isRelaxedType: false,
         },
       },
       scalarTypes: {
-        String: {},
-        test_arguments_unionWithNull: {},
+        String: { type: "built-in" },
+        test_arguments_unionWithNull: { type: "built-in" },
       },
     };
 

@@ -36,7 +36,7 @@ describe("parallel degree", function() {
           },
         },
         scalarTypes: {
-          String: {},
+          String: { type: "built-in" },
         },
         objectTypes: {},
       }
@@ -65,7 +65,7 @@ describe("parallel degree", function() {
       functionsSchema: {
         functions: {},
         scalarTypes: {
-          String: {},
+          String: { type: "built-in" },
         },
         objectTypes: {},
       }

@@ -15,7 +15,7 @@ describe("unsupported types", function() {
       },
       functionsSchema: {
         scalarTypes: {
-          String: {},
+          String: { type: "built-in" },
         },
         objectTypes: {},
         functions: {}
@@ -53,7 +53,7 @@ describe("unsupported types", function() {
       },
       functionsSchema: {
         scalarTypes: {
-          String: {}
+          String: { type: "built-in" },
         },
         objectTypes: {},
         functions: {}
@@ -73,7 +73,7 @@ describe("unsupported types", function() {
       },
       functionsSchema: {
         scalarTypes: {
-          String: {}
+          String: { type: "built-in" },
         },
         objectTypes: {},
         functions: {}
@@ -93,7 +93,7 @@ describe("unsupported types", function() {
       },
       functionsSchema: {
         scalarTypes: {
-          String: {}
+          String: { type: "built-in" },
         },
         objectTypes: {},
         functions: {}
@@ -113,7 +113,7 @@ describe("unsupported types", function() {
       },
       functionsSchema: {
         scalarTypes: {
-          String: {}
+          String: { type: "built-in" },
         },
         objectTypes: {},
         functions: {}
@@ -139,7 +139,7 @@ describe("unsupported types", function() {
       },
       functionsSchema: {
         scalarTypes: {
-          String: {}
+          String: { type: "built-in" },
         },
         objectTypes: {},
         functions: {}
@@ -184,7 +184,7 @@ describe("unsupported types", function() {
       },
       functionsSchema: {
         scalarTypes: {
-          String: {}
+          String: { type: "built-in" },
         },
         objectTypes: {},
         functions: {}
@@ -210,7 +210,7 @@ describe("unsupported types", function() {
       },
       functionsSchema: {
         scalarTypes: {
-          String: {}
+          String: { type: "built-in" },
         },
         objectTypes: {},
         functions: {}
@@ -232,7 +232,7 @@ describe("unsupported types", function() {
       },
       functionsSchema: {
         scalarTypes: {
-          String: {}
+          String: { type: "built-in" },
         },
         objectTypes: {},
         functions: {}
@@ -258,10 +258,13 @@ describe("unsupported types", function() {
         "objectWithPropsAndIndexSignatureType": [
           "Types with index signatures are not supported, but one was encountered in function 'objectWithPropsAndIndexSignatureType' parameter 'param' (type: ObjectWithPropsAndIndexSignature)",
         ],
+        "objectWithMultipleIndexSignaturesType": [
+          "Types with index signatures are not supported, but one was encountered in function 'objectWithMultipleIndexSignaturesType' parameter 'param' (type: IntersectionOfMultipleIndexSigs)"
+        ],
       },
       functionsSchema: {
         scalarTypes: {
-          String: {}
+          String: { type: "built-in" },
         },
         objectTypes: {},
         functions: {}

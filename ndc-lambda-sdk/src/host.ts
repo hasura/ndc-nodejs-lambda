@@ -3,12 +3,7 @@ import { createConnector } from "./connector";
 import { makeCommand } from "./cmdline";
 
 const program = makeCommand({
-  serveAction: (hostOpts, serveOpts) => {
-    sdk.start_server(createConnector({functionsFilePath: hostOpts.functions}), serveOpts)
-  },
-  configurationServeAction: (hostOpts, serveOpts) => {
-    sdk.start_configuration_server(createConnector({functionsFilePath: hostOpts.functions}), serveOpts)
-  },
+  serveAction: (hostOpts, serveOpts) => sdk.startServer(createConnector({functionsFilePath: hostOpts.functions}), serveOpts),
 });
 
 program.parseAsync().catch(err => {

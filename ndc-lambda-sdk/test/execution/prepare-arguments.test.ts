@@ -209,7 +209,8 @@ describe("prepare arguments", function() {
               }
             }
           }
-        ]
+        ],
+        isRelaxedType: false,
       }
     }
     const testCases = [
