@@ -167,36 +167,26 @@ function coerceArgumentValue(value: unknown, type: schema.TypeReference, valuePa
 }
 
 async function invokeFunction(func: Function, preparedArgs: unknown[], functionName: string): Promise<unknown> {
-  return tracer.startActiveSpan(`Function: ${functionName}`, async (span) => {
-    span.setAttribute(FUNCTION_NAME_SPAN_ATTR_NAME, functionName);
-    try {
+  try {
+    return await withActiveSpan(tracer, `Function: ${functionName}`, async () => {
       const result = func.apply(undefined, preparedArgs);
       // Await the result if it is a promise
       if (typeof result === "object" && 'then' in result && typeof result.then === "function") {
         return await result;
       }
       return result;
-    } catch (e) {
-      if (e instanceof sdk.ConnectorError) {
-        span.recordException(e);
-        span.setStatus({ code: SpanStatusCode.ERROR });
-        throw e;
-      } else if (e instanceof Error) {
-        span.recordException(e);
-        span.setStatus({ code: SpanStatusCode.ERROR });
-        throw new sdk.InternalServerError(`Error encountered when invoking function '${functionName}'`, getErrorDetails(e));
-      } else if (typeof e === "string") {
-        span.recordException(e);
-        span.setStatus({ code: SpanStatusCode.ERROR });
-        throw new sdk.InternalServerError(`Error encountered when invoking function '${functionName}'`, { message: e });
-      } else {
-        throw new sdk.InternalServerError(`Error encountered when invoking function '${functionName}'`);
-      }
+    }, { [FUNCTION_NAME_SPAN_ATTR_NAME]: functionName });
+  } catch (e) {
+    if (e instanceof sdk.ConnectorError) {
+      throw e;
+    } else if (e instanceof Error) {
+      throw new sdk.InternalServerError(`Error encountered when invoking function '${functionName}'`, getErrorDetails(e));
+    } else if (typeof e === "string") {
+      throw new sdk.InternalServerError(`Error encountered when invoking function '${functionName}'`, { message: e });
+    } else {
+      throw new sdk.InternalServerError(`Error encountered when invoking function '${functionName}'`);
     }
-    finally {
-      span.end();
-    }
-  })
+  }
 }
 
 export type ErrorDetails = {
