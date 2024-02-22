@@ -6,7 +6,8 @@ import { ParsedRoute, generateApi } from "swagger-typescript-api";
 import * as path from 'path';
 import { inspect } from 'util'
 import { Eta } from 'eta';
-import { ParsedApiRoutes } from "./parsedApiRoutes";
+import { ApiRoute, ParsedApiRoutes } from "./parsedApiRoutes";
+import { writeFileSync } from "fs";
 
 const CircularJSON = require('circular-json');
 
@@ -137,13 +138,16 @@ export default class extends Generator {
     const functionTsFilePath = path.resolve(process.cwd(), "functions.ts");
 
 
-    const parsedApiRoutesObj = new ParsedApiRoutes();
+    // const parsedApiRoutesObj = new ParsedApiRoutes();
 
-    const getRequests: ParsedRoute[] = [];
+    // const getRequests: ParsedRoute[] = [];
     for (let parsedRoute of this.oasRouteData) {
+      const getRequests: ParsedRoute[] = [];
+      const parsedApiRoutesObj = new ParsedApiRoutes();
       if (parsedRoute.raw.method === 'get') {
         getRequests.push(parsedRoute);
         parsedApiRoutesObj.parse(parsedRoute);
+        this.generateFile(`${parsedApiRoutesObj.getApiRoutes()[0]?.functionName}.ts`, parsedApiRoutesObj.getApiRoutes(), parsedApiRoutesObj.getImportList());
       }
     };
 
@@ -152,10 +156,22 @@ export default class extends Generator {
     // }
 
 
-    const eta = new Eta({ views: path.join(__dirname, '../../templates/functions') })
-    const res = eta.render("functions.ejs", { apiRoutes: parsedApiRoutesObj.getApiRoutes(), importList: parsedApiRoutesObj.getImportList() });
+    // const eta = new Eta({ views: path.join(__dirname, '../../templates/functions') })
+    // const res = eta.render("functions.ejs", { apiRoutes: parsedApiRoutesObj.getApiRoutes(), importList: parsedApiRoutesObj.getImportList() });
 
-    this.fs.write(functionTsFilePath, res);
+    // this.fs.write(functionTsFilePath, res);
+  }
+
+  private generateFile(fileName: string, apiRoutes: ApiRoute[], importList: string[]) {
+    const functionTsFilePath = path.resolve(process.cwd(), fileName);
+
+    const eta = new Eta({ views: path.join(__dirname, '../../templates/functions'), autoEscape: false }); // autoEscape: false prevents special chars like " from being converted to &quot
+    const res = eta.render("functions.ejs", { apiRoutes: apiRoutes, importList: importList });
+
+    console.log('index.ts: generateFile: fileContents: ', res);
+    writeFileSync(functionTsFilePath, res);
+    // this.fs.write(functionTsFilePath, res);
+    console.log('index.ts: generateFile: File generated: ', fileName);
   }
 
   // capitalizeFirstLetter(str: string): string {
