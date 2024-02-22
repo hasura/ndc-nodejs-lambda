@@ -1,3 +1,5 @@
+import { Attributes, Span, SpanStatusCode, Tracer } from "@opentelemetry/api";
+
 export const unreachable = (x: never): never => { throw new Error(`Unreachable code reached! The types lied! 😭 Unexpected value: ${x}`) };
 
 export function isArray(x: unknown): x is unknown[] {
@@ -32,4 +34,43 @@ export function getFlags(flagsEnum: Record<string, string | number>, value: numb
 
 export function sleep(ms: number): Promise<void> {
   return new Promise((r) => setTimeout(r, ms))
+}
+
+export function withActiveSpan<TReturn>(tracer: Tracer, name: string, func: (span: Span) => TReturn, attributes?: Attributes): TReturn {
+  return tracer.startActiveSpan(name, span => {
+    if (attributes) span.setAttributes(attributes);
+
+    const handleError = (err: unknown) => {
+      if (err instanceof Error || typeof err === "string") {
+        span.recordException(err);
+      }
+      span.setStatus({ code: SpanStatusCode.ERROR });
+      span.end();
+    }
+
+    try {
+      const retval = func(span);
+      // If the function returns a Promise, then wire up the span completion to
+      // the completion of the promise
+      if (typeof retval === "object" && retval !== null && 'then' in retval && typeof retval.then === "function") {
+        return (retval as PromiseLike<unknown>).then(
+          successVal => {
+            span.end();
+            return successVal;
+          },
+          errorVal => {
+            handleError(errorVal);
+            throw errorVal;
+          }) as TReturn;
+      }
+      // Not a promise, just end the span and return
+      else {
+        span.end();
+        return retval;
+      }
+    } catch (e) {
+      handleError(e);
+      throw e;
+    }
+  });
 }
