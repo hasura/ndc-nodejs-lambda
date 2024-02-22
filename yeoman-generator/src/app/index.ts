@@ -68,8 +68,8 @@ export default class extends Generator {
 
   async installSdkPackage() {
     const versionRangeRestrictions = {
-      alpha: "@^0.15.0",
-      beta: "@0.11.0",
+      alpha: "@0.x", // Latest 0.x version
+      beta: "", // Latest version
     }
     const versionRestriction = this._targetHasuraDdnVersion
       ? versionRangeRestrictions[this._targetHasuraDdnVersion]
@@ -79,7 +79,7 @@ export default class extends Generator {
       ? "configuration.json"
       : "./";
 
-    const packageManifest = await pacote.manifest(`@hasura/ndc-lambda-sdk${versionRestriction}`);
+    const packageManifest = await pacote.manifest(`@hasura/ndc-lambda-sdk${versionRestriction}`, {  });
     this.packageJson.merge({
       "private": true,
       "engines": {
