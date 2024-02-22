@@ -4,6 +4,8 @@ import { version } from "../../package.json"
 import { SemVer } from "semver";
 
 export default class extends Generator {
+  _targetHasuraDdnVersion?: "alpha" | "beta";
+
   constructor(args: string | string[], opts: Generator.GeneratorOptions) {
     super(args, opts);
     this.env.options.nodePackageManager = "npm";
@@ -28,15 +30,36 @@ export default class extends Generator {
 
   }
 
+  async initializingCheckAlphaBetaTarget() {
+    const answer = await this.prompt({
+      type: "list",
+      name: "hasuraDdnVersion",
+      message: "Which version of the Hasura DDN are you targeting?",
+      choices: [
+        {
+          name: "Hasura DDN Alpha",
+          value: "alpha",
+        },
+        {
+          name: "Hasura DDN Beta",
+          value: "beta",
+        }
+      ]
+    });
+    this._targetHasuraDdnVersion = answer.hasuraDdnVersion;
+  }
+
   writingTemplateFiles() {
     this.fs.copyTpl(
       this.templatePath("functions.ts"),
       this.destinationPath("functions.ts")
     );
-    this.fs.copyTpl(
-      this.templatePath("configuration.json"),
-      this.destinationPath("configuration.json")
-    );
+    if (this._targetHasuraDdnVersion === "alpha") {
+      this.fs.copyTpl(
+        this.templatePath("configuration.json"),
+        this.destinationPath("configuration.json")
+      );
+    }
     this.fs.copyTpl(
       this.templatePath("tsconfig.json"),
       this.destinationPath("tsconfig.json")
@@ -44,15 +67,27 @@ export default class extends Generator {
   }
 
   async installSdkPackage() {
-    const packageManifest = await pacote.manifest("@hasura/ndc-lambda-sdk");
+    const versionRangeRestrictions = {
+      alpha: "@^0.15.0",
+      beta: "@0.11.0",
+    }
+    const versionRestriction = this._targetHasuraDdnVersion
+      ? versionRangeRestrictions[this._targetHasuraDdnVersion]
+      : ""
+
+    const configuration = this._targetHasuraDdnVersion === "alpha"
+      ? "configuration.json"
+      : "./";
+
+    const packageManifest = await pacote.manifest(`@hasura/ndc-lambda-sdk${versionRestriction}`);
     this.packageJson.merge({
       "private": true,
       "engines": {
         "node": ">=18"
       },
       "scripts": {
-        "start": "ndc-lambda-sdk host -f functions.ts serve --configuration configuration.json",
-        "watch": "ndc-lambda-sdk host -f functions.ts --watch serve --configuration configuration.json --pretty-print-logs"
+        "start": `ndc-lambda-sdk host -f functions.ts serve --configuration ${configuration}`,
+        "watch": `ndc-lambda-sdk host -f functions.ts --watch serve --configuration ${configuration} --pretty-print-logs`
       },
       "dependencies": {
         "@hasura/ndc-lambda-sdk": packageManifest.version
