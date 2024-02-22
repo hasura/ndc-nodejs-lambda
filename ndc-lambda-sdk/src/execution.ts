@@ -3,7 +3,7 @@ import * as sdk from "@hasura/ndc-sdk-typescript"
 import opentelemetry, { SpanStatusCode } from '@opentelemetry/api';
 import pLimit from "p-limit";
 import * as schema from "./schema"
-import { isArray, mapObjectValues, unreachable } from "./util"
+import { isArray, mapObjectValues, unreachable, withActiveSpan } from "./util"
 
 const tracer = opentelemetry.trace.getTracer("nodejs-lambda-sdk.execution");
 
@@ -14,6 +14,9 @@ export type RuntimeFunctions = {
 // This number is chosen arbitrarily, just to place _some_ limit on the amount of
 // parallelism going on within a single query
 const DEFAULT_PARALLEL_DEGREE = 10;
+
+const FUNCTION_NAME_SPAN_ATTR_NAME = "ndc-lambda-sdk.function_name";
+const FUNCTION_INVOCATION_INDEX_SPAN_ATTR_NAME = "ndc-lambda-sdk.function_invocation_index";
 
 export async function executeQuery(queryRequest: sdk.QueryRequest, functionsSchema: schema.FunctionsSchema, runtimeFunctions: RuntimeFunctions): Promise<sdk.QueryResponse> {
   const functionName = queryRequest.collection;
@@ -29,15 +32,27 @@ export async function executeQuery(queryRequest: sdk.QueryRequest, functionsSche
   if (runtimeFunction === undefined)
     throw new sdk.InternalServerError(`Couldn't find '${functionName}' function exported from hosted functions module.`)
 
-  const functionInvocationPreparedArgs = (queryRequest.variables ?? [{}]).map(variables => {
-    const resolvedArgs = resolveArgumentValues(queryRequest.arguments, variables)
-    return prepareArguments(resolvedArgs, functionDefinition, functionsSchema.objectTypes);
-  });
+  const spanAttributes = { [FUNCTION_NAME_SPAN_ATTR_NAME]: functionName };
+
+  const functionInvocationPreparedArgs = withActiveSpan(tracer, "prepare arguments", () =>
+    (queryRequest.variables ?? [{}]).map(variables => {
+      const resolvedArgs = resolveArgumentValues(queryRequest.arguments, variables);
+      return prepareArguments(resolvedArgs, functionDefinition, functionsSchema.objectTypes);
+    })
+  , spanAttributes);
 
   const parallelLimit = pLimit(functionDefinition.parallelDegree ?? DEFAULT_PARALLEL_DEGREE);
-  const functionInvocations: Promise<sdk.RowSet>[] = functionInvocationPreparedArgs.map(invocationPreparedArgs => parallelLimit(async () => {
-    const result = await invokeFunction(runtimeFunction, invocationPreparedArgs, functionName);
-    return reshapeResultUsingFunctionCallingConvention(result, functionDefinition.resultType, queryRequest.query, functionsSchema.objectTypes);
+  const functionInvocations: Promise<sdk.RowSet>[] = functionInvocationPreparedArgs.map((invocationPreparedArgs, invocationIndex) => parallelLimit(async () => {
+    const invocationSpanAttrs = {...spanAttributes, [FUNCTION_INVOCATION_INDEX_SPAN_ATTR_NAME]: invocationIndex};
+
+    return withActiveSpan(tracer, "function invocation", async () => {
+      const result = await invokeFunction(runtimeFunction, invocationPreparedArgs, functionName);
+
+      return withActiveSpan(tracer, "reshape result", () =>
+        reshapeResultUsingFunctionCallingConvention(result, functionDefinition.resultType, queryRequest.query, functionsSchema.objectTypes)
+      , invocationSpanAttrs);
+
+    }, invocationSpanAttrs);
   }));
 
   return await Promise.all(functionInvocations);
@@ -67,13 +82,21 @@ async function executeMutationOperation(mutationOperation: sdk.MutationOperation
     throw new sdk.BadRequest(`'${functionName}' is a '${functionDefinition.ndcKind}' and cannot be queried as a ${schema.FunctionNdcKind.Procedure}.`)
   }
 
+  const spanAttributes = { [FUNCTION_NAME_SPAN_ATTR_NAME]: functionName };
+
   const runtimeFunction = runtimeFunctions[functionName];
   if (runtimeFunction === undefined)
     throw new sdk.InternalServerError(`Couldn't find ${functionName} function exported from hosted functions module.`)
 
-  const preparedArgs = prepareArguments(mutationOperation.arguments, functionDefinition, functionsSchema.objectTypes);
+  const preparedArgs = withActiveSpan(tracer, "prepare arguments", () =>
+    prepareArguments(mutationOperation.arguments, functionDefinition, functionsSchema.objectTypes)
+  , spanAttributes);
+
   const result = await invokeFunction(runtimeFunction, preparedArgs, functionName);
-  const reshapedResult = reshapeResultUsingFieldSelection(result, functionDefinition.resultType, [], mutationOperation.fields ?? { type: "scalar" }, functionsSchema.objectTypes);
+
+  const reshapedResult = withActiveSpan(tracer, "reshape result", () =>
+    reshapeResultUsingFieldSelection(result, functionDefinition.resultType, [], mutationOperation.fields ?? { type: "scalar" }, functionsSchema.objectTypes)
+  , spanAttributes);
 
   return {
     type: "procedure",
@@ -145,7 +168,7 @@ function coerceArgumentValue(value: unknown, type: schema.TypeReference, valuePa
 
 async function invokeFunction(func: Function, preparedArgs: unknown[], functionName: string): Promise<unknown> {
   return tracer.startActiveSpan(`Function: ${functionName}`, async (span) => {
-    span.setAttribute("ndc-lambda-sdk.function_name", functionName);
+    span.setAttribute(FUNCTION_NAME_SPAN_ATTR_NAME, functionName);
     try {
       const result = func.apply(undefined, preparedArgs);
       // Await the result if it is a promise
