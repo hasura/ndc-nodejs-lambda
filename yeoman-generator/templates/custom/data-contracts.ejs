@@ -33,8 +33,6 @@ type <%~ config.Ts.CodeGenKeyword.UtilRequiredKeys %><T, K extends keyof T> = Om
 <% } %>
 
 <% for (const contract of modelTypes) { %>
-  console.log('data-contract.ejs: contract(JSON): ', JSON.stringify(contract)) // TODO: remove
-  console.log('data-contract.ejs: contract: ', contract) // TODO: remove
   <%~ includeFile('@base/data-contract-jsdoc.ejs', { ...it, data: { ...contract, ...contract.typeData } }) %>
   <%~ contract.internal ? '' : 'export'%> <%~ (dataContractTemplates[contract.typeIdentifier] || dataContractTemplates.type)(contract) %>
 
