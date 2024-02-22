@@ -1,40 +1,52 @@
 # NodeJS Lambda Connector Changelog
 This changelog documents the changes between release versions.
 
-## main
+> [!IMPORTANT]
+> Hasura DDN Alpha users should use 0.x versions of the `ndc-lambda-sdk`. v1.x versions of the `ndc-lambda-sdk` support the forthcoming Hasura DDN Beta.
+
+## [Unreleased]
 Changes to be included in the next upcoming release
 
-- Support for NDC Spec v0.1.0-rc.15 via the NDC TypeScript SDK v4.0.0 ([#8](https://github.com/hasura/ndc-nodejs-lambda/pull/8), [#10](https://github.com/hasura/ndc-nodejs-lambda/pull/11)). This is a breaking change and must be used with the latest Hasura engine.
+## [1.0.0] - 2024-02-22
+### ndc-lambda-sdk
+- Support for NDC Spec v0.1.0-rc.15 via the NDC TypeScript SDK v4.1.0 ([#8](https://github.com/hasura/ndc-nodejs-lambda/pull/8), [#10](https://github.com/hasura/ndc-nodejs-lambda/pull/11), [#13](https://github.com/hasura/ndc-nodejs-lambda/pull/13)). This is a breaking change and must be used with the latest Hasura engine.
   - Support for nested object/array selection
   - New function calling convention that relies on nested object queries
   - New mutation request/response format
   - [New names](https://github.com/hasura/ndc-sdk-typescript/releases/tag/v4.0.0) for configuration environment variables
   - The default port is now 8080 instead of 8100
+  - OpenTelemetry support improved, with additional spans covering work done around function invocation
 
-## v0.14.0
+### Yeoman template
+- Prompts the user to pick between a version of ndc-lambda-sdk that works for Hasura DDN Alpha or Hasura DDN Beta
+
+## [0.15.0] - 2024-02-21
+- OpenTelemetry support added via support for NDC TypeScript SDK v1.3.0 ([#12](https://github.com/hasura/ndc-nodejs-lambda/pull/12))
+
+## [0.14.0] - 2024-02-16
 - Support for "relaxed types" ([#10](https://github.com/hasura/ndc-nodejs-lambda/pull/10))
 
-## v0.13.0
+## [0.13.0] - 2024-02-09
 - Add support for treating 'true | false' as a Boolean type ([#7](https://github.com/hasura/ndc-nodejs-lambda/pull/7))
 
-## v0.12.0
+## [0.12.0] - 2024-01-31
 - Add support for JSDoc descriptions from object types ([#3](https://github.com/hasura/ndc-nodejs-lambda/pull/3))
 - Fix type name conflicts when using generic interfaces ([#4](https://github.com/hasura/ndc-nodejs-lambda/pull/4))
 - Improve error handling of errors thrown from functions ([#5](https://github.com/hasura/ndc-nodejs-lambda/pull/5))
   - The entire causal stack trace is now captured as an error detail for unhandled errors
   - `sdk.Forbidden`, `sdk.Conflict`, `sdk.UnprocessableContent` can be thrown to return error details to GraphQL API clients
 
-## v0.11.0
+## [0.11.0] - 2024-01-25
 - Add support for parallel execution of readonly functions ([#2](https://github.com/hasura/ndc-nodejs-lambda/pull/2))
 
-## v0.10.0
+## [0.10.0] - 2024-01-23
 - Add missing query.variables capability
 
-## v0.9.0
+## [0.9.0] - 2024-01-22
 - Disallow use of Map types and types with index signatures
 - Add support for re-exporting functions from other files
 
-## v0.8.0
+## [0.8.0] - 2024-01-18
 ### ndc-lambda-sdk
 - Fix queries with variables returning incorrect result format
 - If a scalar value validation fails, return the error as an UnprocessableContent error
@@ -44,7 +56,7 @@ Changes to be included in the next upcoming release
 - Use pretty printing of logs in watch mode in the template
 - Add latest version check to yeoman generator
 
-## v0.7.0
+## [0.7.0] - 2024-01-17
 - Rename `@pure` to `@readonly`
 - Add JSONValue type for arbitrary JSON
 - Block use of never, object, unknown, any and tuple types
@@ -52,20 +64,20 @@ Changes to be included in the next upcoming release
 - Disallow use of union types in args and return types
 - Remove custom scalar generation as an unknown type fallback
 
-## v0.6.0
+## [0.6.0] - 2024-01-15
 - Prevent usage of null or undefined literals on their own
 - Add support for literal types
 - Fix queries not using new response reshaping code
 
-## v0.5.0
+## [0.5.0] - 2024-01-11
 - Fix SIGTERM signal handling for clean docker container shutdowns
 - Add BigInt support and rework scalar type handling
 - Add support for Date types
 
-## v0.4.0
+## [0.4.0] - 2024-01-04
 - Allow promise typed return values
 - Fix tsconfig relative pathing
 - Fix error when no user tsconfig exists
 
-## v0.3.0
+## [0.3.0] - 2023-12-22
 - Initial release
