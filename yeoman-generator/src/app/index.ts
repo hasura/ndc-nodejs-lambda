@@ -11,14 +11,13 @@ import { writeFileSync } from "fs";
 
 const CircularJSON = require('circular-json');
 
+
 export default class extends Generator {
   _targetHasuraDdnVersion?: "alpha" | "beta";
-
   oasRouteData: ParsedRoute[] = [];
 
   constructor(args: string | string[], opts: Generator.GeneratorOptions) {
     super(args, opts);
-    console.log('*************** Running updated yeoman gen ****************');
     this.env.options.nodePackageManager = "npm";
     this.option("openapi", { type: String, default: '' });
   }
@@ -42,7 +41,6 @@ export default class extends Generator {
     }
 
     const templateDir = path.resolve(__dirname, '../../templates/custom');
-    console.log('yeoman-generator: index.ts: templateDir: ', templateDir);
     const openapi = this.options['openapi'];
     if(openapi !== ''){
       const isUrl = /^https?:/.test(openapi)
@@ -173,16 +171,16 @@ export default class extends Generator {
     const functionTsFilePath = path.resolve(process.cwd(), "functions.ts");
 
 
-    // const parsedApiRoutesObj = new ParsedApiRoutes();
+    const parsedApiRoutesObj = new ParsedApiRoutes();
 
-    // const getRequests: ParsedRoute[] = [];
+    const getRequests: ParsedRoute[] = [];
     for (let parsedRoute of this.oasRouteData) {
-      const getRequests: ParsedRoute[] = [];
-      const parsedApiRoutesObj = new ParsedApiRoutes();
+      // const getRequests: ParsedRoute[] = [];
+      // const parsedApiRoutesObj = new ParsedApiRoutes();
       if (parsedRoute.raw.method === 'get') {
         getRequests.push(parsedRoute);
         parsedApiRoutesObj.parse(parsedRoute);
-        this.generateFile(`${parsedApiRoutesObj.getApiRoutes()[0]?.functionName}.ts`, parsedApiRoutesObj.getApiRoutes(), parsedApiRoutesObj.getImportList());
+        // this.generateFile(`${parsedApiRoutesObj.getApiRoutes()[0]?.functionName}.ts`, parsedApiRoutesObj.getApiRoutes(), parsedApiRoutesObj.getImportList());
       }
     };
 
@@ -191,23 +189,23 @@ export default class extends Generator {
     // }
 
 
-    // const eta = new Eta({ views: path.join(__dirname, '../../templates/functions') })
-    // const res = eta.render("functions.ejs", { apiRoutes: parsedApiRoutesObj.getApiRoutes(), importList: parsedApiRoutesObj.getImportList() });
+    const eta = new Eta({ views: path.join(__dirname, '../../templates/functions') })
+    const res = eta.render("functions.ejs", { apiRoutes: parsedApiRoutesObj.getApiRoutes(), importList: parsedApiRoutesObj.getImportList() });
 
-    // this.fs.write(functionTsFilePath, res);
+    this.fs.write(functionTsFilePath, res);
   }
 
-  private generateFile(fileName: string, apiRoutes: ApiRoute[], importList: string[]) {
-    const functionTsFilePath = path.resolve(process.cwd(), fileName);
+  // private generateFile(fileName: string, apiRoutes: ApiRoute[], importList: string[]) {
+  //   const functionTsFilePath = path.resolve(process.cwd(), fileName);
 
-    const eta = new Eta({ views: path.join(__dirname, '../../templates/functions'), autoEscape: false }); // autoEscape: false prevents special chars like " from being converted to &quot
-    const res = eta.render("functions.ejs", { apiRoutes: apiRoutes, importList: importList });
+  //   const eta = new Eta({ views: path.join(__dirname, '../../templates/functions'), autoEscape: false }); // autoEscape: false prevents special chars like " from being converted to &quot
+  //   const res = eta.render("functions.ejs", { apiRoutes: apiRoutes, importList: importList });
 
-    console.log('index.ts: generateFile: fileContents: ', res);
-    writeFileSync(functionTsFilePath, res);
-    // this.fs.write(functionTsFilePath, res);
-    console.log('index.ts: generateFile: File generated: ', fileName);
-  }
+  //   console.log('index.ts: generateFile: fileContents: ', res);
+  //   writeFileSync(functionTsFilePath, res);
+  //   // this.fs.write(functionTsFilePath, res);
+  //   console.log('index.ts: generateFile: File generated: ', fileName);
+  // }
 
   // capitalizeFirstLetter(str: string): string {
   //   return str.charAt(0).toUpperCase() + str.slice(1);
