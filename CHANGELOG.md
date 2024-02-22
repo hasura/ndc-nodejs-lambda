@@ -1,9 +1,13 @@
 # NodeJS Lambda Connector Changelog
 This changelog documents the changes between release versions.
 
+> [!IMPORTANT]
+> Hasura DDN Alpha users should use 0.x versions of the `ndc-lambda-sdk`. v1.x versions of the `ndc-lambda-sdk` support the forthcoming Hasura DDN Beta.
+
 ## [Unreleased]
 Changes to be included in the next upcoming release
 
+## [1.0.0] - 2024-02-24
 ### ndc-lambda-sdk
 - Support for NDC Spec v0.1.0-rc.15 via the NDC TypeScript SDK v4.1.0 ([#8](https://github.com/hasura/ndc-nodejs-lambda/pull/8), [#10](https://github.com/hasura/ndc-nodejs-lambda/pull/11), [#13](https://github.com/hasura/ndc-nodejs-lambda/pull/13)). This is a breaking change and must be used with the latest Hasura engine.
   - Support for nested object/array selection
