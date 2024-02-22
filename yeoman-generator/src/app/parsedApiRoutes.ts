@@ -27,7 +27,7 @@ export type ApiRoute = {
 
 export class ParsedApiRoutes {
   private apiRoutes: ApiRoute[] = [];
-  private importList: string[] = ['Api'];
+  private importList: Set<string> = new Set<string>(['Api']);
 
   private reservedTypes = new Set<string>(['void', 'any', 'string']);
 
@@ -35,10 +35,10 @@ export class ParsedApiRoutes {
 
     // ensure keywords like `void` are not added to import list and hence to added to import statements
     if (!this.reservedTypes.has(this.getImportType(route.response.type))) {
-      this.importList.push(this.getImportType(route.response.type));
+      this.importList.add(this.getImportType(route.response.type));
     }
     if (!this.reservedTypes.has(this.getImportType(route.response.errorType))) {
-      this.importList.push(this.getImportType(route.response.errorType));
+      this.importList.add(this.getImportType(route.response.errorType));
     }
 
     const apiRoute: ApiRoute = {
@@ -56,12 +56,12 @@ export class ParsedApiRoutes {
 
       // parsedRoute: route,
     };
-    if (apiRoute.functionName === 'getPetGetPetById') {
-      console.log('\n\n\n\n\nparsedApiRoutes: parse: apiRoute: ', apiRoute);
-      console.log('parsedApiRoutes: parse: apiRoute (JSON): ', CircularJSON.stringify(apiRoute));
-      console.log('\n\nparsedApiRoutes: parse: route: ', route);
-      console.log('parsedApiRoutes: parse: route (JSON): ', CircularJSON.stringify(route));
-    }
+    // if (apiRoute.functionName === 'getPetGetPetById') {
+    //   console.log('\n\n\n\n\nparsedApiRoutes: parse: apiRoute: ', apiRoute);
+    //   console.log('parsedApiRoutes: parse: apiRoute (JSON): ', CircularJSON.stringify(apiRoute));
+    //   console.log('\n\nparsedApiRoutes: parse: route: ', route);
+    //   console.log('parsedApiRoutes: parse: route (JSON): ', CircularJSON.stringify(route));
+    // }
 
     this.apiRoutes.push(apiRoute);
   }
@@ -71,7 +71,7 @@ export class ParsedApiRoutes {
   }
 
   public getImportList(): string[] {
-    return this.importList;
+    return Array.from(this.importList);
   }
 
   private getImportType(type: string) {

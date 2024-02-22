@@ -1,6 +1,6 @@
 <% const { apiRoutes, importList } = it; %>
 
-import { <%= it.importList.join(', ') %> } from './Api';
+import { <%~ it.importList.join(', ') %> } from './Api';
 import * as sdk from "@hasura/ndc-lambda-sdk"
 
 const api = new Api({
@@ -30,37 +30,37 @@ const getParameterAsFunctionParam = (param) => { // parameter accepted by the fu
 %>
 /**
  * @readonly
- * <%= req.description %>
+ * <%~ req.description %>
  */
-<% if (!hasParams(req)) { %>export async function <%= req.functionName %>(): Promise<<%= req.successType%>> { <% } %>
+<% if (!hasParams(req)) { %>export async function <%~ req.functionName %>(): Promise<<%~ req.successType%>> { <% } %>
 <%else{%>
-export async function <%= req.functionName %>(
+export async function <%~ req.functionName %>(
 <% for (parameter of req.queryParams) {%>
-  /** <%=parameter.description %> */
-  <%=getParameterAsFunctionParam(parameter) %>
+  /** <%~parameter.description %> */
+  <%~getParameterAsFunctionParam(parameter) %>
 
 <% } %>
 <% for (parameter of req.pathParams) {%>
-  /** <%=parameter.description %> */
-  <%=getParameterAsFunctionParam(parameter) %>
+  /** <%~parameter.description %> */
+  <%~getParameterAsFunctionParam(parameter) %>
 
 <% } %>
-): Promise<<%= req.successType%>> {
+): Promise<<%~ req.successType%>> {
 <% } %>
   <% if (!hasParams(req)) { %>
-const result = await api.<%= req.namespace %>.<%= req.apiFunction %>({});
+const result = await api.<%~ req.namespace %>.<%~ req.apiFunction %>({});
   <% } else { %>
-const result = await api.<%= req.namespace %>.<%= req.apiFunction %>({
+const result = await api.<%~ req.namespace %>.<%~ req.apiFunction %>({
 <% if (req.queryParams && req.queryParams.length > 0) { %>
     query: {
     <% for (const q of req.queryParams) { %>
-    <%=q.name%>: <%=q.name%>,
+    <%~q.name%>: <%~q.name%>,
     <% } %>
   },
     <% } %>
 <% if (req.pathParams && req.pathParams.length > 0) { %>
     <% for (const q of req.pathParams) { %>
-    <%=q.name%>: <%=q.name%>,
+    <%~q.name%>: <%~q.name%>,
     <% } %>
 <% } %>
     });
