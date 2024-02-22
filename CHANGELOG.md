@@ -4,6 +4,7 @@ This changelog documents the changes between release versions.
 ## [Unreleased]
 Changes to be included in the next upcoming release
 
+### ndc-lambda-sdk
 - Support for NDC Spec v0.1.0-rc.15 via the NDC TypeScript SDK v4.1.0 ([#8](https://github.com/hasura/ndc-nodejs-lambda/pull/8), [#10](https://github.com/hasura/ndc-nodejs-lambda/pull/11), [#13](https://github.com/hasura/ndc-nodejs-lambda/pull/13)). This is a breaking change and must be used with the latest Hasura engine.
   - Support for nested object/array selection
   - New function calling convention that relies on nested object queries
@@ -12,9 +13,8 @@ Changes to be included in the next upcoming release
   - The default port is now 8080 instead of 8100
   - OpenTelemetry support improved, with additional spans covering work done around function invocation
 
-## [1.0.0-citest] - 2024-02-22
-- Testing CI releases
-- We did some good stuff
+### Yeoman template
+- Prompts the user to pick between a version of ndc-lambda-sdk that works for Hasura DDN Alpha or Hasura DDN Beta
 
 ## [0.15.0] - 2024-02-21
 - OpenTelemetry support added via support for NDC TypeScript SDK v1.3.0 ([#12](https://github.com/hasura/ndc-nodejs-lambda/pull/12))
