@@ -48,11 +48,11 @@ export async function <%= req.functionName %>(
 ): Promise<<%= req.successType%>> {
 <% } %>
   <% if (!hasParams(req)) { %>
-const result = await api.<%= req.namespace %>.<%= req.apiFunction %>();
+const result = await api.<%= req.namespace %>.<%= req.apiFunction %>({});
   <% } else { %>
-const result = await api.<%= req.namespace %>.<%= req.apiFunction %>(
+const result = await api.<%= req.namespace %>.<%= req.apiFunction %>({
 <% if (req.queryParams && req.queryParams.length > 0) { %>
-    {
+    query: {
     <% for (const q of req.queryParams) { %>
     <%=q.name%>: <%=q.name%>,
     <% } %>
@@ -63,7 +63,7 @@ const result = await api.<%= req.namespace %>.<%= req.apiFunction %>(
     <%=q.name%>: <%=q.name%>,
     <% } %>
 <% } %>
-);
+    });
   <% } %>
 if (result.data) {
     return result.data

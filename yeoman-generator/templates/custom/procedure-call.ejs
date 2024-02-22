@@ -19,7 +19,8 @@ const requestConfigParam = {
     defaultValue: "{}",
 }
 
-const argToTmpl = ({ name, optional, type, defaultValue }) => `${name}${!defaultValue && optional ? '?' : ''}: ${type}${defaultValue ? ` = ${defaultValue}` : ''}`;
+const argToTmpl = ({ name, optional, type, defaultValue }) => `${name}${defaultValue || optional ? '?' : ''}: ${type}`;
+const argToNamedImpl = ({ name, optional, type, defaultValue }) => `${name}${defaultValue ? ` = ${defaultValue}` : ''}`;
 
 const rawWrapperArgs = config.extractRequestParams ?
     _.compact([
@@ -44,6 +45,13 @@ const wrapperArgs = _
     .sortBy(rawWrapperArgs, [o => o.optional])
     .map(argToTmpl)
     .join(', ')
+
+const namedWrapperArgs = _
+    // Sort by optionality
+    .sortBy(rawWrapperArgs, [o => o.optional])
+    .map(argToNamedImpl)
+    .join(', ')
+
 
 // RequestParams["type"]
 const requestContentKind = {
@@ -87,7 +95,7 @@ const describeReturnType = () => {
 <%~ routeDocs.lines %>
 
  */
-<%~ route.routeName.usage %><%~ route.namespace ? ': ' : ' = ' %>(<%~ wrapperArgs %>)<%~ config.toJS ? `: ${describeReturnType()}` : "" %> =>
+<%~ route.routeName.usage %><%~ route.namespace ? ': ' : ' = ' %>({<%= namedWrapperArgs %>}: { <%~ wrapperArgs %> })<%~ config.toJS ? `: ${describeReturnType()}` : "" %> =>
     <%~ config.singleHttpClient ? 'this.http.request' : 'this.request' %><<%~ type %>, <%~ errorType %>>({
         path: `<%~ path %>`,
         method: '<%~ _.upperCase(method) %>',
