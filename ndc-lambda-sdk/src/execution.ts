@@ -1,9 +1,10 @@
 import { EOL } from "os";
 import * as sdk from "@hasura/ndc-sdk-typescript"
-import opentelemetry, { SpanStatusCode } from '@opentelemetry/api';
+import { withActiveSpan } from "@hasura/ndc-sdk-typescript/instrumentation"
+import opentelemetry from '@opentelemetry/api';
 import pLimit from "p-limit";
 import * as schema from "./schema"
-import { isArray, mapObjectValues, unreachable, withActiveSpan } from "./util"
+import { isArray, mapObjectValues, unreachable } from "./util"
 
 const tracer = opentelemetry.trace.getTracer("nodejs-lambda-sdk.execution");
 
