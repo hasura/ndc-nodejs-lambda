@@ -1,5 +1,6 @@
 import { EOL } from "os";
 import * as sdk from "@hasura/ndc-sdk-typescript"
+import { withActiveSpan } from "@hasura/ndc-sdk-typescript/instrumentation"
 import opentelemetry, { SpanStatusCode } from '@opentelemetry/api';
 import pLimit from "p-limit";
 import * as schema from "./schema"
@@ -15,6 +16,9 @@ export type RuntimeFunctions = {
 // parallelism going on within a single query
 const DEFAULT_PARALLEL_DEGREE = 10;
 
+const FUNCTION_NAME_SPAN_ATTR_NAME = "ndc-lambda-sdk.function_name";
+const FUNCTION_INVOCATION_INDEX_SPAN_ATTR_NAME = "ndc-lambda-sdk.function_invocation_index";
+
 export async function executeQuery(queryRequest: sdk.QueryRequest, functionsSchema: schema.FunctionsSchema, runtimeFunctions: RuntimeFunctions): Promise<sdk.QueryResponse> {
   const functionName = queryRequest.collection;
 
@@ -29,23 +33,36 @@ export async function executeQuery(queryRequest: sdk.QueryRequest, functionsSche
   if (runtimeFunction === undefined)
     throw new sdk.InternalServerError(`Couldn't find '${functionName}' function exported from hosted functions module.`)
 
-  const functionInvocationPreparedArgs = (queryRequest.variables ?? [{}]).map(variables => {
-    const resolvedArgs = resolveArgumentValues(queryRequest.arguments, variables)
-    return prepareArguments(resolvedArgs, functionDefinition, functionsSchema.objectTypes);
-  });
+  const spanAttributes = { [FUNCTION_NAME_SPAN_ATTR_NAME]: functionName };
+
+  const functionInvocationPreparedArgs = withActiveSpan(tracer, "prepare arguments", () =>
+    (queryRequest.variables ?? [{}]).map(variables => {
+      const resolvedArgs = resolveArgumentValues(queryRequest.arguments, variables);
+      return prepareArguments(resolvedArgs, functionDefinition, functionsSchema.objectTypes);
+    })
+  , spanAttributes);
 
   const parallelLimit = pLimit(functionDefinition.parallelDegree ?? DEFAULT_PARALLEL_DEGREE);
-  const functionInvocations: Promise<sdk.RowSet>[] = functionInvocationPreparedArgs.map(invocationPreparedArgs => parallelLimit(async () => {
-    const result = await invokeFunction(runtimeFunction, invocationPreparedArgs, functionName);
-    const prunedResult = reshapeResultToNdcResponseValue(result, functionDefinition.resultType, [], queryRequest.query.fields ?? {}, functionsSchema.objectTypes);
-    return {
-      aggregates: {},
-      rows: [
-        {
-          __value: prunedResult
-        }
-      ]
-    };
+  const functionInvocations: Promise<sdk.RowSet>[] = functionInvocationPreparedArgs.map((invocationPreparedArgs, invocationIndex) => parallelLimit(async () => {
+    const invocationSpanAttrs = {...spanAttributes, [FUNCTION_INVOCATION_INDEX_SPAN_ATTR_NAME]: invocationIndex};
+
+    return withActiveSpan(tracer, "function invocation", async () => {
+      const result = await invokeFunction(runtimeFunction, invocationPreparedArgs, functionName);
+
+      const prunedResult = withActiveSpan(tracer, "reshape result", () =>
+        reshapeResultToNdcResponseValue(result, functionDefinition.resultType, [], queryRequest.query.fields ?? {}, functionsSchema.objectTypes)
+      , invocationSpanAttrs);
+
+      return {
+        aggregates: {},
+        rows: [
+          {
+            __value: prunedResult
+          }
+        ]
+      };
+    }, invocationSpanAttrs);
+
   }));
 
   return await Promise.all(functionInvocations);
@@ -74,13 +91,21 @@ async function executeMutationOperation(mutationOperation: sdk.MutationOperation
     throw new sdk.BadRequest(`'${functionName}' is a '${functionDefinition.ndcKind}' and cannot be queried as a ${schema.FunctionNdcKind.Procedure}.`)
   }
 
+  const spanAttributes = { [FUNCTION_NAME_SPAN_ATTR_NAME]: functionName };
+
   const runtimeFunction = runtimeFunctions[functionName];
   if (runtimeFunction === undefined)
     throw new sdk.InternalServerError(`Couldn't find ${functionName} function exported from hosted functions module.`)
 
-  const preparedArgs = prepareArguments(mutationOperation.arguments, functionDefinition, functionsSchema.objectTypes);
+  const preparedArgs = withActiveSpan(tracer, "prepare arguments", () =>
+    prepareArguments(mutationOperation.arguments, functionDefinition, functionsSchema.objectTypes)
+  , spanAttributes);
+
   const result = await invokeFunction(runtimeFunction, preparedArgs, functionName);
-  const prunedResult = reshapeResultToNdcResponseValue(result, functionDefinition.resultType, [], mutationOperation.fields ?? {}, functionsSchema.objectTypes);
+
+  const prunedResult = withActiveSpan(tracer, "reshape result", () =>
+    reshapeResultToNdcResponseValue(result, functionDefinition.resultType, [], mutationOperation.fields ?? {}, functionsSchema.objectTypes)
+  , spanAttributes);
 
   return {
     affected_rows: 1,
@@ -153,36 +178,26 @@ function coerceArgumentValue(value: unknown, type: schema.TypeReference, valuePa
 }
 
 async function invokeFunction(func: Function, preparedArgs: unknown[], functionName: string): Promise<unknown> {
-  return tracer.startActiveSpan(`Function: ${functionName}`, async (span) => {
-    span.setAttribute("ndc-lambda-sdk.function_name", functionName);
-    try {
+  try {
+    return await withActiveSpan(tracer, `Function: ${functionName}`, async () => {
       const result = func.apply(undefined, preparedArgs);
       // Await the result if it is a promise
       if (typeof result === "object" && 'then' in result && typeof result.then === "function") {
         return await result;
       }
       return result;
-    } catch (e) {
-      if (e instanceof sdk.ConnectorError) {
-        span.recordException(e);
-        span.setStatus({ code: SpanStatusCode.ERROR });
-        throw e;
-      } else if (e instanceof Error) {
-        span.recordException(e);
-        span.setStatus({ code: SpanStatusCode.ERROR });
-        throw new sdk.InternalServerError(`Error encountered when invoking function '${functionName}'`, getErrorDetails(e));
-      } else if (typeof e === "string") {
-        span.recordException(e);
-        span.setStatus({ code: SpanStatusCode.ERROR });
-        throw new sdk.InternalServerError(`Error encountered when invoking function '${functionName}'`, { message: e });
-      } else {
-        throw new sdk.InternalServerError(`Error encountered when invoking function '${functionName}'`);
-      }
+    }, { [FUNCTION_NAME_SPAN_ATTR_NAME]: functionName });
+  } catch (e) {
+    if (e instanceof sdk.ConnectorError) {
+      throw e;
+    } else if (e instanceof Error) {
+      throw new sdk.InternalServerError(`Error encountered when invoking function '${functionName}'`, getErrorDetails(e));
+    } else if (typeof e === "string") {
+      throw new sdk.InternalServerError(`Error encountered when invoking function '${functionName}'`, { message: e });
+    } else {
+      throw new sdk.InternalServerError(`Error encountered when invoking function '${functionName}'`);
     }
-    finally {
-      span.end();
-    }
-  })
+  }
 }
 
 export type ErrorDetails = {
