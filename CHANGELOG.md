@@ -7,6 +7,8 @@ This changelog documents the changes between release versions.
 ## [Unreleased]
 Changes to be included in the next upcoming release
 
+- Updated to [NDC TypeScript SDK v4.2.0](https://github.com/hasura/ndc-sdk-typescript/releases/tag/v4.2.0) to include OpenTelemetry improvements. Traced spans should now appear in the Hasura Console
+
 ## [1.0.0] - 2024-02-22
 ### ndc-lambda-sdk
 - Support for NDC Spec v0.1.0-rc.15 via the NDC TypeScript SDK v4.1.0 ([#8](https://github.com/hasura/ndc-nodejs-lambda/pull/8), [#10](https://github.com/hasura/ndc-nodejs-lambda/pull/11), [#13](https://github.com/hasura/ndc-nodejs-lambda/pull/13)). This is a breaking change and must be used with the latest Hasura engine.
