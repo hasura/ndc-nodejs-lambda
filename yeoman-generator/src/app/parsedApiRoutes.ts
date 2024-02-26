@@ -30,6 +30,8 @@ export type ApiRoute = {
   pathParams: Param[], // TODO: remove
   allParams: Param[],
   isQuery: boolean,
+  shouldWrapReturnResultInJSON: boolean, // if the return result type is unsupported (like `any`), it should be wrapped as JSON. this flag dictates whether that happens or not
+  shouldAllowRelaxedTypes: boolean, // flag to add `@allowrelaxedtypes` annotation. More: https://github.com/hasura/ndc-nodejs-lambda?tab=readme-ov-file#relaxed-types
 
   // parsedRoute: ParsedRoute,
 }
@@ -75,18 +77,20 @@ export class ParsedApiRoutes {
       queryParams: this.parseParams(route.routeParams.query, ParamType.QUERY),
       pathParams: this.parseParams(route.routeParams.path, ParamType.PATH),
       allParams: allParams,
+      shouldWrapReturnResultInJSON: this.shouldWrapReturnResultInJSON(route.response),
+      shouldAllowRelaxedTypes: this.shouldWrapReturnResultInJSON(route.response),
 
       isQuery: route.raw.method === 'get'
 
       // parsedRoute: route,
     };
-    if (apiRoute.functionName === 'postPetUpdatePetWithForm') {
-      console.log('all params: ', JSON.stringify(allParams));
-      console.log('\n\n\n\n\nparsedApiRoutes: parse: apiRoute: ', apiRoute);
-      console.log('parsedApiRoutes: parse: apiRoute (JSON): ', CircularJSON.stringify(apiRoute));
-      console.log('\n\nparsedApiRoutes: parse: route: ', route);
-      console.log('parsedApiRoutes: parse: route (JSON): ', CircularJSON.stringify(route));
-    }
+    // if (apiRoute.functionName === 'postPetUpdatePetWithForm') {
+    //   console.log('all params: ', JSON.stringify(allParams));
+    //   console.log('\n\n\n\n\nparsedApiRoutes: parse: apiRoute: ', apiRoute);
+    //   console.log('parsedApiRoutes: parse: apiRoute (JSON): ', CircularJSON.stringify(apiRoute));
+    //   console.log('\n\nparsedApiRoutes: parse: route: ', route);
+    //   console.log('parsedApiRoutes: parse: route (JSON): ', CircularJSON.stringify(route));
+    // }
 
     this.apiRoutes.push(apiRoute);
   }
@@ -106,6 +110,10 @@ export class ParsedApiRoutes {
     } else {
       return type;
     }
+  }
+
+  private shouldWrapReturnResultInJSON(response: any): boolean {
+    return (response['type'] === 'any')
   }
 
   private addTypeToImportList(type: string, importList: Set<string>) {

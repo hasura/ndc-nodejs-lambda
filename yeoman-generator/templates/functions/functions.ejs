@@ -1,7 +1,7 @@
 <% const { apiRoutes, importList } = it; %>
 
 import { <%~ it.importList.join(', ') %> } from './Api';
-import * as sdk from "@hasura/ndc-lambda-sdk"
+import * as hasuraSdk from "@hasura/ndc-lambda-sdk"
 
 const api = new Api({
 
@@ -28,10 +28,13 @@ const getParameterAsFunctionParam = (param) => { // parameter accepted by the fu
   // const functionName = `get${capitalizeFirstLetter(req.namespace)}${capitalizeFirstLetter(req.routeName.original)}`;
 %>
 /**
+ <% if (req.shouldAllowRelaxedTypes) { %> * @allowrelaxedtypes <% } %>
+
  <% if (req.isQuery) { %> * @readonly <% } %>
+
  * <%~ req.description %>
  */
-<% if (!hasParams(req)) { %>export async function <%~ req.functionName %>(): Promise<<%~ req.successType%>> { <% } %>
+<% if (!hasParams(req)) { %>export async function <%~ req.functionName %>(): <% } %>
 <%else{%>
 export async function <%~ req.functionName %>(
 
@@ -40,8 +43,14 @@ export async function <%~ req.functionName %>(
   <%~getParameterAsFunctionParam(parameter) %>
 
 <% } %>
-): Promise<<%~ req.successType%>> {
+):
 <% } %>
+Promise<% if (req.shouldWrapReturnResultInJSON) { -%>
+<hasuraSdk.JSONValue>
+  <% } else { %>
+<<%~ req.successType%>>
+    <% } %>
+{
   <% if (!hasParams(req)) { %>
 const result = await api.<%~ req.namespace %>.<%~ req.apiFunction %>({});
   <% } else { %>
@@ -63,7 +72,11 @@ const result = await api.<%~ req.namespace %>.<%~ req.apiFunction %>({
     });
   <% } %>
 if (result.data) {
-    return result.data
+    return <% if (req.shouldWrapReturnResultInJSON) { -%>
+      new hasuraSdk.JSONValue(result.data);
+  <% } else { %>
+    result.data
+    <% } %>
   } else {
     throw (result.error)
   }
