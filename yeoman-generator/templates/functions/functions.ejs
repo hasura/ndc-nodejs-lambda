@@ -29,18 +29,14 @@ const getParameterAsFunctionParam = (param) => { // parameter accepted by the fu
   // const functionName = `get${capitalizeFirstLetter(req.namespace)}${capitalizeFirstLetter(req.routeName.original)}`;
 %>
 /**
- * @readonly
+ <% if (req.isQuery) { %> * @readonly <% } %>
  * <%~ req.description %>
  */
 <% if (!hasParams(req)) { %>export async function <%~ req.functionName %>(): Promise<<%~ req.successType%>> { <% } %>
 <%else{%>
 export async function <%~ req.functionName %>(
-<% for (parameter of req.queryParams) {%>
-  /** <%~parameter.description %> */
-  <%~getParameterAsFunctionParam(parameter) %>
 
-<% } %>
-<% for (parameter of req.pathParams) {%>
+<% for (parameter of req.allParams) {%>
   /** <%~parameter.description %> */
   <%~getParameterAsFunctionParam(parameter) %>
 
