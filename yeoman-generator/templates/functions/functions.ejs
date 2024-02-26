@@ -1,4 +1,4 @@
-<% const { apiRoutes, importList } = it; %>
+<% const { apiRoutes, importList } = it; _%>
 
 import { <%~ it.importList.join(', ') %> } from './Api';
 import * as hasuraSdk from "@hasura/ndc-lambda-sdk"
@@ -7,10 +7,7 @@ const api = new Api({
 
 });
 
-<% const capitalizeFirstLetter = (str) => {
-  return str.charAt(0).toUpperCase() + str.slice(1);
-}
-
+<%
 const hasParams = (route) => {
   return (route.allParams && route.allParams.length > 0)
 }
@@ -22,39 +19,45 @@ const getParameterAsFunctionParam = (param) => { // parameter accepted by the fu
     return `${param.name}?: ${param.tsType},`
   }
 }
-%>
+_%>
 
-<% for (let req of apiRoutes) {
-  // const functionName = `get${capitalizeFirstLetter(req.namespace)}${capitalizeFirstLetter(req.routeName.original)}`;
-%>
+<%- for (let req of apiRoutes) { %>
+
 /**
- <% if (req.shouldAllowRelaxedTypes) { %> * @allowrelaxedtypes <% } %>
-
- <% if (req.isQuery) { %> * @readonly <% } %>
-
+<% if (req.shouldAllowRelaxedTypes) { %>
+ * @allowrelaxedtypes
+<% } %>
+<% if (req.isQuery) { %>
+ * @readonly
+<% } %>
  * <%~ req.description %>
+
  */
-<% if (!hasParams(req)) { %>export async function <%~ req.functionName %>(): <% } %>
-<%else{%>
-export async function <%~ req.functionName %>(
 
-<% for (parameter of req.allParams) {%>
+<%- if (!hasParams(req)) { -%>
+export async function <%~ req.functionName _%> ():
+<%_ } else { -%>
+export async function <%~ req.functionName _%> (
+      <%_ for (parameter of req.allParams) { -%>
+
   /** <%~parameter.description %> */
-  <%~getParameterAsFunctionParam(parameter) %>
+  <%~ getParameterAsFunctionParam(parameter) %>
+      <% } %>
 
-<% } %>
 ):
-<% } %>
-Promise<% if (req.shouldWrapReturnResultInJSON) { -%>
+<%- } -%>
+ Promise
+<%_ if (req.shouldWrapReturnResultInJSON) { -%>
 <hasuraSdk.JSONValue>
-  <% } else { %>
-<<%~ req.successType%>>
-    <% } %>
-{
-  <% if (!hasParams(req)) { %>
-const result = await api.<%~ req.namespace %>.<%~ req.apiFunction %>({});
-  <% } else { %>
-const result = await api.<%~ req.namespace %>.<%~ req.apiFunction %>({
+<%_ } else { -%>
+<<%~ req.successType-%>>
+<%- } -%>
+ {
+
+<%- if (!hasParams(req)) { %>
+  const result = await api.<%~ req.namespace %>.<%~ req.apiFunction %>({});
+<% } else { %>
+  const result = await api.<%~ req.namespace %>.<%~ req.apiFunction %>({
 <% if (req.queryParams && req.queryParams.length > 0) { %>
     query: {
     <% for (const q of req.queryParams) { %>
@@ -82,3 +85,4 @@ if (result.data) {
   }
 }
 <% } %>
+
