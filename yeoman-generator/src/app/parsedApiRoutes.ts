@@ -37,6 +37,11 @@ export type ApiRoute = {
 export class ParsedApiRoutes {
   private apiRoutes: ApiRoute[] = [];
   private importList: Set<string> = new Set<string>(['Api']);
+  private generatedComponents = new Set<string>();
+
+  constructor(generatedComponents: Set<string>) {
+    this.generatedComponents = generatedComponents;
+  }
 
   private reservedTypes = new Set<string>(['void', 'any',
     'string', 'Record', 'number']);
@@ -75,12 +80,12 @@ export class ParsedApiRoutes {
 
       // parsedRoute: route,
     };
-    if (apiRoute.functionName === 'postPetAddPet') {
+    if (apiRoute.functionName === 'postPetUpdatePetWithForm') {
       console.log('all params: ', JSON.stringify(allParams));
-      // console.log('\n\n\n\n\nparsedApiRoutes: parse: apiRoute: ', apiRoute);
-      // console.log('parsedApiRoutes: parse: apiRoute (JSON): ', CircularJSON.stringify(apiRoute));
-      // console.log('\n\nparsedApiRoutes: parse: route: ', route);
-      // console.log('parsedApiRoutes: parse: route (JSON): ', CircularJSON.stringify(route));
+      console.log('\n\n\n\n\nparsedApiRoutes: parse: apiRoute: ', apiRoute);
+      console.log('parsedApiRoutes: parse: apiRoute (JSON): ', CircularJSON.stringify(apiRoute));
+      console.log('\n\nparsedApiRoutes: parse: route: ', route);
+      console.log('parsedApiRoutes: parse: route (JSON): ', CircularJSON.stringify(route));
     }
 
     this.apiRoutes.push(apiRoute);
@@ -106,7 +111,7 @@ export class ParsedApiRoutes {
   private addTypeToImportList(type: string, importList: Set<string>) {
     const allTypes = this.splitGenericType(type);
     for (type of allTypes) {
-      if (!this.reservedTypes.has(this.getImportType(type))) {
+      if (!this.reservedTypes.has(this.getImportType(type)) && this.generatedComponents.has(type)) {
         importList.add(this.getImportType(type));
       }
     }

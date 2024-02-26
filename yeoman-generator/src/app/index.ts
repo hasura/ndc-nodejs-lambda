@@ -15,6 +15,7 @@ const CircularJSON = require('circular-json');
 export default class extends Generator {
   _targetHasuraDdnVersion?: "alpha" | "beta";
   oasRouteData: ParsedRoute[] = [];
+  generatedComponents = new Set<string>();
 
   constructor(args: string | string[], opts: Generator.GeneratorOptions) {
     super(args, opts);
@@ -54,7 +55,7 @@ export default class extends Generator {
         hooks: {
           onCreateComponent: (component) => {
             // console.log('\n\n\n\nonCreateComponent: component', component);
-
+            this.generatedComponents.add(component.typeName);
           },
           onCreateRequestParams: (rawType) => {
             // console.log('\n\n\n\nonCreateRequestParams: rawType: ', rawType);
@@ -171,7 +172,7 @@ export default class extends Generator {
     const functionTsFilePath = path.resolve(process.cwd(), "functions.ts");
 
 
-    const parsedApiRoutesObj = new ParsedApiRoutes();
+    const parsedApiRoutesObj = new ParsedApiRoutes(this.generatedComponents);
 
     const getRequests: ParsedRoute[] = [];
     for (let parsedRoute of this.oasRouteData) {
