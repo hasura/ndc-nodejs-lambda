@@ -177,11 +177,8 @@ export default class extends Generator {
     for (let parsedRoute of this.oasRouteData) {
       // const getRequests: ParsedRoute[] = [];
       // const parsedApiRoutesObj = new ParsedApiRoutes();
-      if (parsedRoute.raw.method === 'get') {
-        getRequests.push(parsedRoute);
-        parsedApiRoutesObj.parse(parsedRoute);
-        // this.generateFile(`${parsedApiRoutesObj.getApiRoutes()[0]?.functionName}.ts`, parsedApiRoutesObj.getApiRoutes(), parsedApiRoutesObj.getImportList());
-      }
+      getRequests.push(parsedRoute);
+      parsedApiRoutesObj.parse(parsedRoute);
     };
 
     // for (let req of getRequests) {

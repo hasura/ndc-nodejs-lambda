@@ -12,8 +12,7 @@ const api = new Api({
 }
 
 const hasParams = (route) => {
-  return (route.queryParams && route.queryParams.length > 0)
-    || (route.pathParams && route.pathParams.length > 0)
+  return (route.allParams && route.allParams.length > 0)
 }
 
 const getParameterAsFunctionParam = (param) => { // parameter accepted by the funciton in function.ts
@@ -54,9 +53,11 @@ const result = await api.<%~ req.namespace %>.<%~ req.apiFunction %>({
     <% } %>
   },
     <% } %>
-<% if (req.pathParams && req.pathParams.length > 0) { %>
-    <% for (const q of req.pathParams) { %>
-    <%~q.name%>: <%~q.name%>,
+<% if (req.allParams && req.allParams.length > 0) { %>
+    <% for (const q of req.allParams) { %>
+      <% if (q.paramType !== 'query') { %>
+        <%~q.name%>: <%~q.name%>,
+        <% } %>
     <% } %>
 <% } %>
     });

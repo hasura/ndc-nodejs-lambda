@@ -4,6 +4,7 @@ const CircularJSON = require('circular-json');
 export enum ParamType {
   QUERY = 'query',
   PATH = 'path',
+  BODY = 'body',
 }
 
 export type Param = {
@@ -43,17 +44,15 @@ export class ParsedApiRoutes {
   public parse(route: any) {
 
     // ensure keywords like `void` are not added to import list and hence to added to import statements
-    // if (!this.reservedTypes.has(this.getImportType(route.response.type))) {
-    //   this.importList.add(this.getImportType(route.response.type));
-    // }
-    // if (!this.reservedTypes.has(this.getImportType(route.response.errorType))) {
-    //   this.importList.add(this.getImportType(route.response.errorType));
-    // }
     this.addTypeToImportList(route.response.type, this.importList);
     this.addTypeToImportList(route.response.errorType, this.importList);
 
     const allParams = this.parseParams(route.routeParams.query, ParamType.QUERY);
     allParams.push(...this.parseParams(route.routeParams.path, ParamType.PATH));
+    const bodyParam = this.parseBodyParams(route.requestBodyInfo);
+    if (bodyParam) {
+      allParams.push(bodyParam);
+    }
 
     this.sortParamsByOptionality(allParams);
 
@@ -76,12 +75,13 @@ export class ParsedApiRoutes {
 
       // parsedRoute: route,
     };
-    // if (apiRoute.functionName === 'getStoreGetInventory') {
-    //   console.log('\n\n\n\n\nparsedApiRoutes: parse: apiRoute: ', apiRoute);
-    //   console.log('parsedApiRoutes: parse: apiRoute (JSON): ', CircularJSON.stringify(apiRoute));
-    //   console.log('\n\nparsedApiRoutes: parse: route: ', route);
-    //   console.log('parsedApiRoutes: parse: route (JSON): ', CircularJSON.stringify(route));
-    // }
+    if (apiRoute.functionName === 'postPetAddPet') {
+      console.log('all params: ', JSON.stringify(allParams));
+      // console.log('\n\n\n\n\nparsedApiRoutes: parse: apiRoute: ', apiRoute);
+      // console.log('parsedApiRoutes: parse: apiRoute (JSON): ', CircularJSON.stringify(apiRoute));
+      // console.log('\n\nparsedApiRoutes: parse: route: ', route);
+      // console.log('parsedApiRoutes: parse: route (JSON): ', CircularJSON.stringify(route));
+    }
 
     this.apiRoutes.push(apiRoute);
   }
@@ -157,18 +157,37 @@ export class ParsedApiRoutes {
 
     const returnParams: Param[] = [];
     for (const arg of args) {
+      const paramTsType = this.getTypeMapping(arg);
       const param: Param = {
         name: arg['name'],
         description: arg['description'],
         required: (arg['required'] && arg['required'] === true) ? true : false,
-        tsType: this.getTypeMapping(arg),
+        tsType: paramTsType,
         format: arg['format'],
         paramType: paramType,
       }
 
       returnParams.push(param);
+      this.addTypeToImportList(paramTsType, this.importList);
     }
     return returnParams;
+  }
+
+  private parseBodyParams(arg: any): Param | null {
+    if (!arg['type']) {
+      return null;
+    }
+    const paramType = this.getTypeMapping(arg);
+    const param: Param = {
+      name: arg['paramName'],
+      description: 'Request body',
+      required: (arg['required'] && arg['required'] === true) ? true : false,
+      tsType: paramType,
+      format: arg['format'],
+      paramType: ParamType.BODY,
+    }
+    this.addTypeToImportList(paramType, this.importList);
+    return param;
   }
 
   private getTypeMapping(routeParam: any): string {
