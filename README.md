@@ -302,6 +302,34 @@ Descriptions are collected for:
 * Types
 * Type properties
 
+### Tracing
+Your functions are automatically instrumented with OpenTelemetry traces that Hasura will capture.
+
+By default, the following spans are emitted:
+* `handleQuery`/`handleMutation` - wraps the request from the Hasura DDN to the connector
+* `prepare arguments` - wraps the process of preparing arguments to pass to your function
+* `function invocation` - wraps a (potentially) parallel function invocation during a query
+* `Function: <function name>` - wraps the invocation of your function
+* `reshape result` - wraps the projection of the function result to match the requirements of the GraphQL selection set
+
+If you want to add additional spans around your own code, you can do so by using the OpenTelemetry SDK and `withActiveSpan` from `ndc-lambda-sdk`:
+
+```typescript
+import opentelemetry from '@opentelemetry/api';
+import * as sdk from "@hasura/ndc-lambda-sdk"
+
+const tracer = opentelemetry.trace.getTracer("my functions"); // Name your functions service here
+
+export async function doSomething(): Promise<string> {
+  const spanAttributes = { myAttribute: "value" };
+  return await sdk.withActiveSpan(tracer, "my span name", async () => {
+    return await doSomethingExpensive();
+  }, spanAttributes);
+}
+```
+
+The span will be wrapped around the function you pass to `sdk.withActiveSpan`. The function can optionally be an async function that returns a Promise, and if so, the span will be ended when the Promise resolves.
+
 ## Deploying with `hasura3 connector create`
 
 You will need:
