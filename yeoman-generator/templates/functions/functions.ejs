@@ -4,7 +4,7 @@ import { <%~ it.importList.join(', ') %> } from './Api';
 import * as hasuraSdk from "@hasura/ndc-lambda-sdk"
 
 const api = new Api({
-
+  baseUrl: '', // please add your base URL here
 });
 
 <%
@@ -24,14 +24,16 @@ _%>
 <%- for (let req of apiRoutes) { %>
 
 /**
+ * <%~ req.description %>
+
+ * @request <%~ req.type %> :<%~ req.route %>
+
 <% if (req.shouldAllowRelaxedTypes) { %>
  * @allowrelaxedtypes
 <% } %>
 <% if (req.isQuery) { %>
  * @readonly
 <% } %>
- * <%~ req.description %>
-
  */
 
 <%- if (!hasParams(req)) { -%>

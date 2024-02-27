@@ -18,6 +18,7 @@ export type Param = {
 
 export type ApiRoute = {
   type: string, // get/post etc
+  route: string, // route of the api
   successType: any, // successDto
   errorType: any, // error DTO
   description?: string, // description of the api
@@ -66,7 +67,8 @@ export class ParsedApiRoutes {
 
 
     const apiRoute: ApiRoute = {
-      type: route.request.method,
+      type: route.request.method?.toUpperCase(),
+      route: route.raw.route,
       successType: this.sanitizeTypes(route.response.type),
       errorType: this.sanitizeTypes(route.response.errorType),
       description: route.raw.summary,
