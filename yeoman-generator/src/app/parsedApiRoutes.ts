@@ -40,6 +40,7 @@ export class ParsedApiRoutes {
   private apiRoutes: ApiRoute[] = [];
   private importList: Set<string> = new Set<string>(['Api']);
   private generatedComponents = new Set<string>();
+  private hasEnumVariables = false;
 
   constructor(generatedComponents: Set<string>) {
     this.generatedComponents = generatedComponents;
@@ -78,13 +79,13 @@ export class ParsedApiRoutes {
       pathParams: this.parseParams(route.routeParams.path, ParamType.PATH),
       allParams: allParams,
       shouldWrapReturnResultInJSON: this.shouldWrapReturnResultInJSON(route.response),
-      shouldAllowRelaxedTypes: this.shouldWrapReturnResultInJSON(route.response),
+      shouldAllowRelaxedTypes: this.shouldAllowRelaxedTypes(route),
 
       isQuery: route.raw.method === 'get'
 
       // parsedRoute: route,
     };
-    // if (apiRoute.functionName === 'postPetUpdatePetWithForm') {
+    // if (apiRoute.functionName === 'getPetFindPetsByStatus') {
     //   console.log('all params: ', JSON.stringify(allParams));
     //   console.log('\n\n\n\n\nparsedApiRoutes: parse: apiRoute: ', apiRoute);
     //   console.log('parsedApiRoutes: parse: apiRoute (JSON): ', CircularJSON.stringify(apiRoute));
@@ -114,6 +115,19 @@ export class ParsedApiRoutes {
 
   private shouldWrapReturnResultInJSON(response: any): boolean {
     return (response['type'] === 'any')
+  }
+
+  private shouldAllowRelaxedTypes(apiRoute: any): boolean {
+    if (this.shouldWrapReturnResultInJSON(apiRoute.response)) {
+      return true;
+    }
+    if (apiRoute.response.type.startsWith('Record<')) {
+      return true;
+    }
+    if (this.hasEnumVariables) {
+      return true;
+    }
+    return false;
   }
 
   private addTypeToImportList(type: string, importList: Set<string>) {
@@ -170,7 +184,13 @@ export class ParsedApiRoutes {
 
     const returnParams: Param[] = [];
     for (const arg of args) {
-      const paramTsType = this.getTypeMapping(arg);
+      let paramTsType: string = '';
+      if (this.isEnum(arg)) {
+        this.hasEnumVariables = true;
+        paramTsType = this.getEnumType(arg);
+      } else {
+        paramTsType = this.getTypeMapping(arg);
+      }
       const param: Param = {
         name: arg['name'],
         description: arg['description'],
@@ -201,6 +221,28 @@ export class ParsedApiRoutes {
     }
     this.addTypeToImportList(paramType, this.importList);
     return param;
+  }
+
+  private isEnum(routeParam: any): boolean {
+    return (routeParam.enum && routeParam.enum.length > 0)
+  }
+
+  private getEnumType(routeParam: any): string {
+    if (!this.isEnum(routeParam)) {
+      return routeParam.type;
+    }
+    if (routeParam.type != 'string') {
+      return routeParam.enum.join(' | ');
+    }
+    let returnType = '';
+    for (const enumValue of routeParam.enum) {
+      if (returnType.length === 0) {
+        returnType = `"${enumValue}"`;
+      } else {
+        returnType = `${returnType} | "${enumValue}"`
+      }
+    }
+    return returnType;
   }
 
   private getTypeMapping(routeParam: any): string {

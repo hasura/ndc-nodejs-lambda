@@ -6,7 +6,6 @@ export type QueryParamsType = Record<string | number, any>;
 export type ResponseFormat = keyof Omit<Body, "body" | "bodyUsed">;
 
 export interface FullRequestParams extends Omit<RequestInit, "body"> {
-  /** THIS IS GENERATED USING MYYYYY CUSTOM TEMPLATES */
   /** set parameter to `true` for call `securityWorker` for this request */
   secure?: boolean;
   /** request path */
@@ -199,16 +198,16 @@ export class HttpClient<SecurityDataType = unknown> {
 
             // TODO: make this more robust
             if (!response.ok && response.status < 500) {
-              let problemDetails: any;
-              if (r.error) { // TODO: add status code and text here also
-                problemDetails = r.error as ProblemDetails
-              } else {
-                problemDetails = {
-                  title: r.statusText,
-                  status: r.status,
-                }
-              }
-              r.error = problemDetails;
+              // let problemDetails: any;
+              // if (r.error) { // TODO: add status code and text here also
+              //   problemDetails = r.error as ProblemDetails
+              // } else {
+              //  problemDetails = {
+              //    title: r.statusText,
+              //    status: r.status,
+              //  }
+              // }
+              // r.error = problemDetails;
               return r;
             }
 
