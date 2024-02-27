@@ -60,29 +60,29 @@ export async function <%~ req.functionName _%> (
   const result = await api.<%~ req.namespace %>.<%~ req.apiFunction %>({
 <% if (req.queryParams && req.queryParams.length > 0) { %>
     query: {
-    <% for (const q of req.queryParams) { %>
-    <%~q.name%>: <%~q.name%>,
-    <% } %>
-  },
-    <% } %>
-<% if (req.allParams && req.allParams.length > 0) { %>
-    <% for (const q of req.allParams) { %>
-      <% if (q.paramType !== 'query') { %>
-        <%~q.name%>: <%~q.name%>,
-        <% } %>
-    <% } %>
+    <%- for (const q of req.queryParams) { %>
+  <%~q.name%>: <%~q.name%>,
+    <% } _%>
+    },
 <% } %>
+
+<%- if (req.allParams && req.allParams.length > 0) { %>
+    <%_ for (const q of req.allParams) { %>
+      <%_ if (q.paramType !== 'query') { -%>
+    <%~q.name%>: <%~q.name%>,
+<%    }
+    }
+  } %>
     });
-  <% } %>
-if (result.data) {
-    return <% if (req.shouldWrapReturnResultInJSON) { -%>
+<% } %>
+  if (result.data) {
+    return <% if (req.shouldWrapReturnResultInJSON) { _%>
       new hasuraSdk.JSONValue(result.data);
-  <% } else { %>
-    result.data
-    <% } %>
+<%   } else { _%>
+      result.data
+<%   } %>
   } else {
     throw (result.error)
   }
 }
 <% } %>
-
