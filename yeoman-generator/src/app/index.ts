@@ -55,11 +55,12 @@ export default class extends Generator {
         hooks: {
           onCreateComponent: (component) => {
             // console.log('\n\n\n\nonCreateComponent: component', component);
-            this.generatedComponents.add(component.typeName);
+            // console.log('onCreateComponent: component(JSON): ', CircularJSON.stringify(component));
+            // this.generatedComponents.add(component.typeName);
           },
           onCreateRequestParams: (rawType) => {
-            // console.log('\n\n\n\nonCreateRequestParams: rawType: ', rawType);
-            // console.log('onCreateRequestParams: rawType (JSON): ', CircularJSON.stringify(rawType));
+            // console.log('\n\n\n\n onCreateRequestParams: rawType', rawType);
+            // console.log('onCreateRequestParams: rawType(JSON): ', CircularJSON.stringify(rawType));
           },
           onCreateRoute: (routeData) => {
             this.oasRouteData.push(routeData);
@@ -79,6 +80,7 @@ export default class extends Generator {
             // console.log('onFormatTypeName: rawTypeName (JSON): ', CircularJSON.stringify(rawTypeName));
             // console.log('\nnFormatTypeName: schemaType: ', schemaType);
             // console.log('onFormatTypeName: schemaType (JSON): ', CircularJSON.stringify(schemaType));
+            this.generatedComponents.add(typeName);
           },
           onInit: (configuration) => {
             // console.log('\n\n\n\n\n onInit: configuration: ', configuration);
