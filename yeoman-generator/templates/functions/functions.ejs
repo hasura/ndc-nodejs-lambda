@@ -1,0 +1,90 @@
+<% const { apiRoutes, importList, baseUrl } = it; _%>
+
+import { <%~ it.importList.join(', ') %> } from './Api';
+import * as hasuraSdk from "@hasura/ndc-lambda-sdk"
+
+const api = new Api({
+  baseUrl: '<%~ baseUrl %>',
+});
+
+<%-
+const hasParams = (route) => {
+  return (route.allParams && route.allParams.length > 0)
+}
+
+const getParameterAsFunctionParam = (param) => { // parameter accepted by the funciton in function.ts
+  if (param.required) {
+    return `${param.name}: ${param.tsType},`
+  } else {
+    return `${param.name}?: ${param.tsType},`
+  }
+}
+_%>
+
+<%- for (let req of apiRoutes) { %>
+
+/**
+ * <%~ req.description %>
+
+ * @request <%~ req.type %> :<%~ req.route %>
+
+<% if (req.shouldAllowRelaxedTypes) { %>
+ * @allowrelaxedtypes
+<% } %>
+<% if (req.isQuery) { %>
+ * @readonly
+<% } %>
+ */
+
+<%- if (!hasParams(req)) { -%>
+export async function <%~ req.functionName _%> ():
+<%_ } else { -%>
+export async function <%~ req.functionName _%> (
+      <%_ for (parameter of req.allParams) { -%>
+
+  /** <%~parameter.description %> */
+  <%~ getParameterAsFunctionParam(parameter) %>
+      <% } %>
+
+):
+<%- } -%>
+ Promise
+<%_ if (req.shouldWrapReturnResultInJSON) { -%>
+<hasuraSdk.JSONValue>
+<%_ } else { -%>
+<<%~ req.successType-%>>
+<%- } -%>
+ {
+
+<%- if (!hasParams(req)) { %>
+  const result = await api.<%~ req.namespace %>.<%~ req.apiFunction %>({});
+<% } else { %>
+  const result = await api.<%~ req.namespace %>.<%~ req.apiFunction %>({
+<% if (req.queryParams && req.queryParams.length > 0) { %>
+    query: {
+    <%- for (const q of req.queryParams) { %>
+  <%~q.name%>: <%~q.name%>,
+    <% } _%>
+    },
+<% } %>
+
+<%- if (req.allParams && req.allParams.length > 0) { %>
+    <%_ for (const q of req.allParams) { %>
+      <%_ if (q.paramType !== 'query') { -%>
+    <%~q.name%>: <%~q.name%>,
+<%    }
+    }
+  } %>
+  });
+<% } %>
+  if (result.data) {
+    return <% if (req.shouldWrapReturnResultInJSON) { _%>
+      new hasuraSdk.JSONValue(result.data);
+<%   } else { _%>
+      result.data
+<%   } %>
+  } else {
+    throw (result.error)
+  }
+}
+<% } %>

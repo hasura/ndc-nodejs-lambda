@@ -28,6 +28,17 @@ abstract class ResultBase<T, TError> {
       throw new Error("Unknown result subclass");
     }
   }
+
+  onErr(fn: (r: TError) => void): Result<T, TError> {
+    if (this instanceof Ok) {
+      return this;
+    } else if (this instanceof Err) {
+      fn(this.error)
+      return this;
+    } else {
+      throw new Error("Unknown result subclass");
+    }
+  }
 }
 
 export class Ok<T, TError> extends ResultBase<T, TError> {
@@ -50,11 +61,11 @@ export class Err<T, TError> extends ResultBase<T, TError> {
 
 export type Result<T, TError> = Ok<T, TError> | Err<T, TError>
 
-function traverseAndCollectErrors<T1, T2, TErr>(inputs: T1[], fn: (input: T1) => Result<T2, TErr[]>): Result<T2[], TErr[]> {
+function traverseAndCollectErrors<T1, T2, TErr>(inputs: readonly T1[], fn: (input: T1, index: number) => Result<T2, TErr[]>): Result<T2[], TErr[]> {
   return sequenceAndCollectErrors(inputs.map(fn))
 }
 
-function sequenceAndCollectErrors<T, TErr>(results: Result<T, TErr[]>[]): Result<T[], TErr[]> {
+function sequenceAndCollectErrors<T, TErr>(results: readonly Result<T, TErr[]>[]): Result<T[], TErr[]> {
   const data: T[] = [];
   const errors: TErr[] = [];
 
@@ -71,7 +82,7 @@ function sequenceAndCollectErrors<T, TErr>(results: Result<T, TErr[]>[]): Result
     : new Ok(data);
 }
 
-function partitionAndCollectErrors<T, TErr>(results: Result<T, TErr[]>[]): { oks: T[], errs: TErr[] } {
+function partitionAndCollectErrors<T, TErr>(results: readonly Result<T, TErr[]>[]): { oks: T[], errs: TErr[] } {
   const partitionedResults: { oks: T[], errs: TErr[] } = {
     oks: [],
     errs: [],

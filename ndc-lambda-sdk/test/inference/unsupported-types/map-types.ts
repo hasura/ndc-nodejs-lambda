@@ -21,3 +21,17 @@ type ObjectWithPropsAndIndexSignature = {
 export function objectWithPropsAndIndexSignatureType(param: ObjectWithPropsAndIndexSignature): string {
   return "";
 }
+
+type MyType1 = {
+  [index: number]: string;
+};
+
+type MyType2 = {
+  [key: string]: number;
+};
+
+type IntersectionOfMultipleIndexSigs = MyType1 & MyType2
+
+export function objectWithMultipleIndexSignaturesType(param: IntersectionOfMultipleIndexSigs): string {
+  return "";
+}

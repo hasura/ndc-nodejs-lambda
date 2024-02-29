@@ -2,6 +2,9 @@
 
 The NodeJS Lambda connector allows you to expose TypeScript functions as NDC functions/procedures for use in your Hasura DDN subgraphs.
 
+> [!IMPORTANT]
+> Hasura DDN Alpha users should use 0.x versions of the `ndc-lambda-sdk`. v1.x versions of the `ndc-lambda-sdk` support the forthcoming Hasura DDN Beta.
+
 ## How to Use
 First, ensure you have NodeJS v18+ installed. Then, create a directory into which you will create your functions using the `hasura-ndc-nodejs-lambda` Yeoman template.
 
@@ -147,6 +150,41 @@ These types are unsupported as function parameter types or return types for func
 * [`void`](https://www.typescriptlang.org/docs/handbook/2/functions.html#void), [`object`](https://www.typescriptlang.org/docs/handbook/2/functions.html#object), [`unknown`](https://www.typescriptlang.org/docs/handbook/2/functions.html#unknown), [`never`](https://www.typescriptlang.org/docs/handbook/2/functions.html#never), [`any`](https://www.typescriptlang.org/docs/handbook/2/everyday-types.html#any) types - to accept and return arbitrary JSON, use `sdk.JSONValue` instead
 * `null` and `undefined` - unless used in a union with a single other type
 
+### Relaxed Types
+"Relaxed types" are types that are otherwise unsupported, but instead of being rejected are instead converted into opaque custom scalar types. These scalar types are entirely unvalidated when used as input (ie. the caller of the function can send arbitrary JSON values), making it incumbent on the function itself to ensure the incoming value for that relaxed type actually matches its type. Because relaxed types are represented as custom scalar types, in GraphQL you will be unable to select into the type, if it is an object, and will only be able to select the whole thing.
+
+Relaxed types are designed to be an escape hatch to help people get up and running using existing code quickly, where their existing code uses types that are unsupported. They are **not intended to be used long term**. You should prefer to modify your code to use only supported types. To opt into using relaxed types, one must apply the `@allowrelaxedtypes` JSDoc tag to the function that will be using the unsupported types.
+
+The following unsupported types are allowed when using relaxed types, and will be converted into opaque unvalidated scalar types:
+
+* Union types
+* Tuple types
+* Types with index signatures
+* The `any` and `unknown` types
+
+Here's an example of a function that uses some relaxed types:
+
+```typescript
+/**
+ * @allowrelaxedtypes
+ * @readonly
+ */
+export function findEmptyRecords(record: Record<string, string>): { emptyKeys: string[] } | string {
+  const emptyKeys: string[] = [];
+  const entries = Object.entries(record);
+
+  if (entries.length === 0)
+    return "Error: record was empty";
+
+  for (const [key, value] of entries) {
+    if (value === "")
+      emptyKeys.push(key);
+  }
+
+  return { emptyKeys };
+}
+```
+
 ### Error handling
 By default, unhandled errors thrown from functions are caught by the Lambda SDK host, and an `InternalServerError` is returned to Hasura. The details of the uncaught error (the message and stack trace) is captured and will be logged in the OpenTelemetry trace associated with the GraphQL request. However, the GraphQL API caller will receive a generic "internal error" response to their query. This is to ensure internal error details are not leaked to GraphQL API clients.
 
@@ -263,6 +301,34 @@ Descriptions are collected for:
 * Function parameters
 * Types
 * Type properties
+
+### Tracing
+Your functions are automatically instrumented with OpenTelemetry traces that Hasura will capture.
+
+By default, the following spans are emitted:
+* `handleQuery`/`handleMutation` - wraps the request from the Hasura DDN to the connector
+* `prepare arguments` - wraps the process of preparing arguments to pass to your function
+* `function invocation` - wraps a (potentially) parallel function invocation during a query
+* `Function: <function name>` - wraps the invocation of your function
+* `reshape result` - wraps the projection of the function result to match the requirements of the GraphQL selection set
+
+If you want to add additional spans around your own code, you can do so by using the OpenTelemetry SDK and `withActiveSpan` from `ndc-lambda-sdk`:
+
+```typescript
+import opentelemetry from '@opentelemetry/api';
+import * as sdk from "@hasura/ndc-lambda-sdk"
+
+const tracer = opentelemetry.trace.getTracer("my functions"); // Name your functions service here
+
+export async function doSomething(): Promise<string> {
+  const spanAttributes = { myAttribute: "value" };
+  return await sdk.withActiveSpan(tracer, "my span name", async () => {
+    return await doSomethingExpensive();
+  }, spanAttributes);
+}
+```
+
+The span will be wrapped around the function you pass to `sdk.withActiveSpan`. The function can optionally be an async function that returns a Promise, and if so, the span will be ended when the Promise resolves.
 
 ## Deploying with `hasura3 connector create`
 

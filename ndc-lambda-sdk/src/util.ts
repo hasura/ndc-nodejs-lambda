@@ -1,3 +1,5 @@
+import { Attributes, Span, SpanStatusCode, Tracer } from "@opentelemetry/api";
+
 export const unreachable = (x: never): never => { throw new Error(`Unreachable code reached! The types lied! 😭 Unexpected value: ${x}`) };
 
 export function isArray(x: unknown): x is unknown[] {
