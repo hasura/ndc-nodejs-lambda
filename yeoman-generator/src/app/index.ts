@@ -16,11 +16,13 @@ export default class extends Generator {
   _targetHasuraDdnVersion?: "alpha" | "beta";
   oasRouteData: ParsedRoute[] = [];
   generatedComponents = new Set<string>();
+  baseUrl: string = '';
 
   constructor(args: string | string[], opts: Generator.GeneratorOptions) {
     super(args, opts);
     this.env.options.nodePackageManager = "npm";
-    this.option("openapi", { type: String, default: '' });
+    this.option("open-api", { type: String, default: '' });
+    this.option("base-url", { type: String, default: ''});
   }
 
   async initializingCheckTemplateIsLatestVersion() {
@@ -43,6 +45,7 @@ export default class extends Generator {
 
     const templateDir = path.resolve(__dirname, '../../templates/custom');
     const openapi = this.options['openapi'];
+    this.baseUrl = this.options['baseurl'];
     if(openapi !== ''){
       const isUrl = /^https?:/.test(openapi)
       this.log.info("Generating API class from OpenAPI file...")
@@ -190,7 +193,7 @@ export default class extends Generator {
 
 
     const eta = new Eta({ views: path.join(__dirname, '../../templates/functions') })
-    const res = eta.render("functions.ejs", { apiRoutes: parsedApiRoutesObj.getApiRoutes(), importList: parsedApiRoutesObj.getImportList() });
+    const res = eta.render("functions.ejs", { apiRoutes: parsedApiRoutesObj.getApiRoutes(), importList: parsedApiRoutesObj.getImportList(), baseUrl: this.baseUrl });
 
     this.fs.write(functionTsFilePath, res);
   }
