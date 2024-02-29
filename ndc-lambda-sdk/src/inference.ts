@@ -281,6 +281,7 @@ function deriveSchemaTypeForTsType(tsType: ts.Type, typePath: schema.TypePathSeg
     ?? deriveSchemaTypeIfTsArrayType(tsType, typePath, allowRelaxedTypes, context, recursionDepth)
     ?? deriveSchemaTypeIfScalarType(tsType, context)
     ?? deriveSchemaTypeIfNullableType(tsType, typePath, allowRelaxedTypes, context, recursionDepth)
+    ?? deriveSchemaTypeIfEnumType(tsType, typePath, allowRelaxedTypes, context)
     ?? deriveSchemaTypeIfObjectType(tsType, typePath, allowRelaxedTypes, context, recursionDepth)
     ?? rejectIfClassType(tsType, typePath, context) // This needs to be done after scalars, because JSONValue is a class
     ?? deriveSchemaTypeIfTsIndexSignatureType(tsType, typePath, allowRelaxedTypes, context, recursionDepth) // This needs to be done after scalars and classes, etc because some of those types do have index signatures (eg. strings)
@@ -444,6 +445,31 @@ function deriveSchemaTypeIfScalarType(tsType: ts.Type, context: TypeDerivationCo
   }
 }
 
+function deriveSchemaTypeIfEnumType(tsType: ts.Type, typePath: schema.TypePathSegment[], allowRelaxedTypes: boolean, context: TypeDerivationContext): Result<schema.TypeReference, string[]> | undefined {
+  if (tsutils.isUnionType(tsType) && !tsutils.isIntrinsicType(tsType) /* Block booleans */) {
+    const typeName = context.typeChecker.typeToString(tsType);
+
+    // Handles 'enum { First, Second }'
+    if (tsutils.isTypeFlagSet(tsType, ts.TypeFlags.EnumLiteral)) {
+      return deriveRelaxedTypeOrError(typeName, typePath, () => `Enum types are not supported, but one was encountered in ${schema.typePathToString(typePath)} (type: ${typeName})`, allowRelaxedTypes, context);
+    }
+
+    // Handles `"first" | "second"`
+    if (tsType.types.every(unionMemberType => tsutils.isLiteralType(unionMemberType))) {
+      return deriveRelaxedTypeOrError(typeName, typePath, () => `Literal union types are not supported, but one was encountered in ${schema.typePathToString(typePath)} (type: ${typeName})`, allowRelaxedTypes, context);
+    }
+  }
+  // Handles computed single member enum types: 'enum { OneThing = "test".length }'
+  else if (tsutils.isEnumType(tsType) && tsutils.isSymbolFlagSet(tsType.symbol, ts.SymbolFlags.EnumMember)) {
+    const typeName = context.typeChecker.typeToString(tsType);
+    return deriveRelaxedTypeOrError(typeName, typePath, () => `Enum types are not supported, but one was encountered in ${schema.typePathToString(typePath)} (type: ${typeName})`, allowRelaxedTypes, context);
+  }
+
+  // Note that single member enum types: 'enum { OneThing }' are simplified by the type system
+  // down to literal types (since they can only be a single thing) and are therefore supported via support
+  // for literal types in scalars
+}
+
 function isDateType(tsType: ts.Type): boolean {
   const symbol = tsType.getSymbol()
   if (symbol === undefined) return false;
@@ -464,12 +490,9 @@ function isMapType(tsType: ts.Type): tsType is ts.TypeReference {
 function isBooleanUnionType(tsType: ts.Type): boolean {
   if (!tsutils.isUnionType(tsType)) return false;
 
-  return tsType.types.length === 2 && unionTypeContainsBothBooleanLiterals(tsType);
-}
-
-function unionTypeContainsBothBooleanLiterals(tsUnionType: ts.UnionType): boolean {
-  return tsUnionType.types.find(tsType => tsutils.isBooleanLiteralType(tsType) && tsType.intrinsicName === "true") !== undefined
-    && tsUnionType.types.find(tsType => tsutils.isBooleanLiteralType(tsType) && tsType.intrinsicName === "false") !== undefined;
+  return tsType.types.length === 2
+    && tsType.types.find(type => tsutils.isBooleanLiteralType(type) && type.intrinsicName === "true") !== undefined
+    && tsType.types.find(type => tsutils.isBooleanLiteralType(type) && type.intrinsicName === "false") !== undefined;
 }
 
 function isJSONValueType(tsType: ts.Type, ndcLambdaSdkModule: ts.ResolvedModuleFull): boolean {
@@ -581,21 +604,10 @@ function unwrapNullableType(tsType: ts.Type, typeChecker: ts.TypeChecker): [ts.T
           : null
         );
 
-  const typesWithoutNullAndUndefined = tsType.types
-    .filter(t => !tsutils.isIntrinsicNullType(t) && !tsutils.isIntrinsicUndefinedType(t));
 
-  // The case where one type is unioned with either or both of null and undefined
-  if (typesWithoutNullAndUndefined.length === 1 && nullOrUndefinability) {
-    return [typesWithoutNullAndUndefined[0]!, nullOrUndefinability];
-  }
-  // The weird edge case where null or undefined is unioned with both 'true' and 'false'
-  // We simplify this to being unioned with 'boolean' instead
-  else if (nullOrUndefinability && typesWithoutNullAndUndefined.length === 2 && unionTypeContainsBothBooleanLiterals(tsType)) {
-    return [typeChecker.getBooleanType(), nullOrUndefinability];
-  }
-  else {
-    return null;
-  }
+  return nullOrUndefinability
+    ? [typeChecker.getNonNullableType(tsType), nullOrUndefinability]
+    : null;
 }
 
 type PropertyTypeInfo = {
