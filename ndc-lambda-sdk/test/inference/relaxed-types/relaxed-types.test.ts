@@ -924,7 +924,7 @@ describe("relaxed types", function() {
       })
     });
 
-    it("invaliddd", function() {
+    it("invalid", function() {
       const schema = deriveSchema(require.resolve("./enum-types-invalid.ts"));
 
       assert.deepStrictEqual(schema, {
