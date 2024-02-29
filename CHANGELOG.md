@@ -5,6 +5,8 @@ This changelog documents the changes between release versions.
 > Hasura DDN Alpha users should use 0.x versions of the `ndc-lambda-sdk`. v1.x versions of the `ndc-lambda-sdk` support the forthcoming Hasura DDN Beta.
 
 ## [Unreleased]
+Changes to be included in the next upcoming release
+
 - Improved error messages when unsupported enum types or unions of literal types are found, and allow these types to be used in relaxed types mode ([#17](https://github.com/hasura/ndc-nodejs-lambda/pull/17))
 
 ## [1.1.0] - 2024-02-26
