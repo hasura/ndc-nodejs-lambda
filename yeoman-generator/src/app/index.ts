@@ -44,8 +44,8 @@ export default class extends Generator {
     }
 
     const templateDir = path.resolve(__dirname, '../../templates/custom');
-    const openapi = this.options['openapi'];
-    this.baseUrl = this.options['baseurl'];
+    const openapi = this.options['open-api'];
+    this.baseUrl = this.options['base-url'];
     if(openapi !== ''){
       const isUrl = /^https?:/.test(openapi)
       this.log.info("Generating API class from OpenAPI file...")
