@@ -925,7 +925,17 @@ describe("basic inference", function() {
                   name: BuiltInScalarTypeName.Float,
                   literalValue: 0,
                 }
-              }
+              },
+              {
+                propertyName: "singleItemEnum",
+                description: null,
+                type: {
+                  type: "named",
+                  kind: "scalar",
+                  name: BuiltInScalarTypeName.String,
+                  literalValue: "SingleItem",
+                }
+              },
             ],
             isRelaxedType: false,
           }
