@@ -5,14 +5,22 @@ type LiteralProps = {
   literalBigInt: -123n,
   literalStringEnum: StringEnum.EnumItem
   literalNumericEnum: NumericEnum.EnumItem
+  singleItemEnum: SingleItemEnum
 }
 
 enum StringEnum {
-  EnumItem = "EnumItem"
+  EnumItem = "EnumItem",
+  SecondEnumItem = "SecondEnumItem"
 }
 
 enum NumericEnum {
-  EnumItem
+  EnumItem,
+  SecondEnumItem
+}
+
+// Single item enums are simplified by the compiler to a literal type
+enum SingleItemEnum {
+  SingleItem = "SingleItem"
 }
 
 export function literalTypes(): LiteralProps {
@@ -23,5 +31,6 @@ export function literalTypes(): LiteralProps {
     literalBigInt: -123n,
     literalStringEnum: StringEnum.EnumItem,
     literalNumericEnum: NumericEnum.EnumItem,
+    singleItemEnum: SingleItemEnum.SingleItem
   };
 }

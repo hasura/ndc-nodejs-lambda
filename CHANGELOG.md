@@ -7,6 +7,8 @@ This changelog documents the changes between release versions.
 ## [Unreleased]
 Changes to be included in the next upcoming release
 
+- Improved error messages when unsupported enum types or unions of literal types are found, and allow these types to be used in relaxed types mode ([#17](https://github.com/hasura/ndc-nodejs-lambda/pull/17))
+
 ## [1.1.0] - 2024-02-26
 - Updated to [NDC TypeScript SDK v4.2.0](https://github.com/hasura/ndc-sdk-typescript/releases/tag/v4.2.0) to include OpenTelemetry improvements. Traced spans should now appear in the Hasura Console
 - Custom OpenTelemetry trace spans can now be emitted by creating an OpenTelemetry tracer and using it with `sdk.withActiveSpan` ([#16](https://github.com/hasura/ndc-nodejs-lambda/pull/16))
