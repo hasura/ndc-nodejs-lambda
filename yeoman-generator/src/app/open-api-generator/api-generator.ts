@@ -60,8 +60,8 @@ export async function generateOpenApiTypescriptFile(
         /**
          * Contains the full definition of the type, along with individual variables in objects
          */
-        console.log('\n\n\n\n\n onCreateComponent: component', component);
-        console.log('onCreateComponent: component(JSON): ', CircularJSON.stringify(component));
+        // console.log('\n\n\n\n\n onCreateComponent: component', component);
+        // console.log('onCreateComponent: component(JSON): ', CircularJSON.stringify(component));
 
         apiComponents.addComponent(component);
       },
@@ -71,7 +71,7 @@ export async function generateOpenApiTypescriptFile(
       },
       onCreateRoute: (routeData) => {
         // this.oasRouteData.push(routeData);
-        console.log('onCreateRoute: routeData: ');
+        // console.log('onCreateRoute: routeData: ');
         // console.log('\n\n\n\n\n onCreateRoute: routeData: ', routeData);
         // console.log('onCreateRoute: routeData (JSON): ', CircularJSON.stringify(routeData));
         // console.log('\nonCreateRoute: routeData Type: ', (typeof routeData));
