@@ -1,0 +1,354 @@
+{
+  "openapi": "3.0.1",
+  "info": {
+    "title": "Patient Search API",
+    "version": "v1"
+  },
+  "paths": {
+    "/Patients": {
+      "get": {
+        "tags": [
+          "Patients"
+        ],
+        "summary": "performs a patient search in a specific region.",
+        "parameters": [
+          {
+            "name": "FirstName",
+            "in": "query",
+            "description": "the patient's first name.  Max length 100.  Optional.",
+            "schema": {
+              "maxLength": 100,
+              "minLength": 0,
+              "type": "string"
+            }
+          },
+          {
+            "name": "LastName",
+            "in": "query",
+            "description": "the patient's last name.  Max length 100.  Optional.",
+            "schema": {
+              "maxLength": 100,
+              "minLength": 0,
+              "type": "string"
+            }
+          },
+          {
+            "name": "PhoneNumber",
+            "in": "query",
+            "description": "the patient's phone number.  Optional with min Length = 10.  A phone number search will return\r\nany patient that uses the specified phone number or any patient with the same name and dob\r\nof a patient who has used that number",
+            "schema": {
+              "maxLength": 20,
+              "minLength": 10,
+              "type": "string"
+            }
+          },
+          {
+            "name": "BirthDate",
+            "in": "query",
+            "description": "the patient's date of birth.  Optional. YYYY-MM-DD",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "MRN",
+            "in": "query",
+            "description": "the patient's MRN aka patient ID.  Optional.  Max length 100",
+            "schema": {
+              "maxLength": 100,
+              "minLength": 0,
+              "type": "string"
+            }
+          },
+          {
+            "name": "IssuerOfID",
+            "in": "query",
+            "description": "the issuer of the patient's MRN.  Use \"system\" for ris generated MRNs.  Optional.",
+            "schema": {
+              "maxLength": 100,
+              "minLength": 0,
+              "type": "string"
+            }
+          },
+          {
+            "name": "PageNumber",
+            "in": "query",
+            "description": "results are paginated, this limits the results to the specified page.  default = 1",
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 1
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PatientDto"
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PatientDto"
+                  }
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PatientDto"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "ExamInfoDto": {
+        "required": [
+          "examDescription",
+          "modalityType",
+          "requestedBy",
+          "scheduledDate"
+        ],
+        "type": "object",
+        "properties": {
+          "scheduledDate": {
+            "type": "string",
+            "description": "the scheduled date of this exam",
+            "format": "date-time"
+          },
+          "examDescription": {
+            "minLength": 1,
+            "type": "string",
+            "description": "a description of the procedure that was scheduled"
+          },
+          "requestedBy": {
+            "minLength": 1,
+            "type": "string",
+            "description": "identifies the requesting physician"
+          },
+          "modalityType": {
+            "minLength": 1,
+            "type": "string",
+            "description": "describes the modality type code of the scheduled exam"
+          }
+        },
+        "additionalProperties": false
+      },
+      "OpenOrderDto": {
+        "required": [
+          "orderedProcedures",
+          "requestedBy",
+          "requestedDate"
+        ],
+        "type": "object",
+        "properties": {
+          "requestedDate": {
+            "type": "string",
+            "description": "the requested date for this order",
+            "format": "date-time"
+          },
+          "emrCode": {
+            "type": "string",
+            "description": "if specified, identifies the emr which sent this order",
+            "nullable": true
+          },
+          "requestedBy": {
+            "minLength": 1,
+            "type": "string",
+            "description": "identifies the requesting physician"
+          },
+          "orderedProcedures": {
+            "maxLength": 4000,
+            "minLength": 0,
+            "type": "string",
+            "description": "provides a description of the procedures that were ordered"
+          }
+        },
+        "additionalProperties": false
+      },
+      "PatientDto": {
+        "type": "object",
+        "properties": {
+          "patientKey": {
+            "type": "integer",
+            "description": "primary key: uniquely identifies a patient within a ris system",
+            "format": "int32"
+          },
+          "firstName": {
+            "maxLength": 100,
+            "minLength": 0,
+            "type": "string",
+            "description": "the patient's first name",
+            "nullable": true
+          },
+          "lastName": {
+            "maxLength": 100,
+            "minLength": 0,
+            "type": "string",
+            "nullable": true
+          },
+          "middleInitial": {
+            "maxLength": 1,
+            "minLength": 0,
+            "type": "string",
+            "nullable": true
+          },
+          "birthDate": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "mrn": {
+            "type": "string",
+            "description": "the patient id or MRN.  Together with IssuerOfID this will uniquely identify a patient within a ris system",
+            "nullable": true
+          },
+          "address": {
+            "maxLength": 500,
+            "minLength": 0,
+            "type": "string",
+            "description": "A concatenation of address line 1, city, state, and zip.  Max Length 500.",
+            "nullable": true
+          },
+          "phoneNumber": {
+            "maxLength": 500,
+            "minLength": 0,
+            "type": "string",
+            "description": "a description of all phone numbers for the patient",
+            "nullable": true
+          },
+          "emailAddress": {
+            "maxLength": 500,
+            "minLength": 0,
+            "type": "string",
+            "description": "a description of all email addresses for the patient",
+            "nullable": true
+          },
+          "hasAttachments": {
+            "type": "boolean",
+            "description": "true if this patient record has scan docs / attachments"
+          },
+          "systemID": {
+            "maxLength": 100,
+            "minLength": 0,
+            "type": "string",
+            "description": "identifies the system in which this patient record was found",
+            "nullable": true
+          },
+          "openEMROrder": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/OpenOrderDto"
+              }
+            ],
+            "description": "summary info on the most recent open emr order",
+            "nullable": true
+          },
+          "openNonEMROrder": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/OpenOrderDto"
+              }
+            ],
+            "description": "summary info on the most recent open non-emr order",
+            "nullable": true
+          },
+          "lastSignedExam": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ExamInfoDto"
+              }
+            ],
+            "description": "summary info on the most recently signed exam",
+            "nullable": true
+          },
+          "nextScheduledExam": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ExamInfoDto"
+              }
+            ],
+            "description": "summary info on the nearest future exam in scheduled status",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "ProblemDetails": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "nullable": true
+          },
+          "title": {
+            "type": "string",
+            "nullable": true
+          },
+          "status": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "detail": {
+            "type": "string",
+            "nullable": true
+          },
+          "instance": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": { }
+      }
+    },
+    "securitySchemes": {
+      "ApiKey": {
+        "type": "apiKey",
+        "description": "Enter API key in the box below",
+        "name": "X-API-KEY",
+        "in": "header"
+      }
+    }
+  },
+  "security": [
+    {
+      "ApiKey": [ ]
+    }
+  ]
+}

@@ -2,14 +2,15 @@ import * as path from 'path';
 import { ApiComponents } from './api-generator';
 import { ParsedApiRoutes } from './parsedApiRoutes';
 import { Eta } from 'eta';
+import { getTemplatesDirectory } from "./index";
 
 const CircularJSON = require('circular-json');
 
-const templateDir = path.resolve(__dirname, '../../templates/functions')
+let templateDir: string; // cannot be a constant because calling `getTemplateDirectory` results in a compilation error
 const templateFile = "functions.ejs";
 
 export function generateFunctionsTypescriptFile(apiComponents: ApiComponents): string {
-  // const functionsFileFilePath = path.resolve(outputDir, "functions.ts");
+  templateDir = path.resolve(getTemplatesDirectory(), './functions');
 
   const parseApiRoutes = new ParsedApiRoutes(new Set<string>(apiComponents.getTypeNames()));
 

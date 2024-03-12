@@ -1,9 +1,11 @@
 import { ParsedRoute, generateApi, Hooks, SchemaComponent } from "swagger-typescript-api";
 import * as path from 'path';
+import { getTemplatesDirectory } from ".";
 
 const CircularJSON = require('circular-json');
 
-const templateDir = path.resolve(__dirname, '../../templates/custom')
+let templateDir: string; // cannot be a constant because calling `getTemplateDirectory` results in a compilation error
+
 
 export class ApiComponents {
   rawTypeToTypeMap: Map<string, string>;
@@ -16,6 +18,8 @@ export class ApiComponents {
     this.typeToRawTypeMap = new Map<string, string>();
     this.components = [];
     this.routes = [];
+
+    templateDir =  path.resolve(getTemplatesDirectory(), './custom')
   }
 
   public addComponent(component: SchemaComponent) {

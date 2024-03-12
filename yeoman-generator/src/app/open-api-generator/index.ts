@@ -1,5 +1,6 @@
 import { generateOpenApiTypescriptFile } from './api-generator';
 import * as path from 'path';
+import * as fs from 'fs';
 import { generateFunctionsTypescriptFile } from './function-generator';
 
 function isValidUrl(uri: string): boolean {
@@ -30,8 +31,23 @@ function getFilePath(uri: string): string {
   return path.resolve(uri);
 }
 
+/**
+ * this function is added because the variable `__dirname` points to two different
+ * locations depending on how the code is being run.
+ * If the code is run via tests, it points to the directory in typescript code layout
+ * otherwise it points to the genenrated javascript directory
+ *
+ * @returns the correct parent directory containing templates
+ */
+export const getTemplatesDirectory = (): string => {
+  if (fs.existsSync(path.resolve(__dirname, '../../templates'))) {
+    return path.resolve(__dirname, '../../templates');
+  } else {
+    return path.resolve(__dirname, '../../../templates');
+  }
+}
+
 export async function generateCode(openApiUri: string, outputDir: string): Promise<string> {
-  console.log('generateCode() called');
   const apiComponents = await generateOpenApiTypescriptFile(
     "Api.ts",
     isValidUrl(openApiUri) ? openApiUri : undefined,
