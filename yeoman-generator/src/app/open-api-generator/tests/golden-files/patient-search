@@ -1,0 +1,47 @@
+import { Api, ProblemDetails } from './Api';
+import * as hasuraSdk from "@hasura/ndc-lambda-sdk"
+
+const api = new Api({
+  baseUrl: 'localhost:9090',
+});
+
+/**
+ * performs a patient search in a specific region.
+ * @request GET :/Patients
+ * @readonly
+ */
+export async function getPatientsPatientsList(
+  /** the patient's first name.  Max length 100.  Optional. */
+  FirstName?: string,      
+  /** the patient's last name.  Max length 100.  Optional. */
+  LastName?: string,      
+  /** the patient's phone number.  Optional with min Length = 10.  A phone number search will return
+any patient that uses the specified phone number or any patient with the same name and dob
+of a patient who has used that number */
+  PhoneNumber?: string,      
+  /** the patient's date of birth.  Optional. YYYY-MM-DD */
+  BirthDate?: string,      
+  /** the patient's MRN aka patient ID.  Optional.  Max length 100 */
+  MRN?: string,      
+  /** the issuer of the patient's MRN.  Use "system" for ris generated MRNs.  Optional. */
+  IssuerOfID?: string,      
+  /** results are paginated, this limits the results to the specified page.  default = 1 */
+  PageNumber?: number,      
+): Promise<PatientDto[]> {
+  const result = await api.patients.patientsList({
+    query: {
+      FirstName: FirstName,
+      LastName: LastName,
+      PhoneNumber: PhoneNumber,
+      BirthDate: BirthDate,
+      MRN: MRN,
+      IssuerOfID: IssuerOfID,
+      PageNumber: PageNumber,
+    },
+  });
+  if (result.data) {
+    return result.data
+  } else {
+    throw (result.error)
+  }
+}

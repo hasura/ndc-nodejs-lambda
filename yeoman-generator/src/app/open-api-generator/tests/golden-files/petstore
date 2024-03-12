@@ -1,0 +1,391 @@
+import { Api, Pet, ApiResponse, Order, User } from './Api';
+import * as hasuraSdk from "@hasura/ndc-lambda-sdk"
+
+const api = new Api({
+  baseUrl: 'localhost:9090',
+});
+
+/**
+ * Add a new pet to the store
+ * @request POST :/pet
+ */
+export async function postPetAddPet(
+  /** Request body */
+  data: Pet,      
+): Promise<Pet> {
+  const result = await api.pet.addPet({
+    data: data,
+  });
+  if (result.data) {
+    return result.data
+  } else {
+    throw (result.error)
+  }
+}
+
+/**
+ * Update an existing pet
+ * @request PUT :/pet
+ */
+export async function putPetUpdatePet(
+  /** Request body */
+  data: Pet,      
+): Promise<Pet> {
+  const result = await api.pet.updatePet({
+    data: data,
+  });
+  if (result.data) {
+    return result.data
+  } else {
+    throw (result.error)
+  }
+}
+
+/**
+ * Finds Pets by status
+ * @request GET :/pet/findByStatus
+ * @allowrelaxedtypes
+ * @readonly
+ */
+export async function getPetFindPetsByStatus(
+  /** Status values that need to be considered for filter */
+  status?: "available" | "pending" | "sold",      
+): Promise<Pet[]> {
+  const result = await api.pet.findPetsByStatus({
+    query: {
+      status: status,
+    },
+  });
+  if (result.data) {
+    return result.data
+  } else {
+    throw (result.error)
+  }
+}
+
+/**
+ * Finds Pets by tags
+ * @request GET :/pet/findByTags
+ * @allowrelaxedtypes
+ * @readonly
+ */
+export async function getPetFindPetsByTags(
+  /** Tags to filter by */
+  tags?: string[],      
+): Promise<Pet[]> {
+  const result = await api.pet.findPetsByTags({
+    query: {
+      tags: tags,
+    },
+  });
+  if (result.data) {
+    return result.data
+  } else {
+    throw (result.error)
+  }
+}
+
+/**
+ * Find pet by ID
+ * @request GET :/pet/{petId}
+ * @allowrelaxedtypes
+ * @readonly
+ */
+export async function getPetGetPetById(
+  /** ID of pet to return */
+  petId: number,      
+): Promise<Pet> {
+  const result = await api.pet.getPetById({
+    petId: petId,
+  });
+  if (result.data) {
+    return result.data
+  } else {
+    throw (result.error)
+  }
+}
+
+/**
+ * Updates a pet in the store with form data
+ * @request POST :/pet/{petId}
+ * @allowrelaxedtypes
+ */
+export async function postPetUpdatePetWithForm(
+  /** ID of pet that needs to be updated */
+  petId: number,      
+  /** Name of pet that needs to be updated */
+  name?: string,      
+  /** Status of pet that needs to be updated */
+  status?: string,      
+): Promise<hasuraSdk.JSONValue> {
+  const result = await api.pet.updatePetWithForm({
+    query: {
+      name: name,
+      status: status,
+    },
+    petId: petId,
+  });
+  if (result.data) {
+    return new hasuraSdk.JSONValue(result.data);
+  } else {
+    throw (result.error)
+  }
+}
+
+/**
+ * Deletes a pet
+ * @request DELETE :/pet/{petId}
+ * @allowrelaxedtypes
+ */
+export async function deletePetDeletePet(
+  /** Pet id to delete */
+  petId: number,      
+): Promise<hasuraSdk.JSONValue> {
+  const result = await api.pet.deletePet({
+    petId: petId,
+  });
+  if (result.data) {
+    return new hasuraSdk.JSONValue(result.data);
+  } else {
+    throw (result.error)
+  }
+}
+
+/**
+ * uploads an image
+ * @request POST :/pet/{petId}/uploadImage
+ * @allowrelaxedtypes
+ */
+export async function postPetUploadFile(
+  /** ID of pet to update */
+  petId: number,      
+  /** Request body */
+  data: File,      
+  /** Additional Metadata */
+  additionalMetadata?: string,      
+): Promise<ApiResponse> {
+  const result = await api.pet.uploadFile({
+    query: {
+      additionalMetadata: additionalMetadata,
+    },
+    petId: petId,
+    data: data,
+  });
+  if (result.data) {
+    return result.data
+  } else {
+    throw (result.error)
+  }
+}
+
+/**
+ * Returns pet inventories by status
+ * @request GET :/store/inventory
+ * @allowrelaxedtypes
+ * @readonly
+ */
+export async function getStoreGetInventory(): Promise<Record<string,number>> {
+  const result = await api.store.getInventory({});
+  if (result.data) {
+    return result.data
+  } else {
+    throw (result.error)
+  }
+}
+
+/**
+ * Place an order for a pet
+ * @request POST :/store/order
+ * @allowrelaxedtypes
+ */
+export async function postStorePlaceOrder(
+  /** Request body */
+  data: Order,      
+): Promise<Order> {
+  const result = await api.store.placeOrder({
+    data: data,
+  });
+  if (result.data) {
+    return result.data
+  } else {
+    throw (result.error)
+  }
+}
+
+/**
+ * Find purchase order by ID
+ * @request GET :/store/order/{orderId}
+ * @allowrelaxedtypes
+ * @readonly
+ */
+export async function getStoreGetOrderById(
+  /** ID of order that needs to be fetched */
+  orderId: number,      
+): Promise<Order> {
+  const result = await api.store.getOrderById({
+    orderId: orderId,
+  });
+  if (result.data) {
+    return result.data
+  } else {
+    throw (result.error)
+  }
+}
+
+/**
+ * Delete purchase order by ID
+ * @request DELETE :/store/order/{orderId}
+ * @allowrelaxedtypes
+ */
+export async function deleteStoreDeleteOrder(
+  /** ID of the order that needs to be deleted */
+  orderId: number,      
+): Promise<hasuraSdk.JSONValue> {
+  const result = await api.store.deleteOrder({
+    orderId: orderId,
+  });
+  if (result.data) {
+    return new hasuraSdk.JSONValue(result.data);
+  } else {
+    throw (result.error)
+  }
+}
+
+/**
+ * Create user
+ * @request POST :/user
+ * @allowrelaxedtypes
+ */
+export async function postUserCreateUser(
+  /** Request body */
+  data: User,      
+): Promise<hasuraSdk.JSONValue> {
+  const result = await api.user.createUser({
+    data: data,
+  });
+  if (result.data) {
+    return new hasuraSdk.JSONValue(result.data);
+  } else {
+    throw (result.error)
+  }
+}
+
+/**
+ * Creates list of users with given input array
+ * @request POST :/user/createWithList
+ * @allowrelaxedtypes
+ */
+export async function postUserCreateUsersWithListInput(
+  /** Request body */
+  data: (User)[],      
+): Promise<User> {
+  const result = await api.user.createUsersWithListInput({
+    data: data,
+  });
+  if (result.data) {
+    return result.data
+  } else {
+    throw (result.error)
+  }
+}
+
+/**
+ * Logs user into the system
+ * @request GET :/user/login
+ * @allowrelaxedtypes
+ * @readonly
+ */
+export async function getUserLoginUser(
+  /** The user name for login */
+  username?: string,      
+  /** The password for login in clear text */
+  password?: string,      
+): Promise<string> {
+  const result = await api.user.loginUser({
+    query: {
+      username: username,
+      password: password,
+    },
+  });
+  if (result.data) {
+    return result.data
+  } else {
+    throw (result.error)
+  }
+}
+
+/**
+ * Logs out current logged in user session
+ * @request GET :/user/logout
+ * @allowrelaxedtypes
+ * @readonly
+ */
+export async function getUserLogoutUser(): Promise<hasuraSdk.JSONValue> {
+  const result = await api.user.logoutUser({});
+  if (result.data) {
+    return new hasuraSdk.JSONValue(result.data);
+  } else {
+    throw (result.error)
+  }
+}
+
+/**
+ * Get user by user name
+ * @request GET :/user/{username}
+ * @allowrelaxedtypes
+ * @readonly
+ */
+export async function getUserGetUserByName(
+  /** The name that needs to be fetched. Use user1 for testing.  */
+  username: string,      
+): Promise<User> {
+  const result = await api.user.getUserByName({
+    username: username,
+  });
+  if (result.data) {
+    return result.data
+  } else {
+    throw (result.error)
+  }
+}
+
+/**
+ * Update user
+ * @request PUT :/user/{username}
+ * @allowrelaxedtypes
+ */
+export async function putUserUpdateUser(
+  /** name that needs to be updated */
+  username: string,      
+  /** Request body */
+  data: User,      
+): Promise<hasuraSdk.JSONValue> {
+  const result = await api.user.updateUser({
+    username: username,
+    data: data,
+  });
+  if (result.data) {
+    return new hasuraSdk.JSONValue(result.data);
+  } else {
+    throw (result.error)
+  }
+}
+
+/**
+ * Delete user
+ * @request DELETE :/user/{username}
+ * @allowrelaxedtypes
+ */
+export async function deleteUserDeleteUser(
+  /** The name that needs to be deleted */
+  username: string,      
+): Promise<hasuraSdk.JSONValue> {
+  const result = await api.user.deleteUser({
+    username: username,
+  });
+  if (result.data) {
+    return new hasuraSdk.JSONValue(result.data);
+  } else {
+    throw (result.error)
+  }
+}
