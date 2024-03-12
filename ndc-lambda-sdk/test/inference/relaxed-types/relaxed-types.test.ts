@@ -1,7 +1,7 @@
 import { describe, it } from "mocha";
 import { assert } from "chai";
 import { deriveSchema } from "../../../src/inference";
-import { FunctionNdcKind } from "../../../src/schema";
+import { FunctionNdcKind, NullOrUndefinability } from "../../../src/schema";
 
 describe("relaxed types", function() {
   it("any", function() {
@@ -488,6 +488,451 @@ describe("relaxed types", function() {
             "Promise types are not supported, but one was encountered in function 'unionTypes' parameter 'numberOrString', type 'number | Promise<string>' union member index '1'.",
             "The void type is not supported, but one was encountered in function 'unionTypes' parameter 'aliasedUnion', type 'AliasedUnion' union member index '1'",
             "The never type is not supported, but one was encountered in function 'unionTypes' parameter 'unionedObjects', type '{ prop1: never; } | { prop2: string; }' union member index '0', type 'unionTypes_arguments_unionedObjects_union_0' property 'prop1'",
+          ]
+        },
+        functionsSchema: {
+          scalarTypes: {
+            "String": { type: "built-in" },
+          },
+          objectTypes: {},
+          functions: {}
+        }
+      })
+    });
+  });
+
+  describe("enum types", function() {
+    it("valid", function() {
+      const schema = deriveSchema(require.resolve("./enum-types-valid.ts"));
+
+      assert.deepStrictEqual(schema, {
+        compilerDiagnostics: [],
+        functionIssues: {},
+        functionsSchema: {
+          scalarTypes: {
+            "\"1st\" | \"2nd\"": {
+              type: "relaxed-type",
+              usedIn: [
+                [
+                  {
+                    functionName: "enumTypesFunction",
+                    parameterName: "inlineStringLiteralEnum",
+                    segmentType: "FunctionParameter",
+                  }
+                ],
+                [
+                  {
+                    functionName: "enumTypesFunction",
+                    parameterName: "inlineStringLiteralEnumMaybe",
+                    segmentType: "FunctionParameter",
+                  }
+                ],
+              ]
+            },
+            "0 | 1 | 2": {
+              type: "relaxed-type",
+              usedIn: [
+                [
+                  {
+                    functionName: "enumTypesFunction",
+                    parameterName: "inlineNumberLiteralEnum",
+                    segmentType: "FunctionParameter",
+                  }
+                ],
+                [
+                  {
+                    functionName: "enumTypesFunction",
+                    parameterName: "inlineNumberLiteralEnumMaybe",
+                    segmentType: "FunctionParameter",
+                  }
+                ],
+              ]
+            },
+            "ComputedEnum": {
+              type: "relaxed-type",
+              usedIn: [
+                [
+                  {
+                    functionName: "enumTypesFunction",
+                    parameterName: "computedEnum",
+                    segmentType: "FunctionParameter",
+                  }
+                ]
+              ]
+            },
+            "ComputedSingleItemEnum": {
+              type: "relaxed-type",
+              usedIn: [
+                [
+                  {
+                    functionName: "enumTypesFunction",
+                    parameterName: "computedSingleItemEnum",
+                    segmentType: "FunctionParameter",
+                  }
+                ]
+              ]
+            },
+            "ConstEnum": {
+              type: "relaxed-type",
+              usedIn: [
+                [
+                  {
+                    functionName: "enumTypesFunction",
+                    parameterName: "constEnum",
+                    segmentType: "FunctionParameter",
+                  }
+                ]
+              ]
+            },
+            "ConstObjEnum": {
+              type: "relaxed-type",
+              usedIn: [
+                [
+                  {
+                    functionName: "enumTypesFunction",
+                    parameterName: "constObjEnum",
+                    segmentType: "FunctionParameter",
+                  }
+                ],
+              ]
+            },
+            "MixedEnum": {
+              type: "relaxed-type",
+              usedIn: [
+                [
+                  {
+                    functionName: "enumTypesFunction",
+                    parameterName: "mixedEnum",
+                    segmentType: "FunctionParameter",
+                  }
+                ]
+              ]
+            },
+            "MixedLiteralEnum": {
+              type: "relaxed-type",
+              usedIn: [
+                [
+                  {
+                    functionName: "enumTypesFunction",
+                    parameterName: "mixedLiteralEnum",
+                    segmentType: "FunctionParameter",
+                  }
+                ],
+                [
+                  {
+                    functionName: "enumTypesFunction",
+                    parameterName: "mixedLiteralEnumMaybe",
+                    segmentType: "FunctionParameter",
+                  }
+                ],
+              ]
+            },
+            "NumberEnum": {
+              type: "relaxed-type",
+              usedIn: [
+                [
+                  {
+                    functionName: "enumTypesFunction",
+                    parameterName: "numberEnum",
+                    segmentType: "FunctionParameter",
+                  }
+                ]
+              ]
+            },
+            "NumberLiteralEnum": {
+              type: "relaxed-type",
+              usedIn: [
+                [
+                  {
+                    functionName: "enumTypesFunction",
+                    parameterName: "numberLiteralEnum",
+                    segmentType: "FunctionParameter",
+                  }
+                ],
+                [
+                  {
+                    functionName: "enumTypesFunction",
+                    parameterName: "numberLiteralEnumMaybe",
+                    segmentType: "FunctionParameter",
+                  }
+                ],
+              ]
+            },
+            "String": { type: "built-in" },
+            "StringEnum": {
+              type: "relaxed-type",
+              usedIn: [
+                [
+                  {
+                    functionName: "enumTypesFunction",
+                    parameterName: "stringEnum",
+                    segmentType: "FunctionParameter",
+                  }
+                ]
+              ]
+            },
+            "StringLiteralEnum": {
+              type: "relaxed-type",
+              usedIn: [
+                [
+                  {
+                    functionName: "enumTypesFunction",
+                    parameterName: "stringLiteralEnum",
+                    segmentType: "FunctionParameter",
+                  }
+                ],
+                [
+                  {
+                    functionName: "enumTypesFunction",
+                    parameterName: "stringLiteralEnumMaybe",
+                    segmentType: "FunctionParameter",
+                  }
+                ],
+              ]
+            },
+            "true | 1 | \"first\"": {
+              type: "relaxed-type",
+              usedIn: [
+                [
+                  {
+                    functionName: "enumTypesFunction",
+                    parameterName: "inlineMixedLiteralEnum",
+                    segmentType: "FunctionParameter",
+                  }
+                ],
+                [
+                  {
+                    functionName: "enumTypesFunction",
+                    parameterName: "inlineMixedLiteralEnumMaybe",
+                    segmentType: "FunctionParameter",
+                  }
+                ],
+              ]
+            },
+          },
+          objectTypes: {},
+          functions: {
+            "enumTypesFunction": {
+              description: null,
+              ndcKind: FunctionNdcKind.Function,
+              parallelDegree: null,
+              arguments: [
+                {
+                  argumentName: "stringEnum",
+                  description: null,
+                  type: {
+                    kind: "scalar",
+                    name: "StringEnum",
+                    type: "named",
+                  },
+                },
+                {
+                  argumentName: "numberEnum",
+                  description: null,
+                  type: {
+                    kind: "scalar",
+                    name: "NumberEnum",
+                    type: "named",
+                  },
+                },
+                {
+                  argumentName: "mixedEnum",
+                  description: null,
+                  type: {
+                    kind: "scalar",
+                    name: "MixedEnum",
+                    type: "named",
+                  },
+                },
+                {
+                  argumentName: "constEnum",
+                  description: null,
+                  type: {
+                    kind: "scalar",
+                    name: "ConstEnum",
+                    type: "named",
+                  },
+                },
+                {
+                  argumentName: "computedEnum",
+                  description: null,
+                  type: {
+                    kind: "scalar",
+                    name: "ComputedEnum",
+                    type: "named",
+                  },
+                },
+                {
+                  argumentName: "computedSingleItemEnum",
+                  description: null,
+                  type: {
+                    kind: "scalar",
+                    name: "ComputedSingleItemEnum",
+                    type: "named",
+                  },
+                },
+                {
+                  argumentName: "stringLiteralEnum",
+                  description: null,
+                  type: {
+                    kind: "scalar",
+                    name: "StringLiteralEnum",
+                    type: "named",
+                  },
+                },
+                {
+                  argumentName: "stringLiteralEnumMaybe",
+                  description: null,
+                  type: {
+                    type: "nullable",
+                    nullOrUndefinability: NullOrUndefinability.AcceptsUndefinedOnly,
+                    underlyingType: {
+                      kind: "scalar",
+                      name: "StringLiteralEnum",
+                      type: "named",
+                    },
+                  },
+                },
+                {
+                  argumentName: "inlineStringLiteralEnum",
+                  description: null,
+                  type: {
+                    kind: "scalar",
+                    name: "\"1st\" | \"2nd\"",
+                    type: "named",
+                  },
+                },
+                {
+                  argumentName: "inlineStringLiteralEnumMaybe",
+                  description: null,
+                  type: {
+                    type: "nullable",
+                    nullOrUndefinability: NullOrUndefinability.AcceptsNullOnly,
+                    underlyingType: {
+                      kind: "scalar",
+                      name: "\"1st\" | \"2nd\"",
+                      type: "named",
+                    },
+                  },
+                },
+                {
+                  argumentName: "numberLiteralEnum",
+                  description: null,
+                  type: {
+                    kind: "scalar",
+                    name: "NumberLiteralEnum",
+                    type: "named",
+                  },
+                },
+                {
+                  argumentName: "numberLiteralEnumMaybe",
+                  description: null,
+                  type: {
+                    nullOrUndefinability: NullOrUndefinability.AcceptsNullOnly,
+                    type: "nullable",
+                    underlyingType: {
+                      kind: "scalar",
+                      name: "NumberLiteralEnum",
+                      type: "named",
+                    },
+                  },
+                },
+                {
+                  argumentName: "inlineNumberLiteralEnum",
+                  description: null,
+                  type: {
+                    kind: "scalar",
+                    name: "0 | 1 | 2",
+                    type: "named",
+                  },
+                },
+                {
+                  argumentName: "inlineNumberLiteralEnumMaybe",
+                  description: null,
+                  type: {
+                    nullOrUndefinability: NullOrUndefinability.AcceptsUndefinedOnly,
+                    type: "nullable",
+                    underlyingType: {
+                      kind: "scalar",
+                      name: "0 | 1 | 2",
+                      type: "named",
+                    },
+                  },
+                },
+                {
+                  argumentName: "mixedLiteralEnum",
+                  description: null,
+                  type: {
+                    kind: "scalar",
+                    name: "MixedLiteralEnum",
+                    type: "named",
+                  },
+                },
+                {
+                  argumentName: "mixedLiteralEnumMaybe",
+                  description: null,
+                  type: {
+                    nullOrUndefinability: NullOrUndefinability.AcceptsEither,
+                    type: "nullable",
+                    underlyingType: {
+                      kind: "scalar",
+                      name: "MixedLiteralEnum",
+                      type: "named",
+                    },
+                  },
+                },
+                {
+                  argumentName: "inlineMixedLiteralEnum",
+                  description: null,
+                  type: {
+                    kind: "scalar",
+                    name: "true | 1 | \"first\"",
+                    type: "named",
+                  },
+                },
+                {
+                  argumentName: "inlineMixedLiteralEnumMaybe",
+                  description: null,
+                  type: {
+                    nullOrUndefinability: NullOrUndefinability.AcceptsEither,
+                    type: "nullable",
+                    underlyingType: {
+                      kind: "scalar",
+                      name: "true | 1 | \"first\"",
+                      type: "named",
+                    },
+                  },
+                },
+                {
+                  argumentName: "constObjEnum",
+                  description: null,
+                  type: {
+                    kind: "scalar",
+                    name: "ConstObjEnum",
+                    type: "named",
+                  },
+                },
+              ],
+              resultType: {
+                type: "named",
+                kind: "scalar",
+                name: "String",
+              }
+            },
+          }
+        }
+      })
+    });
+
+    it("invalid", function() {
+      const schema = deriveSchema(require.resolve("./enum-types-invalid.ts"));
+
+      assert.deepStrictEqual(schema, {
+        compilerDiagnostics: [],
+        functionIssues: {
+          "enumTypesFunction": [
+            "Promise types are not supported, but one was encountered in function 'enumTypesFunction' parameter 'stringLiteralEnum', type 'StringLiteralEnum' union member index '0'.",
+            "The void type is not supported, but one was encountered in function 'enumTypesFunction' parameter 'inlineStringLiteralEnum', type 'void | \"1st\" | \"2nd\"' union member index '0'",
           ]
         },
         functionsSchema: {

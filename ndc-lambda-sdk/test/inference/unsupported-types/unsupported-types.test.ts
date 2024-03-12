@@ -271,4 +271,42 @@ describe("unsupported types", function() {
       }
     })
   });
+
+  it("enum types", function() {
+    const schema = deriveSchema(require.resolve("./enum-types.ts"));
+
+    assert.deepStrictEqual(schema, {
+      compilerDiagnostics: [],
+      functionIssues: {
+        "enumTypes": [
+          "Enum types are not supported, but one was encountered in function 'enumTypes' parameter 'stringEnum' (type: StringEnum)",
+          "Enum types are not supported, but one was encountered in function 'enumTypes' parameter 'numberEnum' (type: NumberEnum)",
+          "Enum types are not supported, but one was encountered in function 'enumTypes' parameter 'mixedEnum' (type: MixedEnum)",
+          "Enum types are not supported, but one was encountered in function 'enumTypes' parameter 'constEnum' (type: ConstEnum)",
+          "Enum types are not supported, but one was encountered in function 'enumTypes' parameter 'computedEnum' (type: ComputedEnum)",
+          "Enum types are not supported, but one was encountered in function 'enumTypes' parameter 'computedSingleItemEnum' (type: ComputedSingleItemEnum)",
+          "Literal union types are not supported, but one was encountered in function 'enumTypes' parameter 'stringLiteralEnum' (type: StringLiteralEnum)",
+          "Literal union types are not supported, but one was encountered in function 'enumTypes' parameter 'stringLiteralEnumMaybe' (type: StringLiteralEnum)",
+          "Literal union types are not supported, but one was encountered in function 'enumTypes' parameter 'inlineStringLiteralEnum' (type: \"1st\" | \"2nd\")",
+          "Literal union types are not supported, but one was encountered in function 'enumTypes' parameter 'inlineStringLiteralEnumMaybe' (type: \"1st\" | \"2nd\")",
+          "Literal union types are not supported, but one was encountered in function 'enumTypes' parameter 'numberLiteralEnum' (type: NumberLiteralEnum)",
+          "Literal union types are not supported, but one was encountered in function 'enumTypes' parameter 'numberLiteralEnumMaybe' (type: NumberLiteralEnum)",
+          "Literal union types are not supported, but one was encountered in function 'enumTypes' parameter 'inlineNumberLiteralEnum' (type: 0 | 1 | 2)",
+          "Literal union types are not supported, but one was encountered in function 'enumTypes' parameter 'inlineNumberLiteralEnumMaybe' (type: 0 | 1 | 2)",
+          "Literal union types are not supported, but one was encountered in function 'enumTypes' parameter 'mixedLiteralEnum' (type: MixedLiteralEnum)",
+          "Literal union types are not supported, but one was encountered in function 'enumTypes' parameter 'mixedLiteralEnumMaybe' (type: MixedLiteralEnum)",
+          "Literal union types are not supported, but one was encountered in function 'enumTypes' parameter 'inlineMixedLiteralEnum' (type: true | 1 | \"first\")",
+          "Literal union types are not supported, but one was encountered in function 'enumTypes' parameter 'inlineMixedLiteralEnumMaybe' (type: true | 1 | \"first\")",
+          "Literal union types are not supported, but one was encountered in function 'enumTypes' parameter 'constObjEnum' (type: ConstObjEnum)",
+        ],
+      },
+      functionsSchema: {
+        scalarTypes: {
+          String: { type: "built-in" },
+        },
+        objectTypes: {},
+        functions: {}
+      }
+    })
+  });
 });

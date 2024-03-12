@@ -149,6 +149,7 @@ These types are unsupported as function parameter types or return types for func
 * [Function types](https://www.typescriptlang.org/docs/handbook/2/functions.html#function-type-expressions) - function types can't be accepted as arguments or returned as values
 * [`void`](https://www.typescriptlang.org/docs/handbook/2/functions.html#void), [`object`](https://www.typescriptlang.org/docs/handbook/2/functions.html#object), [`unknown`](https://www.typescriptlang.org/docs/handbook/2/functions.html#unknown), [`never`](https://www.typescriptlang.org/docs/handbook/2/functions.html#never), [`any`](https://www.typescriptlang.org/docs/handbook/2/everyday-types.html#any) types - to accept and return arbitrary JSON, use `sdk.JSONValue` instead
 * `null` and `undefined` - unless used in a union with a single other type
+* [Enum types](https://www.typescriptlang.org/docs/handbook/enums.html)
 
 ### Relaxed Types
 "Relaxed types" are types that are otherwise unsupported, but instead of being rejected are instead converted into opaque custom scalar types. These scalar types are entirely unvalidated when used as input (ie. the caller of the function can send arbitrary JSON values), making it incumbent on the function itself to ensure the incoming value for that relaxed type actually matches its type. Because relaxed types are represented as custom scalar types, in GraphQL you will be unable to select into the type, if it is an object, and will only be able to select the whole thing.
@@ -161,6 +162,7 @@ The following unsupported types are allowed when using relaxed types, and will b
 * Tuple types
 * Types with index signatures
 * The `any` and `unknown` types
+* Enum types
 
 Here's an example of a function that uses some relaxed types:
 
