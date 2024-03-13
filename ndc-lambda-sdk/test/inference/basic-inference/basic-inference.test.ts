@@ -282,7 +282,7 @@ describe("basic inference", function() {
                 type: {
                   type: "named",
                   kind: "object",
-                  name: "bar_arguments_anonObj"
+                  name: "bar_anonObj"
                 }
               },
               {
@@ -372,7 +372,7 @@ describe("basic inference", function() {
                 type: {
                   type: "named",
                   kind: "object",
-                  name: "bar_arguments_anonIntersectionObj"
+                  name: "bar_anonIntersectionObj"
                 }
               },
               {
@@ -546,7 +546,7 @@ describe("basic inference", function() {
             ],
             isRelaxedType: false,
           },
-          "bar_arguments_anonIntersectionObj": {
+          "bar_anonIntersectionObj": {
             description: null,
             properties: [
               {
@@ -570,7 +570,7 @@ describe("basic inference", function() {
             ],
             isRelaxedType: false,
           },
-          "bar_arguments_anonObj": {
+          "bar_anonObj": {
             description: null,
             properties: [
               {
