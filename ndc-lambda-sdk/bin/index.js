@@ -22,7 +22,7 @@ const tsConfigFileLocation =
     ? ts.findConfigFile(path.dirname(hostOpts.functions), ts.sys.fileExists)
     : undefined
   )
-  ?? require.resolve("@tsconfig/node18/tsconfig.json");
+  ?? require.resolve("@tsconfig/node20/tsconfig.json");
 const watchMode = hostOpts?.watch ?? false;
 
 const hostScriptPath = path.resolve(__dirname, "../dist/src/host.js")
