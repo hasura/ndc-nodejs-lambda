@@ -203,7 +203,7 @@ export class JSONValue {
 export type TypePathSegment =
   { segmentType: "FunctionParameter", functionName: string, parameterName: string }
   | { segmentType: "FunctionReturn", functionName: string }
-  | { segmentType: "ObjectProperty", typeName: string, propertyName: string }
+  | { segmentType: "ObjectProperty", typeName: string, preferredTypeName: string, propertyName: string }
   | { segmentType: "Array" }
   | { segmentType: "TypeParameter", typeName: string, index: number }
   | { segmentType: "IndexSignature", typeName: string, sigIndex: number, component: "key" | "value" }

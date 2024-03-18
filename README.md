@@ -136,6 +136,16 @@ export function sum(nums: number[]): number {
 }
 ```
 
+Anonymous types are supported, but will be automatically named after the first place they are used. It is recommended that you **avoid using anonymous types**. Instead, prefer to name all your types to ensure the type name does not change unexpectedly as you rename usage sites and re-order usages of the anonymous type.
+
+```typescript
+export function greet(
+  name: { firstName: string, surname: string } // This type will be automatically named greet_name
+): string {
+  return `Hello ${name.firstName} ${name.surname}`;
+}
+```
+
 ### Unsupported types
 
 These types are unsupported as function parameter types or return types for functions that you export for invocation from Hasura. You can use whatever types you like _inside_ your function or in related code, however.

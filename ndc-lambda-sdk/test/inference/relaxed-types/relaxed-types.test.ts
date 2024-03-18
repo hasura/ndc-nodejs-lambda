@@ -487,7 +487,7 @@ describe("relaxed types", function() {
           "unionTypes": [
             "Promise types are not supported, but one was encountered in function 'unionTypes' parameter 'numberOrString', type 'number | Promise<string>' union member index '1'.",
             "The void type is not supported, but one was encountered in function 'unionTypes' parameter 'aliasedUnion', type 'AliasedUnion' union member index '1'",
-            "The never type is not supported, but one was encountered in function 'unionTypes' parameter 'unionedObjects', type '{ prop1: never; } | { prop2: string; }' union member index '0', type 'unionTypes_arguments_unionedObjects_union_0' property 'prop1'",
+            "The never type is not supported, but one was encountered in function 'unionTypes' parameter 'unionedObjects', type '{ prop1: never; } | { prop2: string; }' union member index '0', type '{ prop1: never; }' property 'prop1'",
           ]
         },
         functionsSchema: {
@@ -971,6 +971,7 @@ describe("relaxed types", function() {
                 {
                   segmentType: "ObjectProperty",
                   typeName: "ObjectWithRelaxedType",
+                  preferredTypeName: "ObjectWithRelaxedType",
                   propertyName: "prop",
                 },
               ]
