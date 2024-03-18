@@ -67,7 +67,7 @@ function loadTsConfig(functionsFilePath: string): Result<ts.ParsedCommandLine, t
   const userTsConfig = ts.findConfigFile(functionsDir, ts.sys.fileExists);
   // If the user doesn't have a tsconfig, use this one as a fallback. The TypeScript defaults are bad
   // (eg. strict and strictNullChecks is off by default)
-  const fallbackTsConfig = path.resolve(require.resolve("@tsconfig/node18/tsconfig.json"));
+  const fallbackTsConfig = path.resolve(require.resolve("@tsconfig/node20/tsconfig.json"));
   const configPath = userTsConfig ?? fallbackTsConfig;
   const configFile = ts.readConfigFile(configPath, ts.sys.readFile)
   if (configFile.error) {

@@ -31,14 +31,14 @@
   },
   "dependencies": {
     "@hasura/ndc-sdk-typescript": "^4.2.1",
-    "@tsconfig/node18": "^18.2.2",
+    "@tsconfig/node20": "^20.1.2",
     "commander": "^11.1.0",
     "cross-spawn": "^7.0.3",
     "p-limit": "^3.1.0",
     "ts-api-utils": "^1.0.3",
     "ts-node": "^10.9.2",
     "ts-node-dev": "^2.0.0",
-    "typescript": "^5.3.3"
+    "typescript": "^5.4.2"
   },
   "devDependencies": {
     "@types/chai": "^4.3.11",
