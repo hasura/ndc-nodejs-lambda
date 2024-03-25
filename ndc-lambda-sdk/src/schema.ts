@@ -242,10 +242,12 @@ export function getNdcSchema(functionsSchema: FunctionsSchema): sdk.SchemaRespon
     }
   });
 
-  const scalarTypes = mapObjectValues(functionsSchema.scalarTypes, _scalar_def => {
+  const scalarTypes: Record<string, sdk.ScalarType> = mapObjectValues(functionsSchema.scalarTypes, (scalarDef, scalarTypeName) => {
     return {
       aggregate_functions: {},
-      comparison_operators: {},
+      comparison_operators: scalarDef.type === "built-in" && isTypeNameBuiltInScalar(scalarTypeName) && builtInScalarSupportsEquality(scalarTypeName)
+      ? <Record<string, sdk.ComparisonOperatorDefinition>>{ "_eq": { type: "equal" } }
+      : {},
     }
   })
 
@@ -329,4 +331,16 @@ export function isTypeNameBuiltInScalar(typeName: string): typeName is BuiltInSc
 
 export function isBuiltInScalarTypeReference(typeReference: NamedScalarTypeReference): typeReference is BuiltInScalarTypeReference {
   return isTypeNameBuiltInScalar(typeReference.name);
+}
+
+function builtInScalarSupportsEquality(typeName: BuiltInScalarTypeName) {
+  switch (typeName) {
+    case BuiltInScalarTypeName.String: return true;
+    case BuiltInScalarTypeName.Float: return true;
+    case BuiltInScalarTypeName.Boolean: return true;
+    case BuiltInScalarTypeName.BigInt: return true;
+    case BuiltInScalarTypeName.DateTime: return true;
+    case BuiltInScalarTypeName.JSON: return false;
+    default: return unreachable(typeName);
+  }
 }
