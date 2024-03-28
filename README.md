@@ -302,8 +302,8 @@ interface Greeting {
  */
 export function greet(title: string, firstName: string, lastName: string): Greeting {
   return {
-    polite: `Hello ${name.title} ${name.lastName}`,
-    casual: `G'day ${name.firstName}`
+    polite: `Hello ${title} ${lastName}`,
+    casual: `G'day ${firstName}`
   }
 }
 ```
