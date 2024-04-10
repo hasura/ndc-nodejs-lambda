@@ -7,6 +7,8 @@ This changelog documents the changes between release versions.
 ## [Unreleased]
 Changes to be included in the next upcoming release
 
+- Fixed watch mode not reloading after files with compiler errors are changed [#27](https://github.com/hasura/ndc-nodejs-lambda/pull/27)
+
 ## [1.2.0] - 2024-03-18
 - Improved error messages when unsupported enum types or unions of literal types are found, and allow these types to be used in relaxed types mode ([#17](https://github.com/hasura/ndc-nodejs-lambda/pull/17))
 - Improved naming of types that reside outside of the main `functions.ts` file. Type names will now only be prefixed with a disambiguator if there is a naming conflict detected (ie. where two different types use the same name). Anonymous types are now also named in a shorter way. ([#21](https://github.com/hasura/ndc-nodejs-lambda/pull/21))
