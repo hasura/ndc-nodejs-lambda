@@ -205,36 +205,42 @@ describe("ndc schema", function() {
       },
       scalar_types: {
         "String": {
+          representation: { type: "string" },
           aggregate_functions: {},
           comparison_operators: {
             "_eq": { type: "equal" }
           }
         },
         "Boolean": {
+          representation: { type: "boolean" },
           aggregate_functions: {},
           comparison_operators: {
             "_eq": { type: "equal" }
           }
         },
         "Float": {
+          representation: { type: "float64" },
           aggregate_functions: {},
           comparison_operators: {
             "_eq": { type: "equal" }
           }
         },
         "DateTime": {
+          representation: { type: "timestamp" },
           aggregate_functions: {},
           comparison_operators: {
             "_eq": { type: "equal" }
           }
         },
         "BigInt": {
+          representation: { type: "string" },
           aggregate_functions: {},
           comparison_operators: {
             "_eq": { type: "equal" }
           }
         },
         "JSON": {
+          representation: { type: "json" },
           aggregate_functions: {},
           comparison_operators: {}
         },
