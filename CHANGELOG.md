@@ -8,6 +8,7 @@ This changelog documents the changes between release versions.
 Changes to be included in the next upcoming release
 
 - Fixed watch mode not reloading after files with compiler errors are changed [#27](https://github.com/hasura/ndc-nodejs-lambda/pull/27)
+- Fixed functions that are imported then re-exported causing a crash [#28](https://github.com/hasura/ndc-nodejs-lambda/pull/28)
 
 ## [1.2.0] - 2024-03-18
 - Improved error messages when unsupported enum types or unions of literal types are found, and allow these types to be used in relaxed types mode ([#17](https://github.com/hasura/ndc-nodejs-lambda/pull/17))
