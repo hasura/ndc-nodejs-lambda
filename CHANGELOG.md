@@ -9,6 +9,9 @@ Changes to be included in the next upcoming release
 
 - Fixed watch mode not reloading after files with compiler errors are changed [#27](https://github.com/hasura/ndc-nodejs-lambda/pull/27)
 - Fixed functions that are imported then re-exported causing a crash [#28](https://github.com/hasura/ndc-nodejs-lambda/pull/28)
+- Support for NDC Spec v0.1.2 via the NDC TypeScript SDK v4.4.0 ([#29](https://github.com/hasura/ndc-nodejs-lambda/pull/29)).
+  - Built-in scalar types that support equality now define it in the NDC schema.
+  - Built-in scalar types now have an explicit type representation defined in the NDC schema.
 
 ## [1.2.0] - 2024-03-18
 - Improved error messages when unsupported enum types or unions of literal types are found, and allow these types to be used in relaxed types mode ([#17](https://github.com/hasura/ndc-nodejs-lambda/pull/17))
