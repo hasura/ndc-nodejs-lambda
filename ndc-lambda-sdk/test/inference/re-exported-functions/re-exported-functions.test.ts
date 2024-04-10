@@ -1,7 +1,7 @@
 import { describe, it } from "mocha";
 import { assert } from "chai";
 import { deriveSchema } from "../../../src/inference";
-import { BuiltInScalarTypeName, FunctionNdcKind, NullOrUndefinability } from "../../../src/schema";
+import { FunctionNdcKind } from "../../../src/schema";
 
 describe("re-exported functions", function() {
   it("supports functions re-exported from other files", function() {
@@ -200,6 +200,67 @@ describe("re-exported functions", function() {
           },
         },
         scalarTypes: {
+          String: { type: "built-in" },
+        },
+        objectTypes: {},
+      }
+    })
+  });
+
+  it("supports re-exports of functions from other files that are first imported then exported", function() {
+    const schema = deriveSchema(require.resolve("./functions-import-then-export.ts"));
+
+    assert.deepStrictEqual(schema, {
+      compilerDiagnostics: [],
+      functionIssues: {},
+      functionsSchema: {
+        functions: {
+          "renamedFileAChildFunction": {
+            ndcKind: FunctionNdcKind.Procedure,
+            description: null,
+            parallelDegree: null,
+            arguments: [],
+            resultType: {
+              name: "String",
+              kind: "scalar",
+              type: "named",
+            }
+          },
+          "fileBChildFunction1": {
+            ndcKind: FunctionNdcKind.Procedure,
+            description: null,
+            parallelDegree: null,
+            arguments: [],
+            resultType: {
+              name: "Boolean",
+              kind: "scalar",
+              type: "named",
+            }
+          },
+          "renamedFileBChildFunction2": {
+            ndcKind: FunctionNdcKind.Function,
+            description: null,
+            parallelDegree: null,
+            arguments: [
+              {
+                argumentName: "input",
+                description: null,
+                type: {
+                  name: "String",
+                  kind: "scalar",
+                  type: "named",
+                }
+              }
+            ],
+            resultType: {
+              name: "String",
+              kind: "scalar",
+              type: "named",
+            }
+          },
+        },
+        scalarTypes: {
+          Boolean: { type: "built-in" },
           String: { type: "built-in" },
         },
         objectTypes: {},

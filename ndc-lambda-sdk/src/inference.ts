@@ -171,10 +171,14 @@ function deriveSchemaFromFunctions(sourceFile: ts.SourceFile, projectRootDir: st
     const declaration = exportedSymbol.getDeclarations()?.[0] ?? throwError("exported symbol does not have a declaration");
 
     // If exported via 'export { name } from "./imported"'
+    // or 'import { name } from "./imported"; export { name }'
     if (ts.isExportSpecifier(declaration)) {
       const identifier = declaration.name ?? throwError("export declaration didn't have an identifier");
       const exportTarget = typeChecker.getExportSpecifierLocalTargetSymbol(declaration) ?? throwError("export specifier does not have a local target symbol");
-      const exportTargetDeclaration = exportTarget.valueDeclaration ?? throwError("export target symbol does not have a value declaration");
+      const exportTargetDeclaration =
+        exportTarget.valueDeclaration // 'export { name } from "./imported"'
+        ?? typeChecker.getAliasedSymbol(exportTarget).valueDeclaration // 'import { name } from "./imported"; export { name }'
+        ?? throwError("export target symbol does not have a value declaration");
       if (ts.isFunctionDeclaration(exportTargetDeclaration)) {
         return [[identifier.text, exportTargetDeclaration]];
       }
