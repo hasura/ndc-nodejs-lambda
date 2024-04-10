@@ -6,11 +6,10 @@ import { RuntimeFunctions, executeMutation, executeQuery } from "./execution";
 
 export type Configuration = {
   functionsSchema: FunctionsSchema
+  runtimeFunctions: RuntimeFunctions
 };
 
-export type State = {
-  runtimeFunctions: RuntimeFunctions
-}
+export type State = {}
 
 export type ConnectorOptions = {
   functionsFilePath: string
@@ -22,23 +21,48 @@ export function createConnector(options: ConnectorOptions): sdk.Connector<Config
   const connector: sdk.Connector<Configuration, State> = {
 
     parseConfiguration: async function (configurationDir: string): Promise<Configuration> {
-      const schemaResults = deriveSchema(functionsFilePath);
-      printCompilerDiagnostics(schemaResults.compilerDiagnostics);
-      printFunctionIssues(schemaResults.functionIssues);
-      printRelaxedTypesWarning(schemaResults.functionsSchema);
-      return {
-        functionsSchema: schemaResults.functionsSchema
+      // We need to try imporing the functions code via require before doing schema inference because
+      // during watch mode we need it to be registered in the watching system so when the files are
+      // changed we reload. If the files fail to compile, ts-node will print the diagnostic errors on the
+      // terminal for us
+      let runtimeFunctions: RuntimeFunctions | undefined = undefined;
+      try {
+        runtimeFunctions = require(functionsFilePath);
+      } catch (e) {
+        console.error(`${e}`); // Print the compiler errors produced by ts-node
+        runtimeFunctions = undefined;
+      }
+
+      // If the functions successfully loaded (ie. compiled), let's derive the schema.
+      // Unfortunately this means we've typechecked everything twice, but that seems unavoidable without
+      // implementing our own hot-reloading system instead of using ts-node-dev.
+      if (runtimeFunctions !== undefined) {
+        const schemaResults = deriveSchema(functionsFilePath);
+        printCompilerDiagnostics(schemaResults.compilerDiagnostics); // Should never have any of these, since we've already tried compiling the code above
+        printFunctionIssues(schemaResults.functionIssues);
+        printRelaxedTypesWarning(schemaResults.functionsSchema);
+
+        return {
+          functionsSchema: schemaResults.functionsSchema,
+          runtimeFunctions,
+        }
+      }
+      // If the functions did not compile, just have an empty schema, the user will need to correct
+      // their code before we can derive a schema
+      else {
+        return {
+          functionsSchema: {
+            functions: {},
+            objectTypes: {},
+            scalarTypes: {},
+          },
+          runtimeFunctions: {}
+        }
       }
     },
 
     tryInitState: async function (configuration: Configuration, metrics: unknown): Promise<State> {
-      if (Object.keys(configuration.functionsSchema.functions).length === 0) {
-        // If there are no declared functions, don't bother trying to load the code.
-        // There's very likely to be compiler errors during schema inference that will
-        // block the load anyway, or the user hasn't written anything useful yet.
-        return { runtimeFunctions: {} }
-      }
-      return { runtimeFunctions: require(functionsFilePath) }
+      return {};
     },
 
     getCapabilities: function (configuration: Configuration): sdk.CapabilitiesResponse {
@@ -58,11 +82,11 @@ export function createConnector(options: ConnectorOptions): sdk.Connector<Config
     },
 
     query: async function (configuration: Configuration, state: State, request: sdk.QueryRequest): Promise<sdk.QueryResponse> {
-      return await executeQuery(request, configuration.functionsSchema, state.runtimeFunctions);
+      return await executeQuery(request, configuration.functionsSchema, configuration.runtimeFunctions);
     },
 
     mutation: async function (configuration: Configuration, state: State, request: sdk.MutationRequest): Promise<sdk.MutationResponse> {
-      return await executeMutation(request, configuration.functionsSchema, state.runtimeFunctions);
+      return await executeMutation(request, configuration.functionsSchema, configuration.runtimeFunctions);
     },
 
     queryExplain: function (configuration: Configuration, state: State, request: sdk.QueryRequest): Promise<sdk.ExplainResponse> {
