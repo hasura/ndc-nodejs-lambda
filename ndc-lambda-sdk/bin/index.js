@@ -27,7 +27,7 @@ const watchMode = hostOpts?.watch ?? false;
 
 const hostScriptPath = path.resolve(__dirname, "../dist/src/host.js")
 const projectArgs = tsConfigFileLocation ? ["--project", tsConfigFileLocation] : []
-const tsNodeArgs = [...projectArgs, "--transpile-only", hostScriptPath, ...process.argv.slice(2)];
+const tsNodeArgs = [...projectArgs, "--pretty", hostScriptPath, ...process.argv.slice(2)];
 
 const [command, args] =
   watchMode
