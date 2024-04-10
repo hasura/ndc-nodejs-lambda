@@ -83,7 +83,7 @@ export default class extends Generator {
     this.packageJson.merge({
       "private": true,
       "engines": {
-        "node": ">=18"
+        "node": ">=20"
       },
       "scripts": {
         "start": `ndc-lambda-sdk host -f functions.ts serve --configuration ${configuration}`,
