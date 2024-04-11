@@ -298,7 +298,7 @@ function convertBuiltInScalarTypeIntoSdkSchemaType(typeName: BuiltInScalarTypeNa
       comparison_operators: { "_eq": { type: "equal" } },
     };
     case BuiltInScalarTypeName.BigInt: return {
-      representation: { type: "string" }, // NDC doesn't have a good representation for this type as at v0.1.2, so this is the best representation in the meantime
+      representation: { type: "int64" }, // NDC doesn't have a good representation for this type as at v0.1.2, so this is the best representation in the meantime
       aggregate_functions: {},
       comparison_operators: { "_eq": { type: "equal" } },
     };

@@ -233,7 +233,7 @@ describe("ndc schema", function() {
           }
         },
         "BigInt": {
-          representation: { type: "string" },
+          representation: { type: "int64" },
           aggregate_functions: {},
           comparison_operators: {
             "_eq": { type: "equal" }
