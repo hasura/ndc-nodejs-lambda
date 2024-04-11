@@ -6,7 +6,7 @@ The Node.js Lambda connector allows you to expose TypeScript functions as NDC fu
 > Hasura DDN Alpha users should use 0.x versions of the `ndc-lambda-sdk`. v1.x versions of the `ndc-lambda-sdk` support the forthcoming Hasura DDN Beta.
 
 ## How to Use
-First, ensure you have Node.js v18+ installed. Then, create a directory into which you will create your functions using the `hasura-ndc-nodejs-lambda` Yeoman template.
+First, ensure you have Node.js v20+ installed. Then, create a directory into which you will create your functions using the `hasura-ndc-nodejs-lambda` Yeoman template.
 
 ```bash
 mkdir my-functions

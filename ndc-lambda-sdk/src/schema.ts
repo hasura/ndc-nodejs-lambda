@@ -1,5 +1,5 @@
 import * as sdk from "@hasura/ndc-sdk-typescript";
-import { mapObjectValues, unreachable } from "./util";
+import { mapObjectValues, throwError, unreachable } from "./util";
 
 export type FunctionsSchema = {
   functions: FunctionDefinitions
@@ -242,10 +242,19 @@ export function getNdcSchema(functionsSchema: FunctionsSchema): sdk.SchemaRespon
     }
   });
 
-  const scalarTypes = mapObjectValues(functionsSchema.scalarTypes, _scalar_def => {
-    return {
-      aggregate_functions: {},
-      comparison_operators: {},
+  const scalarTypes: Record<string, sdk.ScalarType> = mapObjectValues(functionsSchema.scalarTypes, (scalarDef, scalarTypeName) => {
+    switch (scalarDef.type) {
+      case "built-in":
+        return isTypeNameBuiltInScalar(scalarTypeName)
+          ? convertBuiltInScalarTypeIntoSdkSchemaType(scalarTypeName)
+          : throwError(`built-in scalar type with unexpected name: ${scalarTypeName}`);
+      case "relaxed-type":
+        return {
+          aggregate_functions: {},
+          comparison_operators: {},
+        };
+      default:
+        return unreachable(scalarDef["type"]);
     }
   })
 
@@ -268,6 +277,42 @@ function convertTypeReferenceToSdkType(typeRef: TypeReference): sdk.Type {
     case "nullable": return { type: "nullable", underlying_type: convertTypeReferenceToSdkType(typeRef.underlyingType) }
     case "named": return { type: "named", name: typeRef.name }
     default: return unreachable(typeRef["type"])
+  }
+}
+
+function convertBuiltInScalarTypeIntoSdkSchemaType(typeName: BuiltInScalarTypeName): sdk.ScalarType {
+  switch (typeName) {
+    case BuiltInScalarTypeName.String: return {
+      representation: { type: "string" },
+      aggregate_functions: {},
+      comparison_operators: { "_eq": { type: "equal" } },
+    };
+    case BuiltInScalarTypeName.Float: return {
+      representation: { type: "float64" },
+      aggregate_functions: {},
+      comparison_operators: { "_eq": { type: "equal" } },
+    };
+    case BuiltInScalarTypeName.Boolean: return {
+      representation: { type: "boolean" },
+      aggregate_functions: {},
+      comparison_operators: { "_eq": { type: "equal" } },
+    };
+    case BuiltInScalarTypeName.BigInt: return {
+      representation: { type: "int64" }, // NDC doesn't have a good representation for this type as at v0.1.2, so this is the best representation in the meantime
+      aggregate_functions: {},
+      comparison_operators: { "_eq": { type: "equal" } },
+    };
+    case BuiltInScalarTypeName.DateTime: return {
+      representation: { type: "timestamp" },
+      aggregate_functions: {},
+      comparison_operators: { "_eq": { type: "equal" } },
+    };
+    case BuiltInScalarTypeName.JSON: return {
+      representation: { type: "json" },
+      aggregate_functions: {},
+      comparison_operators: {},
+    };
+    default: return unreachable(typeName);
   }
 }
 

@@ -19,7 +19,7 @@ describe("ndc schema", function() {
                 nullOrUndefinability: NullOrUndefinability.AcceptsNullOnly,
                 underlyingType: {
                   kind: "scalar",
-                  name: "String",
+                  name: "Float",
                   type: "named",
                 },
               },
@@ -30,7 +30,7 @@ describe("ndc schema", function() {
             nullOrUndefinability: NullOrUndefinability.AcceptsNullOnly,
             underlyingType: {
               kind: "scalar",
-              name: "String",
+              name: "BigInt",
               type: "named",
             }
           },
@@ -46,6 +46,15 @@ describe("ndc schema", function() {
               type: {
                 kind: "object",
                 name: "MyObject",
+                type: "named",
+              },
+            },
+            {
+              argumentName: "myRelaxedType",
+              description: "My relaxed type param",
+              type: {
+                kind: "scalar",
+                name: "MyRelaxedType",
                 type: "named",
               },
             },
@@ -65,23 +74,23 @@ describe("ndc schema", function() {
           description: "My Object Type",
           properties: [
             {
-              propertyName: "string",
-              description: "A string",
+              propertyName: "boolean",
+              description: "A boolean",
               type: {
                 kind: "scalar",
-                name: "String",
+                name: "Boolean",
                 type: "named",
               },
             },
             {
-              propertyName: "nullableString",
-              description: "A nullable string",
+              propertyName: "nullableDateTime",
+              description: "A nullable date time",
               type: {
                 type: "nullable",
                 nullOrUndefinability: NullOrUndefinability.AcceptsNullOnly,
                 underlyingType: {
                   kind: "scalar",
-                  name: "String",
+                  name: "DateTime",
                   type: "named",
                 },
               },
@@ -91,8 +100,24 @@ describe("ndc schema", function() {
         },
       },
       scalarTypes: {
-        String: { type: "built-in" },
-        test_arguments_unionWithNull: { type: "built-in" },
+        "String": { type: "built-in" },
+        "Boolean": { type: "built-in" },
+        "Float": { type: "built-in" },
+        "DateTime": { type: "built-in" },
+        "BigInt": { type: "built-in" },
+        "JSON": { type: "built-in" },
+        "MyRelaxedType": {
+          type: "relaxed-type",
+          usedIn: [
+            [
+              {
+                segmentType: "FunctionParameter",
+                functionName: "test_func",
+                parameterName: "myRelaxedType"
+              }
+            ]
+          ]
+        },
       },
     };
 
@@ -109,6 +134,13 @@ describe("ndc schema", function() {
               description: "My object param",
               type: {
                 name: "MyObject",
+                type: "named",
+              },
+            },
+            "myRelaxedType": {
+              description: "My relaxed type param",
+              type: {
+                name: "MyRelaxedType",
                 type: "named",
               },
             },
@@ -132,7 +164,7 @@ describe("ndc schema", function() {
               type: {
                 type: "nullable",
                 underlying_type: {
-                  name: "String",
+                  name: "Float",
                   type: "named",
                 },
               },
@@ -141,7 +173,7 @@ describe("ndc schema", function() {
           result_type: {
             type: "nullable",
             underlying_type: {
-              name: "String",
+              name: "BigInt",
               type: "named",
             }
           },
@@ -151,19 +183,19 @@ describe("ndc schema", function() {
         "MyObject": {
           description: "My Object Type",
           fields: {
-            "string": {
-              description: "A string",
+            "boolean": {
+              description: "A boolean",
               type: {
-                name: "String",
+                name: "Boolean",
                 type: "named",
               },
             },
-            "nullableString": {
-              description: "A nullable string",
+            "nullableDateTime": {
+              description: "A nullable date time",
               type: {
                 type: "nullable",
                 underlying_type: {
-                  name: "String",
+                  name: "DateTime",
                   type: "named",
                 },
               },
@@ -172,11 +204,47 @@ describe("ndc schema", function() {
         },
       },
       scalar_types: {
-        String: {
+        "String": {
+          representation: { type: "string" },
+          aggregate_functions: {},
+          comparison_operators: {
+            "_eq": { type: "equal" }
+          }
+        },
+        "Boolean": {
+          representation: { type: "boolean" },
+          aggregate_functions: {},
+          comparison_operators: {
+            "_eq": { type: "equal" }
+          }
+        },
+        "Float": {
+          representation: { type: "float64" },
+          aggregate_functions: {},
+          comparison_operators: {
+            "_eq": { type: "equal" }
+          }
+        },
+        "DateTime": {
+          representation: { type: "timestamp" },
+          aggregate_functions: {},
+          comparison_operators: {
+            "_eq": { type: "equal" }
+          }
+        },
+        "BigInt": {
+          representation: { type: "int64" },
+          aggregate_functions: {},
+          comparison_operators: {
+            "_eq": { type: "equal" }
+          }
+        },
+        "JSON": {
+          representation: { type: "json" },
           aggregate_functions: {},
           comparison_operators: {}
         },
-        test_arguments_unionWithNull: {
+        "MyRelaxedType": {
           aggregate_functions: {},
           comparison_operators: {}
         },
