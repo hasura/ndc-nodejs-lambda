@@ -172,7 +172,7 @@ async function invokeFunction(func: Function, preparedArgs: unknown[], functionN
     return await withActiveSpan(tracer, `Function: ${functionName}`, async () => {
       const result = func.apply(undefined, preparedArgs);
       // Await the result if it is a promise
-      if (typeof result === "object" && 'then' in result && typeof result.then === "function") {
+      if (result && typeof result === "object" && 'then' in result && typeof result.then === "function") {
         return await result;
       }
       return result;
