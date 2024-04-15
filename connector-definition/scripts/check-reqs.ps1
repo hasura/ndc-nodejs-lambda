@@ -16,9 +16,12 @@ if ($nodeVersion -match "^v(\d+)\.") {
   }
 }
 
-Set-Location $env:HASURA_PLUGIN_CONNECTOR_CONTEXT_PATH
-
-if ((Test-Path "./node_modules") -eq $false) {
-  Write-Host "node_modules not found, please ensure you have run 'npm install'."
-  exit 1
+Push-Location $env:HASURA_PLUGIN_CONNECTOR_CONTEXT_PATH
+try {
+  if ((Test-Path "./node_modules") -eq $false) {
+    Write-Host "node_modules not found, please ensure you have run 'npm install'."
+    exit 1
+  }
+} finally {
+  Pop-Location
 }
