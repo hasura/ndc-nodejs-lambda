@@ -170,10 +170,10 @@ function coerceArgumentValue(value: unknown, type: schema.TypeReference, valuePa
 async function invokeFunction(func: Function, preparedArgs: unknown[], functionName: string): Promise<unknown> {
   try {
     return await withActiveSpan(tracer, `Function: ${functionName}`, async () => {
-      const result = func.apply(undefined, preparedArgs);
+      const result: unknown = func.apply(undefined, preparedArgs);
       // Await the result if it is a promise
-      if (result && typeof result === "object" && 'then' in result && typeof result.then === "function") {
-        return await result;
+      if (result !== null && typeof result === "object" && "then" in result && typeof result.then === "function") {
+        return await (result as PromiseLike<unknown>);
       }
       return result;
     }, { [FUNCTION_NAME_SPAN_ATTR_NAME]: functionName });
