@@ -2,7 +2,7 @@ import { describe, it } from "mocha";
 import { assert, expect } from "chai";
 import * as sdk from "@hasura/ndc-sdk-typescript"
 import { executeQuery } from "../../src/execution";
-import { FunctionNdcKind, FunctionsSchema } from "../../src/schema";
+import { FunctionNdcKind, FunctionsSchema, NullOrUndefinability } from "../../src/schema";
 import { sleep } from "../../src/util";
 
 describe("execute query", function() {
@@ -389,9 +389,13 @@ describe("execute query", function() {
           parallelDegree: null,
           arguments: [],
           resultType: {
-            type: "named",
-            kind: "scalar",
-            name: "String"
+            type: "nullable",
+            nullOrUndefinability: NullOrUndefinability.AcceptsNullOnly,
+            underlyingType: {
+              type: "named",
+              kind: "scalar",
+              name: "String"
+            }
           }
         }
       },
@@ -489,6 +493,78 @@ describe("execute query", function() {
             value1: "Called 1 times total",
             value2: "Called 1 times total"
           }]
+        }
+      ]);
+      assert.equal(functionCallCount, 1);
+    });
+
+    it("function can return null", async function() {
+      let functionCallCount = 0;
+      const runtimeFunctions = {
+        "theFunction": () => {
+          functionCallCount++;
+          return null;
+        }
+      };
+      const queryRequest: sdk.QueryRequest = {
+        collection: "theFunction",
+        query: {
+          fields: {
+            "__value": {
+              type: "column",
+              column: "__value"
+            }
+          }
+        },
+        arguments: {},
+        collection_relationships: {}
+      };
+
+      const result = await executeQuery(queryRequest, functionSchema, runtimeFunctions);
+      assert.deepStrictEqual(result, [
+        {
+          aggregates: null,
+          rows: [
+            {
+              "__value": null,
+            }
+          ]
+        }
+      ]);
+      assert.equal(functionCallCount, 1);
+    });
+
+    it("async function can return null", async function() {
+      let functionCallCount = 0;
+      const runtimeFunctions = {
+        "theFunction": async () => {
+          functionCallCount++;
+          return null;
+        }
+      };
+      const queryRequest: sdk.QueryRequest = {
+        collection: "theFunction",
+        query: {
+          fields: {
+            "__value": {
+              type: "column",
+              column: "__value"
+            }
+          }
+        },
+        arguments: {},
+        collection_relationships: {}
+      };
+
+      const result = await executeQuery(queryRequest, functionSchema, runtimeFunctions);
+      assert.deepStrictEqual(result, [
+        {
+          aggregates: null,
+          rows: [
+            {
+              "__value": null,
+            }
+          ]
         }
       ]);
       assert.equal(functionCallCount, 1);

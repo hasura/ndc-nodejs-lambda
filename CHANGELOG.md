@@ -12,6 +12,7 @@ Changes to be included in the next upcoming release
 - Support for NDC Spec v0.1.2 via the NDC TypeScript SDK v4.4.0 ([#29](https://github.com/hasura/ndc-nodejs-lambda/pull/29)).
   - Built-in scalar types that support equality now define it in the NDC schema.
   - Built-in scalar types now have an explicit type representation defined in the NDC schema.
+- Fixed functions that return null causing crashes ([#31](https://github.com/hasura/ndc-nodejs-lambda/pull/31))
 
 ## [1.2.0] - 2024-03-18
 - Improved error messages when unsupported enum types or unions of literal types are found, and allow these types to be used in relaxed types mode ([#17](https://github.com/hasura/ndc-nodejs-lambda/pull/17))
