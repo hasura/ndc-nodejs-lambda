@@ -2,11 +2,12 @@
 This changelog documents the changes between release versions.
 
 > [!IMPORTANT]
-> Hasura DDN Alpha users should use 0.x versions of the `ndc-lambda-sdk`. v1.x versions of the `ndc-lambda-sdk` support the forthcoming Hasura DDN Beta.
+> Hasura DDN Alpha users should use 0.x versions of the `ndc-lambda-sdk`. v1.x versions of the `ndc-lambda-sdk` support the Hasura DDN Beta.
 
 ## [Unreleased]
 Changes to be included in the next upcoming release
 
+## [1.3.0] - 2024-04-17
 - Fixed watch mode not reloading after files with compiler errors are changed [#27](https://github.com/hasura/ndc-nodejs-lambda/pull/27)
 - Fixed functions that are imported then re-exported causing a crash [#28](https://github.com/hasura/ndc-nodejs-lambda/pull/28)
 - Support for NDC Spec v0.1.2 via the NDC TypeScript SDK v4.4.0 ([#29](https://github.com/hasura/ndc-nodejs-lambda/pull/29)).
@@ -14,6 +15,7 @@ Changes to be included in the next upcoming release
   - Built-in scalar types now have an explicit type representation defined in the NDC schema.
 - Fixed functions that return null causing crashes ([#31](https://github.com/hasura/ndc-nodejs-lambda/pull/31))
 - Added support for native connector packaging ([#30](https://github.com/hasura/ndc-nodejs-lambda/pull/30))
+- [b3 (zipkin)](https://github.com/open-telemetry/opentelemetry-js/tree/main/packages/opentelemetry-propagator-b3#b3-formats) OpenTelemetry trace propagation support via the NDC TypeScript SDK v4.5.0 ([#32](https://github.com/hasura/ndc-nodejs-lambda/pull/31))
 
 ## [1.2.0] - 2024-03-18
 - Improved error messages when unsupported enum types or unions of literal types are found, and allow these types to be used in relaxed types mode ([#17](https://github.com/hasura/ndc-nodejs-lambda/pull/17))
