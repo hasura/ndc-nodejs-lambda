@@ -1,5 +1,15 @@
 packagingDefinition:
   type: ManagedDockerBuild
+nativeToolchainDefinition:
+  commands:
+    start:
+      type: ShellScript
+      bash: ./start.sh
+      powershell: ./start.ps1
+    watch:
+      type: ShellScript
+      bash: ./watch.sh
+      powershell: ./watch.ps1
 supportedEnvironmentVariables: []
 commands: {}
 dockerComposeWatch:
