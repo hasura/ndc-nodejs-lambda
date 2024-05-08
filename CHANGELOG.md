@@ -1,4 +1,4 @@
-# NodeJS Lambda Connector Changelog
+# Node.js Lambda Connector Changelog
 This changelog documents the changes between release versions.
 
 > [!IMPORTANT]
@@ -6,6 +6,12 @@ This changelog documents the changes between release versions.
 
 ## [Unreleased]
 Changes to be included in the next upcoming release
+
+## [1.4.0] - 2024-05-08
+- Removed type inference recursion limit ([#33](https://github.com/hasura/ndc-nodejs-lambda/pull/33)). This enables the use of very nested object graphs.
+- Updated the NDC TypeScript SDK to v4.6.0 ([#33](https://github.com/hasura/ndc-nodejs-lambda/pull/33)).
+  - This enables the /metrics endpoint to return the default prometheus metrics
+  - `ConnectorError`s can be thrown and now use any HTTP status code
 
 ## [1.3.0] - 2024-04-17
 - Fixed watch mode not reloading after files with compiler errors are changed [#27](https://github.com/hasura/ndc-nodejs-lambda/pull/27)
