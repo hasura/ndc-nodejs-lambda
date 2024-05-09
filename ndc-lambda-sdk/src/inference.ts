@@ -278,13 +278,8 @@ function getParallelDegreeFromJsDoc(functionSymbol: ts.Symbol, functionIsReadonl
   }
 }
 
-const MAX_TYPE_DERIVATION_RECURSION = 20; // Better to abort than get into an infinite loop, this could be increased if required.
-
-function deriveSchemaTypeForTsType(tsType: ts.Type, typeSource: TypeSource, typePath: schema.TypePathSegment[], allowRelaxedTypes: boolean, context: TypeDerivationContext, recursionDepth: number = 0): Result<schema.TypeReference, string[]> {
+function deriveSchemaTypeForTsType(tsType: ts.Type, typeSource: TypeSource, typePath: schema.TypePathSegment[], allowRelaxedTypes: boolean, context: TypeDerivationContext): Result<schema.TypeReference, string[]> {
   const typeRenderedName = context.typeChecker.typeToString(tsType);
-
-  if (recursionDepth > MAX_TYPE_DERIVATION_RECURSION)
-    throw new Error(`Schema inference validation exceeded depth ${MAX_TYPE_DERIVATION_RECURSION} for type ${typeRenderedName}`)
 
   if (unwrapPromiseType(tsType, context.typeChecker) !== undefined) {
     return new Err([`Promise types are not supported, but one was encountered in ${schema.typePathToString(typePath)}.`]);
@@ -320,15 +315,15 @@ function deriveSchemaTypeForTsType(tsType: ts.Type, typeSource: TypeSource, type
 
   const schemaTypeResult =
     deriveSchemaTypeIfTsUnknownOrAny(tsType, typeSource, typePath, allowRelaxedTypes, context)
-    ?? deriveSchemaTypeIfTsTupleType(tsType, typeSource, typePath, allowRelaxedTypes, context, recursionDepth)
-    ?? deriveSchemaTypeIfTsArrayType(tsType, typeSource, typePath, allowRelaxedTypes, context, recursionDepth)
+    ?? deriveSchemaTypeIfTsTupleType(tsType, typeSource, typePath, allowRelaxedTypes, context)
+    ?? deriveSchemaTypeIfTsArrayType(tsType, typeSource, typePath, allowRelaxedTypes, context)
     ?? deriveSchemaTypeIfBuiltInScalarType(tsType, context)
-    ?? deriveSchemaTypeIfNullableType(tsType, typeSource, typePath, allowRelaxedTypes, context, recursionDepth)
+    ?? deriveSchemaTypeIfNullableType(tsType, typeSource, typePath, allowRelaxedTypes, context)
     ?? deriveSchemaTypeIfEnumType(tsType, typeSource, typePath, allowRelaxedTypes, context)
-    ?? deriveSchemaTypeIfObjectType(tsType, typeSource, typePath, allowRelaxedTypes, context, recursionDepth)
+    ?? deriveSchemaTypeIfObjectType(tsType, typeSource, typePath, allowRelaxedTypes, context)
     ?? rejectIfClassType(tsType, typePath, context) // This needs to be done after scalars, because JSONValue is a class
-    ?? deriveSchemaTypeIfTsIndexSignatureType(tsType, typeSource, typePath, allowRelaxedTypes, context, recursionDepth) // This needs to be done after scalars and classes, etc because some of those types do have index signatures (eg. strings)
-    ?? deriveSchemaTypeIfTsUnionType(tsType, typeSource, typePath, allowRelaxedTypes, context, recursionDepth); // This needs to be done after nullable types, since nullable types use unions, this catches everything else
+    ?? deriveSchemaTypeIfTsIndexSignatureType(tsType, typeSource, typePath, allowRelaxedTypes, context) // This needs to be done after scalars and classes, etc because some of those types do have index signatures (eg. strings)
+    ?? deriveSchemaTypeIfTsUnionType(tsType, typeSource, typePath, allowRelaxedTypes, context); // This needs to be done after nullable types, since nullable types use unions, this catches everything else
 
   if (schemaTypeResult !== undefined)
     return schemaTypeResult;
@@ -368,7 +363,7 @@ function deriveSchemaTypeIfTsUnknownOrAny(tsType: ts.Type, typeSource: TypeSourc
   }
 }
 
-function deriveSchemaTypeIfTsTupleType(tsType: ts.Type, typeSource: TypeSource, typePath: schema.TypePathSegment[], allowRelaxedTypes: boolean, context: TypeDerivationContext, recursionDepth: number): Result<schema.TypeReference, string[]> | undefined {
+function deriveSchemaTypeIfTsTupleType(tsType: ts.Type, typeSource: TypeSource, typePath: schema.TypePathSegment[], allowRelaxedTypes: boolean, context: TypeDerivationContext): Result<schema.TypeReference, string[]> | undefined {
   if (tsutils.isTupleTypeReference(tsType)) {
     const typeName = context.typeChecker.typeToString(tsType);
 
@@ -376,7 +371,7 @@ function deriveSchemaTypeIfTsTupleType(tsType: ts.Type, typeSource: TypeSource, 
       // Verify types in tuple are valid types
       const isolatedContext = cloneTypeDerivationContext(context); // Use an isolated context so we don't actually record any new scalar or object types while doing this, since this is going to end up as a relaxed type anyway
       const result = Result.traverseAndCollectErrors(tsType.typeArguments ?? [], (typeParameterTsType: ts.Type, index: number) => {
-        return deriveSchemaTypeForTsType(typeParameterTsType, typeSource, [...typePath, {segmentType: "TypeParameter", typeName, index}], allowRelaxedTypes, isolatedContext, recursionDepth + 1);
+        return deriveSchemaTypeForTsType(typeParameterTsType, typeSource, [...typePath, {segmentType: "TypeParameter", typeName, index}], allowRelaxedTypes, isolatedContext);
       });
 
       if (result instanceof Err) return new Err(result.error);
@@ -393,7 +388,7 @@ function rejectIfClassType(tsType: ts.Type, typePath: schema.TypePathSegment[], 
 }
 
 // Types with index signatures: ie '[x: T]: Y'
-function deriveSchemaTypeIfTsIndexSignatureType(tsType: ts.Type, typeSource: TypeSource, typePath: schema.TypePathSegment[], allowRelaxedTypes: boolean, context: TypeDerivationContext, recursionDepth: number): Result<schema.TypeReference, string[]> | undefined {
+function deriveSchemaTypeIfTsIndexSignatureType(tsType: ts.Type, typeSource: TypeSource, typePath: schema.TypePathSegment[], allowRelaxedTypes: boolean, context: TypeDerivationContext): Result<schema.TypeReference, string[]> | undefined {
   const indexInfos = context.typeChecker.getIndexInfosOfType(tsType);
   if (indexInfos.length > 0) {
     const typeName = context.typeChecker.typeToString(tsType);
@@ -406,7 +401,7 @@ function deriveSchemaTypeIfTsIndexSignatureType(tsType: ts.Type, typeSource: Typ
         [indexInfo.type, { segmentType: "IndexSignature", typeName, sigIndex, component: "value" }],
       ]);
       const result = Result.traverseAndCollectErrors(indexSignatureTypes, ([sigType, typePathSegment]) => {
-        return deriveSchemaTypeForTsType(sigType, typeSource, [...typePath, typePathSegment], allowRelaxedTypes, isolatedContext, recursionDepth + 1);
+        return deriveSchemaTypeForTsType(sigType, typeSource, [...typePath, typePathSegment], allowRelaxedTypes, isolatedContext);
       });
 
       if (result instanceof Err) return new Err(result.error);
@@ -416,7 +411,7 @@ function deriveSchemaTypeIfTsIndexSignatureType(tsType: ts.Type, typeSource: Typ
   }
 }
 
-function deriveSchemaTypeIfTsUnionType(tsType: ts.Type, typeSource: TypeSource, typePath: schema.TypePathSegment[], allowRelaxedTypes: boolean, context: TypeDerivationContext, recursionDepth: number): Result<schema.TypeReference, string[]> | undefined {
+function deriveSchemaTypeIfTsUnionType(tsType: ts.Type, typeSource: TypeSource, typePath: schema.TypePathSegment[], allowRelaxedTypes: boolean, context: TypeDerivationContext): Result<schema.TypeReference, string[]> | undefined {
   if (tsType.isUnion()) {
     const typeName = context.typeChecker.typeToString(tsType);
 
@@ -424,7 +419,7 @@ function deriveSchemaTypeIfTsUnionType(tsType: ts.Type, typeSource: TypeSource, 
       // Verify union options are valid types
       const isolatedContext = cloneTypeDerivationContext(context); // Use an isolated context so we don't actually record any new scalar or object types while doing this, since this is going to end up as a relaxed type anyway
       const result = Result.traverseAndCollectErrors(tsType.types, (memberTsType: ts.Type, memberIndex: number) => {
-        return deriveSchemaTypeForTsType(memberTsType, typeSource, [...typePath, {segmentType: "UnionMember", typeName, memberIndex}], allowRelaxedTypes, isolatedContext, recursionDepth + 1);
+        return deriveSchemaTypeForTsType(memberTsType, typeSource, [...typePath, {segmentType: "UnionMember", typeName, memberIndex}], allowRelaxedTypes, isolatedContext);
       });
 
       if (result instanceof Err) return new Err(result.error);
@@ -434,12 +429,12 @@ function deriveSchemaTypeIfTsUnionType(tsType: ts.Type, typeSource: TypeSource, 
   }
 }
 
-function deriveSchemaTypeIfTsArrayType(tsType: ts.Type, typeSource: TypeSource, typePath: schema.TypePathSegment[], allowRelaxedTypes: boolean, context: TypeDerivationContext, recursionDepth: number): Result<schema.TypeReference, string[]> | undefined {
+function deriveSchemaTypeIfTsArrayType(tsType: ts.Type, typeSource: TypeSource, typePath: schema.TypePathSegment[], allowRelaxedTypes: boolean, context: TypeDerivationContext): Result<schema.TypeReference, string[]> | undefined {
   if (context.typeChecker.isArrayType(tsType) && tsutils.isTypeReference(tsType)) {
     const typeArgs = context.typeChecker.getTypeArguments(tsType)
     if (typeArgs.length === 1) {
       const innerType = typeArgs[0]!;
-      return deriveSchemaTypeForTsType(innerType, typeSource, [...typePath, {segmentType: "Array"}], allowRelaxedTypes, context, recursionDepth + 1)
+      return deriveSchemaTypeForTsType(innerType, typeSource, [...typePath, {segmentType: "Array"}], allowRelaxedTypes, context)
         .map(innerType => ({ type: "array", elementType: innerType }));
     }
   }
@@ -556,16 +551,16 @@ function isJSONValueType(tsType: ts.Type, ndcLambdaSdkModule: ts.ResolvedModuleF
   return sourceFile.fileName.startsWith(sdkDirectory);
 }
 
-function deriveSchemaTypeIfNullableType(tsType: ts.Type, typeSource: TypeSource, typePath: schema.TypePathSegment[], allowRelaxedTypes: boolean, context: TypeDerivationContext, recursionDepth: number): Result<schema.TypeReference, string[]> | undefined {
+function deriveSchemaTypeIfNullableType(tsType: ts.Type, typeSource: TypeSource, typePath: schema.TypePathSegment[], allowRelaxedTypes: boolean, context: TypeDerivationContext): Result<schema.TypeReference, string[]> | undefined {
   const notNullableResult = unwrapNullableType(tsType, context.typeChecker);
   if (notNullableResult !== null) {
     const [notNullableType, nullOrUndefinability] = notNullableResult;
-    return deriveSchemaTypeForTsType(notNullableType, typeSource, typePath, allowRelaxedTypes, context, recursionDepth + 1)
+    return deriveSchemaTypeForTsType(notNullableType, typeSource, typePath, allowRelaxedTypes, context)
       .map(notNullableType => ({ type: "nullable", underlyingType: notNullableType, nullOrUndefinability }))
   }
 }
 
-function deriveSchemaTypeIfObjectType(tsType: ts.Type, typeSource: TypeSource, typePath: schema.TypePathSegment[], allowRelaxedTypes: boolean, context: TypeDerivationContext, recursionDepth: number): Result<schema.TypeReference, string[]> | undefined {
+function deriveSchemaTypeIfObjectType(tsType: ts.Type, typeSource: TypeSource, typePath: schema.TypePathSegment[], allowRelaxedTypes: boolean, context: TypeDerivationContext): Result<schema.TypeReference, string[]> | undefined {
   const info = getObjectTypeInfo(tsType, typeSource, typePath, context.typeChecker);
   if (info) {
     const makeRelaxedTypesError : () => Result<schema.TypeReference, string[]> = () => new Err<schema.TypeReference, string[]>([`The object type '${info.preferredTypeName}' uses relaxed types and can only be used by a function marked with @allowrelaxedtypes. It was encountered in ${schema.typePathToString(typePath)}`]);
@@ -586,7 +581,7 @@ function deriveSchemaTypeIfObjectType(tsType: ts.Type, typeSource: TypeSource, t
           propertyInfo.tsType,
           { type: "Symbol", symbol: propertyInfo.symbol },
           [...typePath, { segmentType: "ObjectProperty", typeName: context.typeChecker.typeToString(tsType), preferredTypeName: info.preferredTypeName, propertyName }],
-          allowRelaxedTypes, context, recursionDepth + 1
+          allowRelaxedTypes, context
         )
         .map(propertyType => ({ propertyName: propertyName, type: propertyType, description: propertyInfo.description }));
     })
