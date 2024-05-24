@@ -25,7 +25,8 @@ dist/.hasura-connector/Dockerfile: Dockerfile dist/.hasura-connector $(RELEASE_V
 dist/.hasura-connector/.dockerignore: .dockerignore dist/.hasura-connector
 	cp -f .dockerignore dist/.hasura-connector/
 
-template_files := $(filter-out %/package.json,$(wildcard template/*))
+# The .[!.]* includes hidden files (ie. the .gitignore file)
+template_files := $(filter-out %/package.json,$(wildcard template/* template/.[!.]*))
 dist_template_files := $(patsubst template/%,dist/%,$(template_files))
 
 $(dist_template_files): $(template_files)
