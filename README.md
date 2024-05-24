@@ -279,8 +279,6 @@ export async function test(statusCode: number): Promise<string> {
 Non-readonly functions are not invoked in parallel within the same mutation request to the connector, so it is invalid to use the @paralleldegree JSDoc tag on those functions.
 
 ### Documentation
-*Note: this feature is still in development.*
-
 JSDoc comments on your functions and types are used to provide descriptions for types exposed in your GraphQL schema. For example:
 
 ```typescript

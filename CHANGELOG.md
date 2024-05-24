@@ -7,6 +7,8 @@ This changelog documents the changes between release versions.
 ## [Unreleased]
 Changes to be included in the next upcoming release
 
+- Added a default .gitignore that ignores node_modules in the connector template ([#34](https://github.com/hasura/ndc-nodejs-lambda/pull/34))
+
 ## [1.4.0] - 2024-05-08
 - Removed type inference recursion limit ([#33](https://github.com/hasura/ndc-nodejs-lambda/pull/33)). This enables the use of very nested object graphs.
 - Updated the NDC TypeScript SDK to v4.6.0 ([#33](https://github.com/hasura/ndc-nodejs-lambda/pull/33)).
