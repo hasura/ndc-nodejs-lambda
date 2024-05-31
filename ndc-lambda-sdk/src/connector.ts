@@ -67,10 +67,11 @@ export function createConnector(options: ConnectorOptions): sdk.Connector<Config
 
     getCapabilities: function (configuration: Configuration): sdk.CapabilitiesResponse {
       return {
-        version: "0.1.2",
+        version: "0.1.3",
         capabilities: {
           query: {
-            variables: {}
+            variables: {},
+            nested_fields: {},
           },
           mutation: {},
         }
