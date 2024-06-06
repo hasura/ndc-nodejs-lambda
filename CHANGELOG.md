@@ -10,6 +10,7 @@ Changes to be included in the next upcoming release
 - Added a default .gitignore that ignores node_modules in the connector template ([#34](https://github.com/hasura/ndc-nodejs-lambda/pull/34))
 - Updated to NDC TypeScript SDK to v5.0.0 ([#35](https://github.com/hasura/ndc-nodejs-lambda/pull/35))
   - The BigInt scalar type now uses the biginteger type representation
+- Added `dotenv-cli` to the dev dependencies of the connector's default package.json to help with using .env files ([#36](https://github.com/hasura/ndc-nodejs-lambda/pull/36))
 
 ## [1.4.0] - 2024-05-08
 - Removed type inference recursion limit ([#33](https://github.com/hasura/ndc-nodejs-lambda/pull/33)). This enables the use of very nested object graphs.
