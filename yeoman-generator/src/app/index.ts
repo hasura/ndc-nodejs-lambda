@@ -91,6 +91,9 @@ export default class extends Generator {
       },
       "dependencies": {
         "@hasura/ndc-lambda-sdk": packageManifest.version
+      },
+      "devDependencies": {
+        "dotenv-cli": "^7.4.2"
       }
     })
   }
