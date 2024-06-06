@@ -2,22 +2,72 @@
 
 The Node.js Lambda connector allows you to expose TypeScript functions as NDC functions/procedures for use in your Hasura DDN subgraphs.
 
-> [!IMPORTANT]
-> Hasura DDN Alpha users should use 0.x versions of the `ndc-lambda-sdk`. v1.x versions of the `ndc-lambda-sdk` support the Hasura DDN Beta.
-
 ## How to Use
-First, ensure you have Node.js v20+ installed. Then, create a directory into which you will create your functions using the `hasura-ndc-nodejs-lambda` Yeoman template.
+> [!TIP]
+> The following instructions are just a quick summary of how to use the Node.js Lambda connector.
+> To see it in use in a wider Hasura DDN project, and to understand the underlying DDN concepts, please check out the [Hasura DDN Getting Started Guide](https://hasura.io/docs/3.0/getting-started/overview/).
+> The Node.js Lambda connector is used in the business logic part of that tutorial.
+
+First, ensure you have Node.js v20+ installed and an existing Hasura DDN project created (see the [Hasura DDN Getting Started Guide](https://hasura.io/docs/3.0/getting-started/overview/)). Then, initialize the connector into that project:
 
 ```bash
-mkdir my-functions
-cd my-functions
-npm install -g generator-hasura-ndc-nodejs-lambda
-npx yo hasura-ndc-nodejs-lambda
+ddn connector init my_ts --subgraph my_subgraph --hub-connector hasura/nodejs
 ```
 
-This creates a `functions.ts` file in which you will write your functions, and a `package.json` with the `ndc-lambda-sdk` installed into it.
+This will generate the necessary files into the `my_subgraph/connector/my_ts` directory. This creates a `functions.ts` file in which you will write your functions, and a `package.json` with the `ndc-lambda-sdk` installed into it.
 
-The `package.config` has been created with `start` and `watch` scripts. These use the SDK to host your `functions.ts` file. You can start your connector with `npm start`, or if you'd like it to automatically restart as you change your code, use `npm run watch`.
+Restore all the npm packages required to run the connector by running inside the connector's directory:
+
+```bash
+npm install
+```
+
+You may wish to change the port the connector runs on to one that is unused (the default is 8080). You can do so by changing the `.env.local` file and adding:
+
+```
+HASURA_CONNECTOR_PORT=<port>
+```
+
+To run the connector with these environment environment variables applied, you can run the following command:
+
+```bash
+npx dotenv -e .env.local -- npm run watch
+```
+
+This starts the connector in watch mode, which watches for code changes and restarts the connector when they are detected. `npm run start` can be used instead to just start the connector without watching for changes. Both `start` and `watch` are defined in the `package.json`'s scripts section and use the `ndc-lambda-sdk` to host your `functions.ts` file.
+
+To add a `DataConnectorLink` to link the connector into the wider Hasura DDN project, run:
+
+```bash
+ddn connector-link add my_ts
+```
+
+Then, update the values in your subgraph's `.env.my_subgraph` file to include this connector.
+
+```
+MY_SUBGRAPH_MY_TS_READ_URL=http://local.hasura.dev:<port>
+MY_SUBGRAPH_MY_TS_WRITE_URL=http://local.hasura.dev:<port>
+```
+
+Once you have written your functions, and while the connector is running, you can update that `DataConnectorLink` and add all the new functions to your subgraph by running:
+
+```bash
+ddn connector-link update my_ts --subgraph my_subgraph --add-all-resources
+```
+
+To make a local build of your supergraph you can run:
+
+```bash
+ddn supergraph build local --output-dir ./engine
+```
+
+You can then run that build locally for testing by starting the engine and other connectors in the DDN project using Docker Compose:
+
+```bash
+HASURA_DDN_PAT=$(ddn auth print-pat) docker compose -f docker-compose.hasura.yaml watch
+```
+
+You can view and query that local instance using the Hasura Graphiql Explorer by navigating to `https://console.hasura.io/local/graphql?url=http://localhost:3000`.
 
 ### Functions
 Any functions exported from `functions.ts` are made available as NDC functions/procedures to use in your Hasura metadata and expose as GraphQL fields in queries or mutation.
@@ -339,38 +389,3 @@ export async function doSomething(): Promise<string> {
 ```
 
 The span will be wrapped around the function you pass to `sdk.withActiveSpan`. The function can optionally be an async function that returns a Promise, and if so, the span will be ended when the Promise resolves.
-
-## Deploying with `hasura3 connector create`
-
-You will need:
-
-* [Hasura v3 CLI](https://hasura.io/docs/3.0/cli/installation/) (with a logged-in session)
-* [Hasura v3 CLI Connector Plugin](https://hasura.io/docs/latest/hasura-cli/connector-plugin/)
-* (Optionally) A value to use with `SERVICE_TOKEN_SECRET`
-* a TypeScript sources directory. E.g. `--volume ./my_functions_directory:/functions`
-
-First, ensure you have deleted your `node_modules` directory from inside your sources directory, since that is unnecessary to deploy.
-
-Then, create the connector:
-
-```bash
-hasura3 connector create my-cool-connector:v1 \
-  --github-repo-url https://github.com/hasura/ndc-nodejs-lambda/tree/main \
-  --config-file <(echo '{}') \
-  --volume ./my_functions_directory:/functions \
-  --env SERVICE_TOKEN_SECRET=MY-SERVICE-TOKEN # (optional)
-```
-
-*Note: Even though you can use the "main" branch to deploy the latest connector features, see the [Hasura Connector Hub](https://hasura.io/connectors/nodejs-lambda) for verified release tags*
-
-Monitor the deployment status by name - this will indicate in-progress, complete, or failed status:
-
-> hasura3 connector status my-cool-connector:v1
-
-List all your connectors with their deployed URLs:
-
-> hasura3 connector list
-
-View logs from your running connector:
-
-> hasura3 connector logs my-cool-connector:v1

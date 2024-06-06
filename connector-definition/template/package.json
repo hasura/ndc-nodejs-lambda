@@ -9,5 +9,8 @@
   },
   "dependencies": {
     "@hasura/ndc-lambda-sdk": "*"
+  },
+  "devDependencies": {
+    "dotenv-cli": "^7.4.2"
   }
 }
