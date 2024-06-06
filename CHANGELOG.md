@@ -7,6 +7,8 @@ This changelog documents the changes between release versions.
 ## [Unreleased]
 Changes to be included in the next upcoming release
 
+## [1.4.1] - 2024-06-06
+
 - Added a default .gitignore that ignores node_modules in the connector template ([#34](https://github.com/hasura/ndc-nodejs-lambda/pull/34))
 - Updated to NDC TypeScript SDK to v5.0.0 ([#35](https://github.com/hasura/ndc-nodejs-lambda/pull/35))
   - The BigInt scalar type now uses the biginteger type representation
