@@ -31,7 +31,7 @@ Restore all the npm packages required to run the connector by running inside the
 npm install
 ```
 
-To run the connector with the required environment environment variables applied, you can run the following command:
+To run the connector with the required environment variables applied, you can run the following command:
 
 ```bash
 npx dotenv -e .env.local -- npm run watch
