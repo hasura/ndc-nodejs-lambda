@@ -6,15 +6,24 @@ The Node.js Lambda connector allows you to expose TypeScript functions as NDC fu
 > [!TIP]
 > The following instructions are just a quick summary of how to use the Node.js Lambda connector.
 > To see it in use in a wider Hasura DDN project, and to understand the underlying DDN concepts, please check out the [Hasura DDN Getting Started Guide](https://hasura.io/docs/3.0/getting-started/overview/).
-> The Node.js Lambda connector is used in the business logic part of that tutorial.
+> The Node.js Lambda connector is used in the [business logic](https://hasura.io/docs/3.0/getting-started/build/add-business-logic?db=TypeScript) part of that tutorial.
 
-First, ensure you have Node.js v20+ installed and an existing Hasura DDN project created (see the [Hasura DDN Getting Started Guide](https://hasura.io/docs/3.0/getting-started/overview/)). Then, initialize the connector into that project:
+First, ensure you have Node.js v20+ installed and an existing Hasura DDN project created (see the [Hasura DDN Getting Started Guide](https://hasura.io/docs/3.0/getting-started/overview/)). Then, initialize the connector into that project on an unused port of your choosing:
 
 ```bash
-ddn connector init my_ts --subgraph my_subgraph --hub-connector hasura/nodejs
+ddn connector init my_ts --subgraph my_subgraph/subgraph.yaml --hub-connector hasura/nodejs --configure-port 8085
 ```
 
 This will generate the necessary files into the `my_subgraph/connector/my_ts` directory. This creates a `functions.ts` file in which you will write your functions, and a `package.json` with the `ndc-lambda-sdk` installed into it.
+
+To add a `DataConnectorLink` to link the connector into the wider Hasura DDN project, run:
+
+```bash
+ddn connector-link add my_ts \
+  --subgraph my_subgraph/subgraph.yaml \
+  --configure-host http://local.hasura.dev:8085 \
+  --target-env-file my_subgraph/.env.my_subgraph.local
+```
 
 Restore all the npm packages required to run the connector by running inside the connector's directory:
 
@@ -22,13 +31,7 @@ Restore all the npm packages required to run the connector by running inside the
 npm install
 ```
 
-You may wish to change the port the connector runs on to one that is unused (the default is 8080). You can do so by changing the `.env.local` file and adding:
-
-```
-HASURA_CONNECTOR_PORT=<port>
-```
-
-To run the connector with these environment environment variables applied, you can run the following command:
+To run the connector with the required environment environment variables applied, you can run the following command:
 
 ```bash
 npx dotenv -e .env.local -- npm run watch
@@ -36,35 +39,27 @@ npx dotenv -e .env.local -- npm run watch
 
 This starts the connector in watch mode, which watches for code changes and restarts the connector when they are detected. `npm run start` can be used instead to just start the connector without watching for changes. Both `start` and `watch` are defined in the `package.json`'s scripts section and use the `ndc-lambda-sdk` to host your `functions.ts` file.
 
-To add a `DataConnectorLink` to link the connector into the wider Hasura DDN project, run:
-
-```bash
-ddn connector-link add my_ts
-```
-
-Then, update the values in your subgraph's `.env.my_subgraph` file to include this connector.
-
-```
-MY_SUBGRAPH_MY_TS_READ_URL=http://local.hasura.dev:<port>
-MY_SUBGRAPH_MY_TS_WRITE_URL=http://local.hasura.dev:<port>
-```
-
 Once you have written your functions, and while the connector is running, you can update that `DataConnectorLink` and add all the new functions to your subgraph by running:
 
 ```bash
-ddn connector-link update my_ts --subgraph my_subgraph --add-all-resources
+ddn connector-link update my_ts \
+  --subgraph my_subgraph/subgraph.yaml \
+  --env-file my_subgraph/.env.my_subgraph.local \
+  --add-all-resources
 ```
 
 To make a local build of your supergraph you can run:
 
 ```bash
-ddn supergraph build local --output-dir ./engine
+ddn supergraph build local \
+  --output-dir engine \
+  --subgraph-env-file my_subgraph:my_subgraph/.env.my_subgraph.local
 ```
 
 You can then run that build locally for testing by starting the engine and other connectors in the DDN project using Docker Compose:
 
 ```bash
-HASURA_DDN_PAT=$(ddn auth print-pat) docker compose -f docker-compose.hasura.yaml watch
+HASURA_DDN_PAT=$(ddn auth print-pat) docker compose up --build --watch
 ```
 
 You can view and query that local instance using the Hasura Graphiql Explorer by navigating to `https://console.hasura.io/local/graphql?url=http://localhost:3000`.
