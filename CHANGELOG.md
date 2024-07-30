@@ -1,16 +1,17 @@
 # Node.js Lambda Connector Changelog
 This changelog documents the changes between release versions.
 
-> [!IMPORTANT]
-> Hasura DDN Alpha users should use 0.x versions of the `ndc-lambda-sdk`. v1.x versions of the `ndc-lambda-sdk` support the Hasura DDN Beta.
-
 ## [Unreleased]
 Changes to be included in the next upcoming release
+
+## [1.5.0] - 2024-07-30
+- Updated the NDC TypeScript SDK to v5.2.0 ([#38](https://github.com/hasura/ndc-nodejs-lambda/pull/38))
+  - The connector now listens on both ipv4 and ipv6 interfaces
 
 ## [1.4.1] - 2024-06-06
 
 - Added a default .gitignore that ignores node_modules in the connector template ([#34](https://github.com/hasura/ndc-nodejs-lambda/pull/34))
-- Updated to NDC TypeScript SDK to v5.0.0 ([#35](https://github.com/hasura/ndc-nodejs-lambda/pull/35))
+- Updated the NDC TypeScript SDK to v5.0.0 ([#35](https://github.com/hasura/ndc-nodejs-lambda/pull/35))
   - The BigInt scalar type now uses the biginteger type representation
 - Added `dotenv-cli` to the dev dependencies of the connector's default package.json to help with using .env files ([#36](https://github.com/hasura/ndc-nodejs-lambda/pull/36))
 
