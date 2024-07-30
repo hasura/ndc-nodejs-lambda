@@ -1,6 +1,6 @@
 {
   "name": "@hasura/ndc-lambda-sdk",
-  "version": "1.4.1",
+  "version": "1.5.0",
   "description": "SDK that can automatically expose TypeScript functions as Hasura NDC functions/procedures",
   "author": "Hasura",
   "license": "Apache-2.0",
@@ -30,7 +30,7 @@
     "url": "git+https://github.com/hasura/ndc-nodejs-lambda.git"
   },
   "dependencies": {
-    "@hasura/ndc-sdk-typescript": "^5.0.0",
+    "@hasura/ndc-sdk-typescript": "^5.2.0",
     "@tsconfig/node20": "^20.1.3",
     "commander": "^11.1.0",
     "cross-spawn": "^7.0.3",
