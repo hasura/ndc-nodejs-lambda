@@ -65,16 +65,13 @@ export function createConnector(options: ConnectorOptions): sdk.Connector<Config
       return {};
     },
 
-    getCapabilities: function (configuration: Configuration): sdk.CapabilitiesResponse {
+    getCapabilities: function (configuration: Configuration): sdk.Capabilities {
       return {
-        version: "0.1.5",
-        capabilities: {
-          query: {
-            variables: {},
-            nested_fields: {},
-          },
-          mutation: {},
-        }
+        query: {
+          variables: {},
+          nested_fields: {},
+        },
+        mutation: {},
       };
     },
 
@@ -96,10 +93,6 @@ export function createConnector(options: ConnectorOptions): sdk.Connector<Config
 
     mutationExplain: function (configuration: Configuration, state: State, request: sdk.MutationRequest): Promise<sdk.ExplainResponse> {
       throw new Error("Function not implemented.");
-    },
-
-    healthCheck: async function (configuration: Configuration, state: State): Promise<undefined> {
-      return undefined;
     },
 
     fetchMetrics: async function (configuration: Configuration, state: State): Promise<undefined> {

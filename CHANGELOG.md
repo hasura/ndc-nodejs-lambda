@@ -4,6 +4,11 @@ This changelog documents the changes between release versions.
 ## [Unreleased]
 Changes to be included in the next upcoming release
 
+## [1.6.0] - 2024-08-08
+- Updated the NDC TypeScript SDK to v6.0.0 ([#39](https://github.com/hasura/ndc-nodejs-lambda/pull/39))
+  - The `/health` endpoint is now unauthenticated
+- Updated TypeScript to v5.5.4 ([#39](https://github.com/hasura/ndc-nodejs-lambda/pull/39))
+
 ## [1.5.0] - 2024-07-30
 - Updated the NDC TypeScript SDK to v5.2.0 ([#38](https://github.com/hasura/ndc-nodejs-lambda/pull/38))
   - The connector now listens on both ipv4 and ipv6 interfaces
