@@ -4,6 +4,8 @@ This changelog documents the changes between release versions.
 ## [Unreleased]
 Changes to be included in the next upcoming release
 
+- Added multi-platform support to the `hasura/ndc-nodejs-lambda` docker image. It now supports both linux/amd64 and linux/arm64 platforms ([#42](https://github.com/hasura/ndc-nodejs-lambda/pull/42))
+
 ## [1.6.0] - 2024-08-08
 - Updated the NDC TypeScript SDK to v6.0.0 ([#39](https://github.com/hasura/ndc-nodejs-lambda/pull/39))
   - The `/health` endpoint is now unauthenticated
