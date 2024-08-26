@@ -24,3 +24,4 @@ dockerComposeWatch:
   - path: ./
     target: /functions
     action: sync+restart
+documentationPage: https://hasura.info/nodejs-getting-started
