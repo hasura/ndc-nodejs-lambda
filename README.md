@@ -8,22 +8,17 @@ The Node.js Lambda connector allows you to expose TypeScript functions as NDC fu
 > To see it in use in a wider Hasura DDN project, and to understand the underlying DDN concepts, please check out the [Hasura DDN Getting Started Guide](https://hasura.io/docs/3.0/getting-started/overview/).
 > The Node.js Lambda connector is used in the [business logic](https://hasura.io/docs/3.0/getting-started/build/add-business-logic?db=TypeScript) part of that tutorial.
 
-First, ensure you have Node.js v20+ installed and an existing Hasura DDN project created (see the [Hasura DDN Getting Started Guide](https://hasura.io/docs/3.0/getting-started/overview/)). Then, initialize the connector into that project on an unused port of your choosing:
+First, ensure you have Node.js v20+ installed and an existing Hasura DDN project created (see the [Hasura DDN Getting Started Guide](https://hasura.io/docs/3.0/getting-started/overview/)). Then, initialize the connector into that project:
 
 ```bash
-ddn connector init my_ts --subgraph my_subgraph/subgraph.yaml --hub-connector hasura/nodejs --configure-port 8085
+ddn connector init -i
 ```
+
+* Select `hasura/nodejs` from the list of connectors
+* Name it something descriptive. For this example, we'll call it `my_ts`
+* Choose a port (press enter to accept the default recommended by the CLI).
 
 This will generate the necessary files into the `my_subgraph/connector/my_ts` directory. This creates a `functions.ts` file in which you will write your functions, and a `package.json` with the `ndc-lambda-sdk` installed into it.
-
-To add a `DataConnectorLink` to link the connector into the wider Hasura DDN project, run:
-
-```bash
-ddn connector-link add my_ts \
-  --subgraph my_subgraph/subgraph.yaml \
-  --configure-host http://local.hasura.dev:8085 \
-  --target-env-file my_subgraph/.env.my_subgraph.local
-```
 
 Restore all the npm packages required to run the connector by running inside the connector's directory:
 
@@ -34,35 +29,40 @@ npm install
 To run the connector with the required environment variables applied, you can run the following command:
 
 ```bash
-npx dotenv -e .env.local -- npm run watch
+ddn connector setenv --connector connector.yaml -- npm run watch
 ```
 
 This starts the connector in watch mode, which watches for code changes and restarts the connector when they are detected. `npm run start` can be used instead to just start the connector without watching for changes. Both `start` and `watch` are defined in the `package.json`'s scripts section and use the `ndc-lambda-sdk` to host your `functions.ts` file.
 
-Once you have written your functions, and while the connector is running, you can update that `DataConnectorLink` and add all the new functions to your subgraph by running:
+Once you have written your functions, use the following to generate the related metadata that will link together any functions in this functions.ts file and your API:
 
 ```bash
-ddn connector-link update my_ts \
-  --subgraph my_subgraph/subgraph.yaml \
-  --env-file my_subgraph/.env.my_subgraph.local \
-  --add-all-resources
+ddn connector introspect my_ts
+```
+
+Then you can generate all the necessary `hml` files with the Commands that expose your functions in the API by running the following:
+
+```bash
+ddn connector-link add-resources my_ts
 ```
 
 To make a local build of your supergraph you can run:
 
 ```bash
-ddn supergraph build local \
-  --output-dir engine \
-  --subgraph-env-file my_subgraph:my_subgraph/.env.my_subgraph.local
+ddn supergraph build local
 ```
 
 You can then run that build locally for testing by starting the engine and other connectors in the DDN project using Docker Compose:
 
 ```bash
-HASURA_DDN_PAT=$(ddn auth print-pat) docker compose up --build --watch
+HASURA_DDN_PAT=$(ddn auth print-pat) docker compose --env-file .env up --build --watch
 ```
 
-You can view and query that local instance using the Hasura Graphiql Explorer by navigating to `https://console.hasura.io/local/graphql?url=http://localhost:3000`.
+You can view and query that local instance using the Hasura Graphiql Explorer by running:
+
+```bash
+ddn console --local
+```
 
 ### Functions
 Any functions exported from `functions.ts` are made available as NDC functions/procedures to use in your Hasura metadata and expose as GraphQL fields in queries or mutation.
