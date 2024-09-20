@@ -4,6 +4,14 @@ This changelog documents the changes between release versions.
 ## [Unreleased]
 Changes to be included in the next upcoming release
 
+## [1.8.0] - 2024-09-20
+- Updated the NDC TypeScript SDK to v7.0.0 ([#44](https://github.com/hasura/ndc-nodejs-lambda/pull/44))
+  - Added support for exporting OpenTelemetry traces and metrics over GRPC. A new environment variable `OTEL_EXPORTER_OTLP_PROTOCOL` lets you switch between `http/protobuf` and `grpc`.
+  - By default OpenTelemetry is now exported over GRPC to `http://localhost:4317`.
+  - To return to the old defaults, set the following environment variables:
+    - `OTEL_EXPORTER_OTLP_PROTOCOL="http/protobuf"`
+    - `OTEL_EXPORTER_OTLP_ENDPOINT="http://localhost:4318"`
+
 ## [1.7.0] - 2024-08-27
 - Added `documentationPage` to the connector metadata to enable the `ddn` CLI to suggest documentation to users ([#41](https://github.com/hasura/ndc-nodejs-lambda/pull/41))
 - Added multi-platform support to the `hasura/ndc-nodejs-lambda` docker image. It now supports both linux/amd64 and linux/arm64 platforms ([#42](https://github.com/hasura/ndc-nodejs-lambda/pull/42))
@@ -21,7 +29,6 @@ Changes to be included in the next upcoming release
   - The connector now listens on both ipv4 and ipv6 interfaces
 
 ## [1.4.1] - 2024-06-06
-
 - Added a default .gitignore that ignores node_modules in the connector template ([#34](https://github.com/hasura/ndc-nodejs-lambda/pull/34))
 - Updated the NDC TypeScript SDK to v5.0.0 ([#35](https://github.com/hasura/ndc-nodejs-lambda/pull/35))
   - The BigInt scalar type now uses the biginteger type representation
