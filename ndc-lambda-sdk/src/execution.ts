@@ -202,6 +202,13 @@ export function getErrorDetails(error: Error): ErrorDetails {
   }
 }
 
+// NOTE: This should be provided by the NDC SDK types at some point
+// then this can be replaced and won't have to be kept in sync
+// manually with the engine changes.
+export type Supergraph = {
+  endpoint: string
+}
+
 function buildCausalStackTrace(error: Error): string {
   let seenErrs: Error[] = [];
   let currErr: Error | undefined = error;
