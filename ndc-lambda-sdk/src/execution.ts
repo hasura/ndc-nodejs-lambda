@@ -281,7 +281,7 @@ export function reshapeResultUsingFieldSelection(value: unknown, type: schema.Ty
   switch (type.type) {
     case "array":
       if (!isArray(value))
-        throw new sdk.InternalServerError(`Expected an array, but received '${value === null ? "null" : null ?? typeof value}'`);
+        throw new sdk.InternalServerError(`Expected an array, but received '${value === null ? "null" : typeof value}'`);
 
       const elementFieldSelection = (() => {
         switch (fieldSelection.type) {
@@ -314,7 +314,7 @@ export function reshapeResultUsingFieldSelection(value: unknown, type: schema.Ty
           if (objectType === undefined)
             throw new sdk.InternalServerError(`Unable to find object type definition '${type.name}'`)
           if (value === null || Array.isArray(value) || typeof value !== "object")
-            throw new sdk.InternalServerError(`Expected an object, but received '${value === null ? "null" : null ?? Array.isArray(value) ? "array" : null ?? typeof value}'`);
+            throw new sdk.InternalServerError(`Expected an object, but received '${value === null ? "null" : Array.isArray(value) ? "array" : typeof value}'`);
 
           const selectedFields: Record<string, sdk.Field> = (() => {
             switch (fieldSelection.type) {
