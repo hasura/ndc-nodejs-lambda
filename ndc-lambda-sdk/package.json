@@ -18,7 +18,8 @@
   ],
   "exports": {
     ".": "./dist/src/sdk.js",
-    "./host": "./dist/src/host.js"
+    "./host": "./dist/src/host.js",
+    "./connector": "./dist/src/connector.js"
   },
   "scripts": {
     "build": "tsc",
