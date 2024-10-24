@@ -4,6 +4,8 @@ This changelog documents the changes between release versions.
 ## [Unreleased]
 Changes to be included in the next upcoming release
 
+## [1.9.0] - 2024-10-24
+
 ### Changed
 * Updated to use [TypeScript v5.6.3](https://devblogs.microsoft.com/typescript/announcing-typescript-5-6/) ([#46](https://github.com/hasura/ndc-nodejs-lambda/pull/46))
 
