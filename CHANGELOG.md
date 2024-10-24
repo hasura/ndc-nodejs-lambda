@@ -4,6 +4,9 @@ This changelog documents the changes between release versions.
 ## [Unreleased]
 Changes to be included in the next upcoming release
 
+### Changed
+* Updated to use [TypeScript v5.6.3](https://devblogs.microsoft.com/typescript/announcing-typescript-5-6/) ([#46](https://github.com/hasura/ndc-nodejs-lambda/pull/46))
+
 ## [1.8.0] - 2024-09-20
 - Updated the NDC TypeScript SDK to v7.0.0 ([#44](https://github.com/hasura/ndc-nodejs-lambda/pull/44))
   - Added support for exporting OpenTelemetry traces and metrics over GRPC. A new environment variable `OTEL_EXPORTER_OTLP_PROTOCOL` lets you switch between `http/protobuf` and `grpc`.
