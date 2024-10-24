@@ -4,8 +4,13 @@ This changelog documents the changes between release versions.
 ## [Unreleased]
 Changes to be included in the next upcoming release
 
+## [1.9.0] - 2024-10-24
+
 ### Added
 - Exported the `@hasura/ndc-lambda-sdk/connector` module to make it easier to build entirely new connectors that extend the existing functionality provided by the SDK ([#45](https://github.com/hasura/ndc-nodejs-lambda/pull/45))
+
+### Changed
+* Updated to use [TypeScript v5.6.3](https://devblogs.microsoft.com/typescript/announcing-typescript-5-6/) ([#46](https://github.com/hasura/ndc-nodejs-lambda/pull/46))
 
 ## [1.8.0] - 2024-09-20
 - Updated the NDC TypeScript SDK to v7.0.0 ([#44](https://github.com/hasura/ndc-nodejs-lambda/pull/44))
