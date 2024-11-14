@@ -201,6 +201,7 @@ describe("ndc schema", function() {
               },
             },
           },
+          foreign_keys: {}
         },
       },
       scalar_types: {
@@ -245,6 +246,7 @@ describe("ndc schema", function() {
           comparison_operators: {}
         },
         "MyRelaxedType": {
+          representation: { type: "json" },
           aggregate_functions: {},
           comparison_operators: {}
         },

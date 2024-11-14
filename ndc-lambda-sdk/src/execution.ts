@@ -288,6 +288,7 @@ export function reshapeResultUsingFieldSelection(value: unknown, type: schema.Ty
           case "scalar": return fieldSelection;
           case "array": return fieldSelection.fields;
           case "object": throw new sdk.BadRequest(`Trying to perform an object selection on an array type at '${valuePath.join(".")}'`)
+          case "collection": throw new sdk.NotSupported(`Trying to perform an unsupported collection nested field selection at '${valuePath.join(".")}'`)
           default: return unreachable(fieldSelection["type"]);
         }
       })();
@@ -321,6 +322,7 @@ export function reshapeResultUsingFieldSelection(value: unknown, type: schema.Ty
               case "scalar": return Object.fromEntries(objectType.properties.map(propDef => [propDef.propertyName, { type: "column", column: propDef.propertyName }]));
               case "array": throw new sdk.BadRequest(`Trying to perform an array selection on an object type at '${valuePath.join(".")}'`);
               case "object": return fieldSelection.fields;
+              case "collection": throw new sdk.NotSupported(`Trying to perform an unsupported collection nested field selection at '${valuePath.join(".")}'`)
               default: return unreachable(fieldSelection["type"]);
             }
           })();
