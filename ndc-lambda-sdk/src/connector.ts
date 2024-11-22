@@ -23,41 +23,21 @@ export function createConnector(options: ConnectorOptions): sdk.Connector<Config
     parseConfiguration: async function (configurationDir: string): Promise<Configuration> {
       // We need to try imporing the functions code via require before doing schema inference because
       // during watch mode we need it to be registered in the watching system so when the files are
-      // changed we reload. If the files fail to compile, ts-node will print the diagnostic errors on the
-      // terminal for us
-      let runtimeFunctions: RuntimeFunctions | undefined = undefined;
-      try {
-        runtimeFunctions = require(functionsFilePath);
-      } catch (e) {
-        console.error(`${e}`); // Print the compiler errors produced by ts-node
-        runtimeFunctions = undefined;
-      }
+      // changed we reload. If the files fail to compile, require with throw and the exception will
+      // result in the diagnostic errors being printed on the terminal for us
+      let runtimeFunctions: RuntimeFunctions = require(functionsFilePath);;
 
       // If the functions successfully loaded (ie. compiled), let's derive the schema.
       // Unfortunately this means we've typechecked everything twice, but that seems unavoidable without
       // implementing our own hot-reloading system instead of using ts-node-dev.
-      if (runtimeFunctions !== undefined) {
-        const schemaResults = deriveSchema(functionsFilePath);
-        printCompilerDiagnostics(schemaResults.compilerDiagnostics); // Should never have any of these, since we've already tried compiling the code above
-        printFunctionIssues(schemaResults.functionIssues);
-        printRelaxedTypesWarning(schemaResults.functionsSchema);
+      const schemaResults = deriveSchema(functionsFilePath);
+      printCompilerDiagnostics(schemaResults.compilerDiagnostics); // Should never have any of these, since we've already tried compiling the code above
+      printFunctionIssues(schemaResults.functionIssues);
+      printRelaxedTypesWarning(schemaResults.functionsSchema);
 
-        return {
-          functionsSchema: schemaResults.functionsSchema,
-          runtimeFunctions,
-        }
-      }
-      // If the functions did not compile, just have an empty schema, the user will need to correct
-      // their code before we can derive a schema
-      else {
-        return {
-          functionsSchema: {
-            functions: {},
-            objectTypes: {},
-            scalarTypes: {},
-          },
-          runtimeFunctions: {}
-        }
+      return {
+        functionsSchema: schemaResults.functionsSchema,
+        runtimeFunctions,
       }
     },
 
