@@ -11,7 +11,11 @@ nativeToolchainDefinition:
       bash: ./watch.sh
       powershell: ./watch.ps1
 supportedEnvironmentVariables: []
-commands: {}
+commands:
+  upgradeConfiguration:
+    type: Dockerized
+    dockerImage: ghcr.io/hasura/ndc-nodejs-lambda:v{{VERSION}}
+    dockerCommand: ["/scripts/upgrade-connector.sh"]
 dockerComposeWatch:
   # Rebuild the container if a new package restore is required because package[-lock].json changed
   - path: package.json
