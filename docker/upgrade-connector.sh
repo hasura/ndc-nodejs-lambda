@@ -37,7 +37,7 @@ else
   echo "Upgrading @hasura/ndc-lambda-sdk package from version $existing_connector_version to version $target_connector_version"
 fi
 
-npm install "@hasura/ndc-lambda-sdk@$target_connector_version" --save-exact --no-update-notifier
+npm install "@hasura/ndc-lambda-sdk@$target_connector_version" --save-exact --no-update-notifier --package-lock-only
 exit_status=$?
 set -e
 
