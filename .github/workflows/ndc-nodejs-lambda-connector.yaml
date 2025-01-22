@@ -94,9 +94,19 @@ jobs:
         with:
           images: ${{ env.DOCKER_REGISTRY }}/${{ env.DOCKER_IMAGE_NAME }}
 
+      - name: Get npm package version
+        id: get-npm-package-version
+        run: |
+          PACKAGE_VERSION=`npm version | sed -rn "2 s/.*: '([^']*)'.*/\1/g; 2 p"`
+          echo "package_version=${PACKAGE_VERSION}" >> $GITHUB_OUTPUT
+        shell: bash
+        working-directory: ./ndc-lambda-sdk
+
       - uses: docker/build-push-action@v6
         with:
           context: .
+          build-args: |
+            CONNECTOR_VERSION=${{ steps.get-npm-package-version.outputs.package_version }}
           push: ${{ startsWith(github.ref, 'refs/tags/v') }}
           platforms: linux/amd64,linux/arm64
           tags: ${{ steps.docker-metadata.outputs.tags }}

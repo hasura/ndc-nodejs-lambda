@@ -6,11 +6,14 @@ Changes to be included in the next upcoming release
 
 ## [1.11.0] - 2025-01-21
 
+### Added
+- The connector now supports being upgraded with the forthcoming `ddn connector upgrade` command ([#51](https://github.com/hasura/ndc-nodejs-lambda/pull/51))
+
 ### Changed
-* Updated to use [TypeScript v5.7.3](https://devblogs.microsoft.com/typescript/announcing-typescript-5-7/) ([#52](https://github.com/hasura/ndc-nodejs-lambda/pull/52))
+- Updated to use [TypeScript v5.7.3](https://devblogs.microsoft.com/typescript/announcing-typescript-5-7/) ([#52](https://github.com/hasura/ndc-nodejs-lambda/pull/52))
 
 ## [1.10.0] - 2024-11-21
-- The connector now exits during startup if there are compiler errors in the functions code. The compiler errors are printed to stderr. Previously the connector would print the errors and start "successfully", but with an empty schema. The new behaviour ensures that when the connector is used with `ddn connector introspect`, `ddn` is aware that a problem has occurred (because the connector fails to start) and will prompt the user to print the logs to see the compiler errors.
+- The connector now exits during startup if there are compiler errors in the functions code. The compiler errors are printed to stderr. Previously the connector would print the errors and start "successfully", but with an empty schema. The new behaviour ensures that when the connector is used with `ddn connector introspect`, `ddn` is aware that a problem has occurred (because the connector fails to start) and will prompt the user to print the logs to see the compiler errors. ([#50](https://github.com/hasura/ndc-nodejs-lambda/pull/50))
 
 ## [1.9.0] - 2024-10-24
 

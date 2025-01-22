@@ -1,8 +1,11 @@
 FROM node:20-alpine
+ARG CONNECTOR_VERSION
 
 RUN apk add jq curl
 
 COPY /docker /scripts
+RUN : "${CONNECTOR_VERSION:?Connector version must be set}"
+RUN echo ${CONNECTOR_VERSION} > /scripts/CONNECTOR_VERSION
 
 COPY /functions /functions
 RUN /scripts/package-restore.sh

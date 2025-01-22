@@ -17,6 +17,7 @@ dist dist/.hasura-connector:
 
 dist/.hasura-connector/connector-metadata.yaml: connector-metadata.yaml dist
 	cp -f connector-metadata.yaml dist/.hasura-connector
+	sed -i -E 's/\{\{VERSION\}\}/$(RELEASE_VERSION)/g' dist/.hasura-connector/connector-metadata.yaml
 
 dist/.hasura-connector/Dockerfile: Dockerfile dist/.hasura-connector $(RELEASE_VERSION_DEP)
 	cp -f Dockerfile dist/.hasura-connector/
