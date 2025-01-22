@@ -4,7 +4,7 @@ This changelog documents the changes between release versions.
 ## [Unreleased]
 Changes to be included in the next upcoming release
 
-## [1.11.0] - 2025-01-21
+## [1.11.0] - 2025-01-22
 
 ### Added
 - The connector now supports being upgraded with the forthcoming `ddn connector upgrade` command ([#51](https://github.com/hasura/ndc-nodejs-lambda/pull/51))
