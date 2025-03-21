@@ -122,7 +122,7 @@ jobs:
       - name: Scan docker image with gokakashi
         uses: shinobistack/gokakashi-action@v0.1.1
         with:
-          image: ${{ env.DOCKER_REGISTRY }}/${{ env.DOCKER_IMAGE_NAME }}:${{ steps.first-docker-tag.outputs.tag }}
+          image: ${{ steps.first-docker-tag.outputs.tag }}
           labels: agentKey=${{ github.run_id }}
           policy: ci-platform
           server: https://gokakashi-server.hasura-app.io
