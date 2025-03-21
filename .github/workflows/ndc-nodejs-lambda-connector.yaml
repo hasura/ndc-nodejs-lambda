@@ -102,15 +102,16 @@ jobs:
         shell: bash
         working-directory: ./ndc-lambda-sdk
 
-      - uses: docker/build-push-action@v6
+      - name: Build docker image
+        uses: docker/build-push-action@v6
         with:
           context: .
           build-args: |
             CONNECTOR_VERSION=${{ steps.get-npm-package-version.outputs.package_version }}
-          push: ${{ startsWith(github.ref, 'refs/tags/v') }}
           platforms: linux/amd64,linux/arm64
           tags: ${{ steps.docker-metadata.outputs.tags }}
           labels: ${{ steps.docker-metadata.outputs.labels }}
+          load: true # Load the image into Docker so gokakashi can scan it
 
       - name: Get first docker tag for gokakashi
         id: first-docker-tag
@@ -131,6 +132,18 @@ jobs:
           cf_client_secret: ${{ secrets.CF_ACCESS_CLIENT_SECRET }}
           interval: 10
           retries: 8
+
+      - name: Push docker image
+        uses: docker/build-push-action@v6
+        if: ${{ startsWith(github.ref, 'refs/tags/v') }}
+        with:
+          context: .
+          build-args: |
+            CONNECTOR_VERSION=${{ steps.get-npm-package-version.outputs.package_version }}
+          platforms: linux/amd64,linux/arm64
+          tags: ${{ steps.docker-metadata.outputs.tags }}
+          labels: ${{ steps.docker-metadata.outputs.labels }}
+          push: true
 
   release-connector:
     name: Release connector
