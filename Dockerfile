@@ -1,6 +1,7 @@
 FROM node:20-alpine
 ARG CONNECTOR_VERSION
 
+RUN npm update -g npm
 RUN apk add jq curl
 
 COPY /docker /scripts
