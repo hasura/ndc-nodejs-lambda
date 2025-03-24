@@ -132,6 +132,9 @@ jobs:
 
       - name: Debug docker image
         run: |
+          echo "-- Docker Images --"
+          docker images ls
+          echo "-- containerd Images --"
           ctr images ls
 
       - name: Get first docker tag for gokakashi
