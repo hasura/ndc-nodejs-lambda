@@ -91,9 +91,6 @@ jobs:
       - name: Fix containerd socket permissions
         run: |
           sudo chgrp docker /run/containerd/containerd.sock
-          id
-          sudo ls -al /var/run/docker.sock
-          sudo ls -al /run/containerd/
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
@@ -132,6 +129,10 @@ jobs:
           tags: ${{ steps.docker-metadata.outputs.tags }}
           labels: ${{ steps.docker-metadata.outputs.labels }}
           load: true # Load the image into Docker so gokakashi can scan it
+
+      - name: Debug docker image
+        run: |
+          ctr images ls
 
       - name: Get first docker tag for gokakashi
         id: first-docker-tag
