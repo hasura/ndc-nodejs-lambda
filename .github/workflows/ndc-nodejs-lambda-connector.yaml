@@ -133,7 +133,7 @@ jobs:
       - name: Debug docker image
         run: |
           echo "-- Docker Images --"
-          docker images ls
+          docker image ls
           echo "-- containerd Images --"
           ctr images ls
 
