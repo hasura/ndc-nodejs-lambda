@@ -88,8 +88,9 @@ jobs:
               }
             }
 
-      - name: debug
+      - name: Fix containerd socket permissions
         run: |
+          sudo chgrp docker /run/containerd/containerd.sock
           id
           sudo ls -al /var/run/docker.sock
           sudo ls -al /run/containerd/
