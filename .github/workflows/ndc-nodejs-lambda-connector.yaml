@@ -90,9 +90,9 @@ jobs:
 
       - name: debug
         run: |
-          ls -al /run/containerd/
-          ls -al
           id
+          sudo ls -al /var/run/docker.sock
+          sudo ls -al /run/containerd/
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
