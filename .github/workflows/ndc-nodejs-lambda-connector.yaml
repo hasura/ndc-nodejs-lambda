@@ -128,7 +128,11 @@ jobs:
           platforms: linux/amd64,linux/arm64
           tags: ${{ steps.docker-metadata.outputs.tags }}
           labels: ${{ steps.docker-metadata.outputs.labels }}
-          load: true # Load the image into Docker so gokakashi can scan it
+          outputs: type=oci,dest=/tmp/image.tar # Export the image to a tar so it can be imported into containerd so gokakashi can scan it
+
+      - name: Import docker image into containerd store
+        run: |
+          ctr images import --base-name ${{ env.DOCKER_REGISTRY }}/${{ env.DOCKER_IMAGE_NAME }} --digests --all-platforms /tmp/image.tar
 
       - name: Debug docker image
         run: |
