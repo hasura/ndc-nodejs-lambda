@@ -4,6 +4,9 @@ This changelog documents the changes between release versions.
 ## [Unreleased]
 Changes to be included in the next upcoming release
 
+## [1.13.0] - 2025-03-27
+- Added native toolchain support for connector version upgrading and fixed Dockerized connector version upgrading ([#55](https://github.com/hasura/ndc-nodejs-lambda/pull/55))
+
 ## [1.12.0] - 2025-03-21
 - Updated to use [TypeScript v5.8.2](https://devblogs.microsoft.com/typescript/announcing-typescript-5-8/) ([#53](https://github.com/hasura/ndc-nodejs-lambda/pull/53))
 - Updated `cross-spawn` dependency to resolve [security vulnerability](https://www.cve.org/CVERecord?id=CVE-2024-21538) ([#53](https://github.com/hasura/ndc-nodejs-lambda/pull/53))
