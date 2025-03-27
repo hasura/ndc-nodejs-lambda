@@ -1,3 +1,4 @@
+# yaml-language-server: $schema=connector-metadata.schema.json
 packagingDefinition:
   type: ManagedDockerBuild
 nativeToolchainDefinition:
@@ -10,12 +11,18 @@ nativeToolchainDefinition:
       type: ShellScript
       bash: ./watch.sh
       powershell: ./watch.ps1
+    upgradeConfiguration:
+      type: ShellScript
+      bash: |
+        ./upgrade-connector.sh "$HASURA_PLUGIN_CONNECTOR_CONTEXT_PATH" "{{VERSION}}"
+      powershell: |
+        & ./upgrade-connector.ps1 "$env:HASURA_PLUGIN_CONNECTOR_CONTEXT_PATH" "{{VERSION}}"
 supportedEnvironmentVariables: []
 commands:
   upgradeConfiguration:
     type: Dockerized
     dockerImage: ghcr.io/hasura/ndc-nodejs-lambda:v{{VERSION}}
-    dockerCommand: ["/scripts/upgrade-connector.sh"]
+    commandArgs: ["/scripts/upgrade.sh"]
 dockerComposeWatch:
   # Rebuild the container if a new package restore is required because package[-lock].json changed
   - path: package.json
