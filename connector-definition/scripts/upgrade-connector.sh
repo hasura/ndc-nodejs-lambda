@@ -1,8 +1,31 @@
-#!/usr/bin/env sh
+#!/usr/bin/env bash
 set -eu -o pipefail
 
-connector_path="${HASURA_PLUGIN_CONNECTOR_CONTEXT_PATH:-/functions}"
-target_connector_version="$(cat /scripts/CONNECTOR_VERSION)"
+connector_path="${1:-}"
+target_connector_version="${2:-}"
+npm_flags="${3:-}"
+
+if [ -z "$connector_path" ]; then
+  echo "Error: connector path must be passed as the first argument"
+  exit 1
+fi
+
+if [ -z "$target_connector_version" ]; then
+  echo "Error: target connector version must be passed as the second argument"
+  exit 1
+fi
+
+if ! command -v npm &> /dev/null
+then
+  echo "npm could not be found on the PATH. Is Node.js installed?"
+  exit 1
+fi
+
+if ! command -v jq &> /dev/null
+then
+  echo "jq could not be found on the PATH. Is jq installed?"
+  exit 1
+fi
 
 cd "$connector_path"
 
@@ -23,10 +46,7 @@ else
   echo "Upgrading @hasura/ndc-lambda-sdk package from version $existing_connector_version to version $target_connector_version"
 fi
 
-# We do a --package-lock-only because we don't want to change the node_modules directory.
-# This is because the existing node_modules directory  may have been installed on a
-# different platform since it is being volume mounted into a Linux container
-npm install "@hasura/ndc-lambda-sdk@$target_connector_version" --save-exact --no-update-notifier --package-lock-only
+npm install "@hasura/ndc-lambda-sdk@$target_connector_version" --save-exact --no-update-notifier $npm_flags
 exit_status=$?
 set -e
 
@@ -37,4 +57,3 @@ if [ $exit_status -ne 0 ]; then
 fi
 
 echo "Successfully upgraded @hasura/ndc-lambda-sdk package to version $target_connector_version"
-echo "You may need to run 'npm install' to install the new dependencies locally"

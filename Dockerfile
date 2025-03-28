@@ -2,9 +2,10 @@ FROM node:20-alpine
 ARG CONNECTOR_VERSION
 
 RUN npm update -g npm
-RUN apk add jq curl
+RUN apk add bash jq curl
 
 COPY /docker /scripts
+COPY /connector-definition/scripts/upgrade-connector.sh /scripts/upgrade-connector.sh
 RUN : "${CONNECTOR_VERSION:?Connector version must be set}"
 RUN echo ${CONNECTOR_VERSION} > /scripts/CONNECTOR_VERSION
 
