@@ -4,6 +4,9 @@ This changelog documents the changes between release versions.
 ## [Unreleased]
 Changes to be included in the next upcoming release
 
+## [1.14.0] - 2025-05-12
+- Increase `bodyLimit` to 30mb
+
 ## [1.13.0] - 2025-03-27
 - Added native toolchain support for connector version upgrading and fixed Dockerized connector version upgrading ([#55](https://github.com/hasura/ndc-nodejs-lambda/pull/55))
 
