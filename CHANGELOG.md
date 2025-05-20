@@ -4,8 +4,11 @@ This changelog documents the changes between release versions.
 ## [Unreleased]
 Changes to be included in the next upcoming release
 
+## [1.15.0] - 2025-05-20
+- Updated to use [TypeScript v5.8.2](https://devblogs.microsoft.com/typescript/announcing-typescript-5-8/) ([#53](https://github.com/hasura/ndc-nodejs-lambda/pull/57))
+
 ## [1.14.0] - 2025-05-12
-- Increase `bodyLimit` to 30mb
+- Increase the limit of the size of the request's body to 30 MB ([#56](https://github.com/hasura/ndc-nodejs-lambda/pull/56))
 
 ## [1.13.0] - 2025-03-27
 - Added native toolchain support for connector version upgrading and fixed Dockerized connector version upgrading ([#55](https://github.com/hasura/ndc-nodejs-lambda/pull/55))
