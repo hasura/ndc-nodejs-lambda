@@ -1,4 +1,4 @@
-#!/usr/bin/env sh
+#!/usr/bin/env bash
 set -eu -o pipefail
 
 # We do a --package-lock-only because we don't want to change the node_modules directory.
