@@ -5,7 +5,7 @@ This changelog documents the changes between release versions.
 Changes to be included in the next upcoming release
 
 ## [1.15.0] - 2025-05-20
-- Updated to use [TypeScript v5.8.2](https://devblogs.microsoft.com/typescript/announcing-typescript-5-8/) ([#57](https://github.com/hasura/ndc-nodejs-lambda/pull/57))
+- Updated to use [TypeScript v5.8.3](https://github.com/microsoft/TypeScript/releases/tag/v5.8.3) ([#57](https://github.com/hasura/ndc-nodejs-lambda/pull/57))
 
 ## [1.14.0] - 2025-05-12
 - Increase the limit of the size of the request's body to 30 MB ([#56](https://github.com/hasura/ndc-nodejs-lambda/pull/56))
