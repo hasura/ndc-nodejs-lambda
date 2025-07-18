@@ -4,6 +4,13 @@ This changelog documents the changes between release versions.
 ## [Unreleased]
 Changes to be included in the next upcoming release
 
+## [1.16.0] - 2025-07-18
+- Updated the NDC TypeScript SDK to v8.2.0 ([#58](https://github.com/hasura/ndc-nodejs-lambda/pull/58))
+  - Updated to support v0.2.0 of the NDC Spec. This is a very large update which adds new features and some breaking changes to the spec.
+  - If the `X-Hasura-NDC-Version` header is sent, the SDK will validate that the connector supports the incoming request's version and reject it if it does not. If no header is sent, no action is taken
+  - Added support for automatically returning compressed responses using gzip or deflate
+- All OpenTelemetry trace spans are now annotated with the TypeScript SDK version (`resource.service.version: "8.2.0"`) and the connector name (`resource.service.connector.name: "ndc-nodejs-lambda"`) and version (`resource.service.connector.version: "1.16.0"`). The connector name and version can be overriden using `HASURA_CONNECTOR_NAME` and `HASURA_CONNECTOR_VERSION` environment variables.
+
 ## [1.15.0] - 2025-05-20
 - Updated to use [TypeScript v5.8.3](https://github.com/microsoft/TypeScript/releases/tag/v5.8.3) ([#57](https://github.com/hasura/ndc-nodejs-lambda/pull/57))
 

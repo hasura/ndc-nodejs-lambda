@@ -238,7 +238,8 @@ export function getNdcSchema(functionsSchema: FunctionsSchema): sdk.SchemaRespon
         }
         return [propDef.propertyName, objField];
       })),
-      ...(objDef.description ? { description: objDef.description } : {})
+      foreign_keys: {},
+      ...(objDef.description ? { description: objDef.description } : {}),
     }
   });
 
@@ -250,6 +251,7 @@ export function getNdcSchema(functionsSchema: FunctionsSchema): sdk.SchemaRespon
           : throwError(`built-in scalar type with unexpected name: ${scalarTypeName}`);
       case "relaxed-type":
         return {
+          representation: { type: "json" },
           aggregate_functions: {},
           comparison_operators: {},
         };
