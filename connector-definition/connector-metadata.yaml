@@ -1,4 +1,6 @@
 # yaml-language-server: $schema=connector-metadata.schema.json
+version: v2
+ndcSpecGeneration: v0.2
 packagingDefinition:
   type: ManagedDockerBuild
 nativeToolchainDefinition:
