@@ -8,6 +8,13 @@ import { isArray, mapObjectValues, unreachable } from "./util"
 
 const tracer = opentelemetry.trace.getTracer("nodejs-lambda-sdk.execution");
 
+// Helper to attach function name to any ConnectorError for logging purposes
+function attachFunctionNameToError(error: unknown, functionName: string): void {
+  if (error instanceof sdk.ConnectorError) {
+    (error as sdk.ConnectorError & { function?: string }).function = functionName;
+  }
+}
+
 export type RuntimeFunctions = {
   [functionName: string]: Function
 }
@@ -22,41 +29,46 @@ const FUNCTION_INVOCATION_INDEX_SPAN_ATTR_NAME = "ndc-lambda-sdk.function_invoca
 export async function executeQuery(queryRequest: sdk.QueryRequest, functionsSchema: schema.FunctionsSchema, runtimeFunctions: RuntimeFunctions): Promise<sdk.QueryResponse> {
   const functionName = queryRequest.collection;
 
-  const functionDefinition = functionsSchema.functions[functionName];
-  if (functionDefinition === undefined)
-    throw new sdk.BadRequest(`Couldn't find function '${functionName}' in schema.`)
-  if (functionDefinition.ndcKind !== schema.FunctionNdcKind.Function) {
-    throw new sdk.BadRequest(`'${functionName}' is a '${functionDefinition.ndcKind}' and cannot be queried as a ${schema.FunctionNdcKind.Function}.`)
+  try {
+    const functionDefinition = functionsSchema.functions[functionName];
+    if (functionDefinition === undefined)
+      throw new sdk.BadRequest(`Couldn't find function '${functionName}' in schema.`)
+    if (functionDefinition.ndcKind !== schema.FunctionNdcKind.Function) {
+      throw new sdk.BadRequest(`'${functionName}' is a '${functionDefinition.ndcKind}' and cannot be queried as a ${schema.FunctionNdcKind.Function}.`)
+    }
+
+    const runtimeFunction = runtimeFunctions[functionName];
+    if (runtimeFunction === undefined)
+      throw new sdk.InternalServerError(`Couldn't find '${functionName}' function exported from hosted functions module.`)
+
+    const spanAttributes = { [FUNCTION_NAME_SPAN_ATTR_NAME]: functionName };
+
+    const functionInvocationPreparedArgs = withActiveSpan(tracer, "prepare arguments", () =>
+      (queryRequest.variables ?? [{}]).map(variables => {
+        const resolvedArgs = resolveArgumentValues(queryRequest.arguments, variables);
+        return prepareArguments(resolvedArgs, functionDefinition, functionsSchema.objectTypes);
+      })
+    , spanAttributes);
+
+    const parallelLimit = pLimit(functionDefinition.parallelDegree ?? DEFAULT_PARALLEL_DEGREE);
+    const functionInvocations: Promise<sdk.RowSet>[] = functionInvocationPreparedArgs.map((invocationPreparedArgs, invocationIndex) => parallelLimit(async () => {
+      const invocationSpanAttrs = {...spanAttributes, [FUNCTION_INVOCATION_INDEX_SPAN_ATTR_NAME]: invocationIndex};
+
+      return withActiveSpan(tracer, "function invocation", async () => {
+        const result = await invokeFunction(runtimeFunction, invocationPreparedArgs, functionName);
+
+        return withActiveSpan(tracer, "reshape result", () =>
+          reshapeResultUsingFunctionCallingConvention(result, functionDefinition.resultType, queryRequest.query, functionsSchema.objectTypes)
+        , invocationSpanAttrs);
+
+      }, invocationSpanAttrs);
+    }));
+
+    return await Promise.all(functionInvocations);
+  } catch (e) {
+    attachFunctionNameToError(e, functionName);
+    throw e;
   }
-
-  const runtimeFunction = runtimeFunctions[functionName];
-  if (runtimeFunction === undefined)
-    throw new sdk.InternalServerError(`Couldn't find '${functionName}' function exported from hosted functions module.`)
-
-  const spanAttributes = { [FUNCTION_NAME_SPAN_ATTR_NAME]: functionName };
-
-  const functionInvocationPreparedArgs = withActiveSpan(tracer, "prepare arguments", () =>
-    (queryRequest.variables ?? [{}]).map(variables => {
-      const resolvedArgs = resolveArgumentValues(queryRequest.arguments, variables);
-      return prepareArguments(resolvedArgs, functionDefinition, functionsSchema.objectTypes);
-    })
-  , spanAttributes);
-
-  const parallelLimit = pLimit(functionDefinition.parallelDegree ?? DEFAULT_PARALLEL_DEGREE);
-  const functionInvocations: Promise<sdk.RowSet>[] = functionInvocationPreparedArgs.map((invocationPreparedArgs, invocationIndex) => parallelLimit(async () => {
-    const invocationSpanAttrs = {...spanAttributes, [FUNCTION_INVOCATION_INDEX_SPAN_ATTR_NAME]: invocationIndex};
-
-    return withActiveSpan(tracer, "function invocation", async () => {
-      const result = await invokeFunction(runtimeFunction, invocationPreparedArgs, functionName);
-
-      return withActiveSpan(tracer, "reshape result", () =>
-        reshapeResultUsingFunctionCallingConvention(result, functionDefinition.resultType, queryRequest.query, functionsSchema.objectTypes)
-      , invocationSpanAttrs);
-
-    }, invocationSpanAttrs);
-  }));
-
-  return await Promise.all(functionInvocations);
 }
 
 export async function executeMutation(mutationRequest: sdk.MutationRequest, functionsSchema: schema.FunctionsSchema, runtimeFunctions: RuntimeFunctions): Promise<sdk.MutationResponse> {
@@ -76,32 +88,37 @@ export async function executeMutation(mutationRequest: sdk.MutationRequest, func
 async function executeMutationOperation(mutationOperation: sdk.MutationOperation, functionsSchema: schema.FunctionsSchema, runtimeFunctions: RuntimeFunctions): Promise<sdk.MutationOperationResults> {
   const functionName = mutationOperation.name;
 
-  const functionDefinition = functionsSchema.functions[functionName];
-  if (functionDefinition === undefined)
-    throw new sdk.BadRequest(`Couldn't find procedure '${functionName}' in schema.`)
-  if (functionDefinition.ndcKind !== schema.FunctionNdcKind.Procedure) {
-    throw new sdk.BadRequest(`'${functionName}' is a '${functionDefinition.ndcKind}' and cannot be queried as a ${schema.FunctionNdcKind.Procedure}.`)
-  }
+  try {
+    const functionDefinition = functionsSchema.functions[functionName];
+    if (functionDefinition === undefined)
+      throw new sdk.BadRequest(`Couldn't find procedure '${functionName}' in schema.`)
+    if (functionDefinition.ndcKind !== schema.FunctionNdcKind.Procedure) {
+      throw new sdk.BadRequest(`'${functionName}' is a '${functionDefinition.ndcKind}' and cannot be queried as a ${schema.FunctionNdcKind.Procedure}.`)
+    }
 
-  const spanAttributes = { [FUNCTION_NAME_SPAN_ATTR_NAME]: functionName };
+    const spanAttributes = { [FUNCTION_NAME_SPAN_ATTR_NAME]: functionName };
 
-  const runtimeFunction = runtimeFunctions[functionName];
-  if (runtimeFunction === undefined)
-    throw new sdk.InternalServerError(`Couldn't find ${functionName} function exported from hosted functions module.`)
+    const runtimeFunction = runtimeFunctions[functionName];
+    if (runtimeFunction === undefined)
+      throw new sdk.InternalServerError(`Couldn't find ${functionName} function exported from hosted functions module.`)
 
-  const preparedArgs = withActiveSpan(tracer, "prepare arguments", () =>
-    prepareArguments(mutationOperation.arguments, functionDefinition, functionsSchema.objectTypes)
-  , spanAttributes);
+    const preparedArgs = withActiveSpan(tracer, "prepare arguments", () =>
+      prepareArguments(mutationOperation.arguments, functionDefinition, functionsSchema.objectTypes)
+    , spanAttributes);
 
-  const result = await invokeFunction(runtimeFunction, preparedArgs, functionName);
+    const result = await invokeFunction(runtimeFunction, preparedArgs, functionName);
 
-  const reshapedResult = withActiveSpan(tracer, "reshape result", () =>
-    reshapeResultUsingFieldSelection(result, functionDefinition.resultType, [], mutationOperation.fields ?? { type: "scalar" }, functionsSchema.objectTypes)
-  , spanAttributes);
+    const reshapedResult = withActiveSpan(tracer, "reshape result", () =>
+      reshapeResultUsingFieldSelection(result, functionDefinition.resultType, [], mutationOperation.fields ?? { type: "scalar" }, functionsSchema.objectTypes)
+    , spanAttributes);
 
-  return {
-    type: "procedure",
-    result: reshapedResult
+    return {
+      type: "procedure",
+      result: reshapedResult
+    }
+  } catch (e) {
+    attachFunctionNameToError(e, functionName);
+    throw e;
   }
 }
 

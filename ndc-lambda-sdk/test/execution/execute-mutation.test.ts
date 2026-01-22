@@ -336,6 +336,112 @@ describe("execute mutation", function() {
         });
       }
     });
+
+    describe("function is set on errors for logging", function() {
+      it("Error -> sdk.InternalServerError has function", async function() {
+        const runtimeFunctions = {
+          "theFunction": () => {
+            throw new Error("BOOM!");
+          }
+        };
+
+        await expect(executeMutation(mutationRequest, functionSchema, runtimeFunctions))
+          .to.be.rejectedWith(sdk.InternalServerError)
+          .and.eventually.property("function").equals("theFunction");
+      });
+
+      it("string -> sdk.InternalServerError has function", async function() {
+        const runtimeFunctions = {
+          "theFunction": () => {
+            throw "A bad way to throw errors";
+          }
+        };
+
+        await expect(executeMutation(mutationRequest, functionSchema, runtimeFunctions))
+          .to.be.rejectedWith(sdk.InternalServerError)
+          .and.eventually.property("function").equals("theFunction");
+      });
+
+      it("unknown -> sdk.InternalServerError has function", async function() {
+        const runtimeFunctions = {
+          "theFunction": () => {
+            throw 666;
+          }
+        };
+
+        await expect(executeMutation(mutationRequest, functionSchema, runtimeFunctions))
+          .to.be.rejectedWith(sdk.InternalServerError)
+          .and.eventually.property("function").equals("theFunction");
+      });
+
+      it("sdk.ConnectorError has function", async function() {
+        const runtimeFunctions = {
+          "theFunction": () => {
+            throw new sdk.UnprocessableContent("Nope!");
+          }
+        };
+
+        await expect(executeMutation(mutationRequest, functionSchema, runtimeFunctions))
+          .to.be.rejectedWith(sdk.UnprocessableContent)
+          .and.eventually.property("function").equals("theFunction");
+      });
+
+      it("procedure not found in schema has function name", async function() {
+        const emptySchema: FunctionsSchema = {
+          functions: {},
+          objectTypes: {},
+          scalarTypes: {}
+        };
+        const mutationRequestForMissing: sdk.MutationRequest = {
+          operations: [{
+            type: "procedure",
+            name: "missingProcedure",
+            arguments: {},
+            fields: null
+          }],
+          collection_relationships: {}
+        };
+
+        await expect(executeMutation(mutationRequestForMissing, emptySchema, {}))
+          .to.be.rejectedWith(sdk.BadRequest, "Couldn't find procedure 'missingProcedure' in schema")
+          .and.eventually.property("function").equals("missingProcedure");
+      });
+
+      it("wrong ndcKind error has function name", async function() {
+        const functionOnlySchema: FunctionsSchema = {
+          functions: {
+            "theQueryFunction": {
+              ndcKind: FunctionNdcKind.Function,
+              description: null,
+              parallelDegree: null,
+              arguments: [],
+              resultType: { type: "named", kind: "scalar", name: "String" }
+            }
+          },
+          objectTypes: {},
+          scalarTypes: { "String": { type: "built-in" } }
+        };
+        const mutationRequestForFunction: sdk.MutationRequest = {
+          operations: [{
+            type: "procedure",
+            name: "theQueryFunction",
+            arguments: {},
+            fields: null
+          }],
+          collection_relationships: {}
+        };
+
+        await expect(executeMutation(mutationRequestForFunction, functionOnlySchema, {}))
+          .to.be.rejectedWith(sdk.BadRequest, "'theQueryFunction' is a 'Function'")
+          .and.eventually.property("function").equals("theQueryFunction");
+      });
+
+      it("procedure not in runtime has function name", async function() {
+        await expect(executeMutation(mutationRequest, functionSchema, {}))
+          .to.be.rejectedWith(sdk.InternalServerError, "Couldn't find theFunction function exported")
+          .and.eventually.property("function").equals("theFunction");
+      });
+    });
   })
 
 });

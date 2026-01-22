@@ -378,6 +378,106 @@ describe("execute query", function() {
         });
       }
     });
+
+    describe("function is set on errors for logging", function() {
+      it("Error -> sdk.InternalServerError has function", async function() {
+        const runtimeFunctions = {
+          "theFunction": () => {
+            throw new Error("BOOM!");
+          }
+        };
+
+        await expect(executeQuery(queryRequest, functionSchema, runtimeFunctions))
+          .to.be.rejectedWith(sdk.InternalServerError)
+          .and.eventually.property("function").equals("theFunction");
+      });
+
+      it("string -> sdk.InternalServerError has function", async function() {
+        const runtimeFunctions = {
+          "theFunction": () => {
+            throw "A bad way to throw errors";
+          }
+        };
+
+        await expect(executeQuery(queryRequest, functionSchema, runtimeFunctions))
+          .to.be.rejectedWith(sdk.InternalServerError)
+          .and.eventually.property("function").equals("theFunction");
+      });
+
+      it("unknown -> sdk.InternalServerError has function", async function() {
+        const runtimeFunctions = {
+          "theFunction": () => {
+            throw 666;
+          }
+        };
+
+        await expect(executeQuery(queryRequest, functionSchema, runtimeFunctions))
+          .to.be.rejectedWith(sdk.InternalServerError)
+          .and.eventually.property("function").equals("theFunction");
+      });
+
+      it("sdk.ConnectorError has function", async function() {
+        const runtimeFunctions = {
+          "theFunction": () => {
+            throw new sdk.UnprocessableContent("Nope!");
+          }
+        };
+
+        await expect(executeQuery(queryRequest, functionSchema, runtimeFunctions))
+          .to.be.rejectedWith(sdk.UnprocessableContent)
+          .and.eventually.property("function").equals("theFunction");
+      });
+
+      it("function not found in schema has function name", async function() {
+        const emptySchema: FunctionsSchema = {
+          functions: {},
+          objectTypes: {},
+          scalarTypes: {}
+        };
+        const queryRequestForMissing: sdk.QueryRequest = {
+          collection: "missingFunction",
+          query: { fields: { __value: { type: "column", column: "__value" } } },
+          arguments: {},
+          collection_relationships: {}
+        };
+
+        await expect(executeQuery(queryRequestForMissing, emptySchema, {}))
+          .to.be.rejectedWith(sdk.BadRequest, "Couldn't find function 'missingFunction' in schema")
+          .and.eventually.property("function").equals("missingFunction");
+      });
+
+      it("wrong ndcKind error has function name", async function() {
+        const procedureSchema: FunctionsSchema = {
+          functions: {
+            "theProcedure": {
+              ndcKind: FunctionNdcKind.Procedure,
+              description: null,
+              parallelDegree: null,
+              arguments: [],
+              resultType: { type: "named", kind: "scalar", name: "String" }
+            }
+          },
+          objectTypes: {},
+          scalarTypes: { "String": { type: "built-in" } }
+        };
+        const queryRequestForProcedure: sdk.QueryRequest = {
+          collection: "theProcedure",
+          query: { fields: { __value: { type: "column", column: "__value" } } },
+          arguments: {},
+          collection_relationships: {}
+        };
+
+        await expect(executeQuery(queryRequestForProcedure, procedureSchema, {}))
+          .to.be.rejectedWith(sdk.BadRequest, "'theProcedure' is a 'Procedure'")
+          .and.eventually.property("function").equals("theProcedure");
+      });
+
+      it("function not in runtime has function name", async function() {
+        await expect(executeQuery(queryRequest, functionSchema, {}))
+          .to.be.rejectedWith(sdk.InternalServerError, "Couldn't find 'theFunction' function exported")
+          .and.eventually.property("function").equals("theFunction");
+      });
+    });
   })
 
   describe("function calling convention", function() {
