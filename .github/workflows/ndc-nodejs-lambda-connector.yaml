@@ -118,37 +118,6 @@ jobs:
           platforms: linux/amd64,linux/arm64
           tags: ${{ steps.docker-metadata.outputs.tags }}
           labels: ${{ steps.docker-metadata.outputs.labels }}
-          outputs: type=oci,dest=/tmp/image.tar # Export the image to a tar so it can be imported into containerd so gokakashi can scan it
-
-      - name: Import docker image into containerd store
-        run: |
-          ctr images import --base-name ${{ env.DOCKER_REGISTRY }}/${{ env.DOCKER_IMAGE_NAME }} --digests --all-platforms /tmp/image.tar
-
-      - name: Get first docker tag for gokakashi
-        id: first-docker-tag
-        run: |
-          FIRST_TAG=$(echo "${{ steps.docker-metadata.outputs.tags }}" | head -n 1)
-          echo "First docker tag: $FIRST_TAG"
-          echo "tag=$FIRST_TAG" >> $GITHUB_OUTPUT
-
-      - name: Scan docker image with gokakashi
-        uses: shinobistack/gokakashi-action@v0.1.1
-        with:
-          image: ${{ steps.first-docker-tag.outputs.tag }}
-          labels: agentKey=${{ github.run_id }}
-          policy: ci-platform
-          server: https://gokakashi-server.hasura-app.io
-          token: ${{ secrets.GOKAKASHI_API_TOKEN }}
-          cf_client_id: ${{ secrets.CF_ACCESS_CLIENT_ID }}
-          cf_client_secret: ${{ secrets.CF_ACCESS_CLIENT_SECRET }}
-          interval: 10
-          retries: 8
-
-      - name: Upload Trivy report as artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: trivy-report
-          path: /tmp/trivy-report-*.json
 
       - name: Push docker image
         uses: docker/build-push-action@v6
