@@ -4,6 +4,10 @@ This changelog documents the changes between release versions.
 ## [Unreleased]
 Changes to be included in the next upcoming release
 
+## [1.17.0] - 2026-01-23
+- Updated the NDC TypeScript SDK to v8.3.0 ([#61](https://github.com/hasura/ndc-nodejs-lambda/pull/61))
+  - Logging of requests, responses and errors has been improved to include the collection/operation name if available
+
 ## [1.16.0] - 2025-07-18
 - Updated the NDC TypeScript SDK to v8.2.0 ([#58](https://github.com/hasura/ndc-nodejs-lambda/pull/58))
   - Updated to support v0.2.0 of the NDC Spec. This is a very large update which adds new features and some breaking changes to the spec.

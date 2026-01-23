@@ -31,7 +31,7 @@
     "url": "git+https://github.com/hasura/ndc-nodejs-lambda.git"
   },
   "dependencies": {
-    "@hasura/ndc-sdk-typescript": "^8.2.0",
+    "@hasura/ndc-sdk-typescript": "^8.3.0",
     "@hasura/ts-node-dev": "^2.1.0",
     "@tsconfig/node20": "^20.1.4",
     "commander": "^11.1.0",
