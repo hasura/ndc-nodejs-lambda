@@ -1,4 +1,4 @@
-FROM node:20-alpine
+FROM node:20-alpine3.23
 ARG CONNECTOR_VERSION
 
 RUN npm update -g npm
