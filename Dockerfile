@@ -24,8 +24,8 @@ RUN echo ${CONNECTOR_VERSION} > /scripts/CONNECTOR_VERSION
 COPY /functions /functions
 RUN /scripts/package-restore.sh
 
-# Create non-root user
-RUN useradd -m -s /bin/bash -u 1000 hasura \
+# Create non-root user, let useradd pick a unique UID
+RUN useradd -m -s /bin/bash hasura \
     && chown -R hasura:hasura /scripts /functions
 
 USER hasura
