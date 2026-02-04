@@ -24,6 +24,12 @@ RUN echo ${CONNECTOR_VERSION} > /scripts/CONNECTOR_VERSION
 COPY /functions /functions
 RUN /scripts/package-restore.sh
 
+# Create non-root user
+RUN useradd -m -s /bin/bash -u 1000 hasura \
+    && chown -R hasura:hasura /scripts /functions
+
+USER hasura
+
 EXPOSE 8080
 
 HEALTHCHECK --interval=5s --timeout=10s --start-period=1s --retries=3 CMD [ "sh", "-c", "exec curl -f http://localhost:${HASURA_CONNECTOR_PORT:-8080}/health" ]
