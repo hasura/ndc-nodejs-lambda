@@ -1,5 +1,11 @@
 # Node.js Lambda Connector Changelog
 
+## [1.20.1] - 2026-02-05
+
+- Add GH Workflow to automate release (#66)
+- Match UID for hasura in Dockerfile and connector-definition Dockerfile (#65)
+
+
 This changelog documents the changes between release versions.
 
 ## [Unreleased]
