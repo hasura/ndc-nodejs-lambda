@@ -25,7 +25,8 @@ COPY /functions /functions
 RUN /scripts/package-restore.sh
 
 # Explicitly set UID/GID to match the cache mount used in ./connector-definition/Dockerfile
-RUN useradd -m -s /bin/bash -u 1001 -g 1001 hasura \
+RUN groupadd -g 1001 hasura \
+    && useradd -m -s /bin/bash -u 1001 -g hasura hasura \
     && chown -R hasura:hasura /scripts /functions
 
 USER hasura
