@@ -24,8 +24,8 @@ RUN echo ${CONNECTOR_VERSION} > /scripts/CONNECTOR_VERSION
 COPY /functions /functions
 RUN /scripts/package-restore.sh
 
-# Create non-root user, let useradd pick a unique UID
-RUN useradd -m -s /bin/bash hasura \
+# Explicitly set UID/GID to match the cache mount used in ./connector-definition/Dockerfile
+RUN useradd -m -s /bin/bash -u 1001 -g 1001 hasura \
     && chown -R hasura:hasura /scripts /functions
 
 USER hasura
