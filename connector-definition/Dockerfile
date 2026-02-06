@@ -7,3 +7,5 @@ RUN --mount=type=cache,target=/home/hasura/.npm,uid=1001,gid=1001 \
     npm ci
 
 COPY --chown=hasura:hasura ./ /functions
+
+USER hasura:hasura
