@@ -1,5 +1,13 @@
 # Node.js Lambda Connector Changelog
 
+## [1.20.3] - 2026-03-06
+
+- revert package version (#74)
+- Add .trivyignore for npm-bundled CVEs pending upstream fix (#73)
+- Bump SDK version (#72)
+- non root user (#70)
+
+
 This changelog documents the changes between release versions.
 
 ## [Unreleased]
