@@ -1,0 +1,13 @@
+# CVE-2026-27903: minimatch - DoS via unbounded recursive backtracking in glob patterns
+# CVE-2026-27904: minimatch - DoS via catastrophic backtracking in glob expressions
+# CVE-2026-29786: tar - Hardlink path traversal via drive-relative linkpath
+#
+# These vulnerabilities exist in packages bundled within npm itself (not in our application
+# dependencies). They cannot be resolved by updating our own package.json — a fix requires
+# a new npm release that ships patched versions of minimatch and tar internally.
+#
+# TODO: Remove these ignores once a fixed version of npm is available and deployed in the
+# base image. Track the npm release notes for minimatch >= <fixed-version> and tar >= <fixed-version>.
+CVE-2026-27903
+CVE-2026-27904
+CVE-2026-29786
