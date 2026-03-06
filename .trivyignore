@@ -1,0 +1,8 @@
+# CVEs in npm's own bundled dependencies (minimatch and tar).
+# npm 11.11.0 (latest) ships with minimatch@10.2.2 and tar@7.5.9 bundled.
+# Fixed versions (minimatch@10.2.3, tar@7.5.10) are available but npm has not
+# yet released a new version that bundles them. Suppress until npm ships a fix.
+
+CVE-2026-27903
+CVE-2026-27904
+CVE-2026-29786
