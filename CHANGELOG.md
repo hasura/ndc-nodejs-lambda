@@ -6,6 +6,10 @@ This changelog documents the changes between release versions.
 
 Changes to be included in the next upcoming release
 
+## [1.20.3] - 2026-03-06
+
+- Updated ndc-sdk-typescript to v8.5.0
+
 ## [1.20.2] - 2026-02-07
 
 - Updated ndc-sdk-typescript to v8.4.0 to address CVE-2026-25223 ([#66](https://github.com/hasura/ndc-nodejs-lambda/pull/66))
