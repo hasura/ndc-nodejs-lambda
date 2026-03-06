@@ -129,7 +129,7 @@ jobs:
           tags: ${{ env.DOCKER_REGISTRY }}/${{ env.DOCKER_IMAGE_NAME }}:scan
 
       - name: Run Trivy vulnerability scanner (json output)
-        uses: aquasecurity/trivy-action@0.32.0
+        uses: aquasecurity/trivy-action@0.34.2
         with:
           image-ref: ${{ env.DOCKER_REGISTRY }}/${{ env.DOCKER_IMAGE_NAME }}:scan
           format: json
@@ -152,7 +152,7 @@ jobs:
             team=engine
 
       - name: Fail build on High/Critical Vulnerabilities
-        uses: aquasecurity/trivy-action@0.32.0
+        uses: aquasecurity/trivy-action@0.34.2
         with:
           skip-setup-trivy: true
           image-ref: ${{ env.DOCKER_REGISTRY }}/${{ env.DOCKER_IMAGE_NAME }}:scan
