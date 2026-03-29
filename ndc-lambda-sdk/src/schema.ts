@@ -189,6 +189,10 @@ export class JSONValue {
     return this.#value;
   }
 
+  get toJSON(): unknown {
+    return this.#value;
+  }
+
   /**
    * @internal
    */
