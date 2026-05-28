@@ -1,0 +1,21 @@
+{
+  "name": "ndc-nodejs-lambda-integration-tests",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "test": "mocha"
+  },
+  "dependencies": {
+    "@hasura/ndc-lambda-sdk": "file:../ndc-lambda-sdk"
+  },
+  "devDependencies": {
+    "@tsconfig/node20": "^20.1.4",
+    "@types/chai": "^4.3.20",
+    "@types/mocha": "^10.0.10",
+    "@types/node": "^20.17.0",
+    "chai": "^4.5.0",
+    "mocha": "^10.8.2",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.8.3"
+  }
+}
