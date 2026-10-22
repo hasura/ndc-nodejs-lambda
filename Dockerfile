@@ -13,12 +13,14 @@ RUN apt-get update && apt-get upgrade -y && apt-get install -y \
     && echo "deb [signed-by=/etc/apt/keyrings/nodesource.gpg] https://deb.nodesource.com/node_24.x nodistro main" | tee /etc/apt/sources.list.d/nodesource.list \
     && apt-get update \
     && apt-get install -y nodejs \
+    && node -e 'if (Number(process.versions.node.split(".")[0]) !== 24) process.exit(1)' \
+    && dpkg --compare-versions "$(node --version | sed 's/^v//')" ge 24.22.1 \
     && npm update -g npm \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
-# Node bundled roots are independent of the OS bundle. Select the patched OS store.
-ENV NODE_OPTIONS="--use-openssl-ca" \
+# Patched Node and the OS store are independent trust inputs; retain OS trust selection.
+ENV NODE_OPTIONS="--no-experimental-strip-types --use-openssl-ca" \
     SSL_CERT_FILE=/etc/ssl/certs/ca-certificates.crt \
     SSL_CERT_DIR=/etc/ssl/certs
 
