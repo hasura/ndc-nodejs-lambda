@@ -19,11 +19,6 @@ RUN apt-get update && apt-get upgrade -y && apt-get install -y \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
-# Patched Node and the OS store are independent trust inputs; retain OS trust selection.
-ENV NODE_OPTIONS="--no-experimental-strip-types --use-openssl-ca" \
-    SSL_CERT_FILE=/etc/ssl/certs/ca-certificates.crt \
-    SSL_CERT_DIR=/etc/ssl/certs
-
 COPY /docker /scripts
 COPY /connector-definition/scripts/upgrade-connector.sh /scripts/upgrade-connector.sh
 RUN : "${CONNECTOR_VERSION:?Connector version must be set}"
