@@ -1,5 +1,14 @@
 # Node.js Lambda Connector Changelog
 
+## [1.20.4] - 2026-10-26
+
+- fix(security): require patched Node 24 runtime for lambda images (#81)
+- ci: re-enable trivy vulnerability scanning with SHA-pinned action (#79)
+- ci: disable trivy vulnerability scanning (#78)
+- Upgrade Trivy action to version 0.35.0 (#76)
+- revert package version (#74)
+
+
 This changelog documents the changes between release versions.
 
 ## [Unreleased]
