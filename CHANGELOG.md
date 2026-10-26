@@ -6,6 +6,8 @@ This changelog documents the changes between release versions.
 
 Changes to be included in the next upcoming release
 
+- Updated ndc-sdk-typescript to v8.5.2 (OpenTelemetry security fixes) and refreshed transitive dependencies to clear HIGH/CRITICAL CVEs
+
 ## [1.20.4] - 2026-10-26
 
 - Require Node >= 24.22.1 and patched ca-certificates in the connector image (eMudhra emSign DV-G3B certificate compromise) ([#81](https://github.com/hasura/ndc-nodejs-lambda/pull/81))
