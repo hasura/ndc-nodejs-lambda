@@ -1,19 +1,15 @@
 # Node.js Lambda Connector Changelog
 
-## [1.20.4] - 2026-10-26
-
-- fix(security): require patched Node 24 runtime for lambda images (#81)
-- ci: re-enable trivy vulnerability scanning with SHA-pinned action (#79)
-- ci: disable trivy vulnerability scanning (#78)
-- Upgrade Trivy action to version 0.35.0 (#76)
-- revert package version (#74)
-
-
 This changelog documents the changes between release versions.
 
 ## [Unreleased]
 
 Changes to be included in the next upcoming release
+
+## [1.20.4] - 2026-10-26
+
+- Require Node >= 24.22.1 and patched ca-certificates in the connector image (eMudhra emSign DV-G3B certificate compromise) ([#81](https://github.com/hasura/ndc-nodejs-lambda/pull/81))
+- Updated ndc-sdk-typescript to v8.5.1
 
 ## [1.20.3] - 2026-03-06
 
