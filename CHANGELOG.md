@@ -1,5 +1,10 @@
 # Node.js Lambda Connector Changelog
 
+## [1.20.5] - 2026-10-26
+
+- fix(security): update ndc-sdk-typescript to v8.5.2 and add Trivy lockfile scan (#84)
+
+
 This changelog documents the changes between release versions.
 
 ## [Unreleased]
