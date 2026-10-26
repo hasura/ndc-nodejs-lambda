@@ -6,6 +6,11 @@ This changelog documents the changes between release versions.
 
 Changes to be included in the next upcoming release
 
+## [1.20.4] - 2026-10-26
+
+- Require Node >= 24.22.1 and patched ca-certificates in the connector image (eMudhra emSign DV-G3B certificate compromise) ([#81](https://github.com/hasura/ndc-nodejs-lambda/pull/81))
+- Updated ndc-sdk-typescript to v8.5.1
+
 ## [1.20.3] - 2026-03-06
 
 - Updated ndc-sdk-typescript to v8.5.0
