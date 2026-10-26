@@ -41,7 +41,7 @@
           default = pkgs.mkShell {
             packages = [
               pkgs.nixfmt
-              pkgs.nodejs_20
+              pkgs.nodejs_24
             ];
           };
         }
