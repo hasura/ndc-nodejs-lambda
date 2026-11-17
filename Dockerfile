@@ -1,4 +1,4 @@
-FROM ubuntu:noble-20260113
+FROM ubuntu:noble-20261110
 ARG CONNECTOR_VERSION
 
 RUN apt-get update && apt-get upgrade -y && apt-get install -y \
